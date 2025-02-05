@@ -1,6 +1,0 @@
-# ninja log v6
-16	1340	7604647845577028	CMakeFiles/minimum-dominating-set.dir/src/reduce.cpp.obj	bd392dcbb823acf2
-12	1443	7604647845577028	CMakeFiles/minimum-dominating-set.dir/src/graph/context.cpp.obj	442f8b85db17c6c
-8	1463	7604647845577028	CMakeFiles/minimum-dominating-set.dir/src/graph/graph_io.cpp.obj	d9c31704ba3fc544
-3	1741	7604647845577028	CMakeFiles/minimum-dominating-set.dir/src/minimum-dominating-set.cpp.obj	9a825adaa221e01a
-1741	2017	7604647862938479	minimum-dominating-set.exe	ba265e490be475e7

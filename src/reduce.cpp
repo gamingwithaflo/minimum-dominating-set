@@ -26,10 +26,10 @@ namespace reduce {
 		adjacencyListBoost& test = mds_context.get_graph();
 		int num_vertices = mds_context.get_num_nodes();
 		auto [neigh_itt, neigh_itt_end] = boost::adjacent_vertices(u, test);
-		
+
 		//create adjacencyLookup table 
 		std::vector<int>lookup = std::vector<int>(num_vertices, 0);
-		for (auto itt=neigh_itt ; itt < neigh_itt_end; ++itt) {
+		for (auto itt = neigh_itt; itt < neigh_itt_end; ++itt) {
 			lookup[*itt] = 1;
 		}
 		// partition neighborhood u into 3 sets.
@@ -38,6 +38,7 @@ namespace reduce {
 		std::vector<int>prison_vertices; //N_{1}
 
 		//TODO: Identify exit_vertices
-
+		
 		//TODO: Identify if remaining vertices go into guard_vertices or prisonn_vertices.
+	}
 }
