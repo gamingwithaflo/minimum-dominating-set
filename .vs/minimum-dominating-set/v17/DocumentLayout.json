@@ -1,0 +1,203 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\reduce.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\graph\\context.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\reduce.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\graph\\context.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\graph\\graph_io.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\graph\\graph_io.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\minimum-dominating-set.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\minimum-dominating-set.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakePresets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakePresets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|CMake Overview Pages||{B1CAA5B0-FEB1-4350-8AB9-F895876842F2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "CMakePresets.json",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakePresets.json",
+              "RelativeDocumentMoniker": "CMakePresets.json",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakePresets.json",
+              "RelativeToolTip": "CMakePresets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-02-05T15:14:54.579Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "context.cpp",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.cpp",
+              "RelativeDocumentMoniker": "src\\graph\\context.cpp",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.cpp",
+              "RelativeToolTip": "src\\graph\\context.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-05T14:56:43.217Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "reduce.cpp",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.cpp",
+              "RelativeDocumentMoniker": "src\\reduce.cpp",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.cpp",
+              "RelativeToolTip": "src\\reduce.cpp",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAABoAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-05T13:41:49.066Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "context.h",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.h",
+              "RelativeDocumentMoniker": "src\\graph\\context.h",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\context.h",
+              "RelativeToolTip": "src\\graph\\context.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-02-05T13:24:42.097Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "minimum-dominating-set.cpp",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.cpp",
+              "RelativeDocumentMoniker": "src\\minimum-dominating-set.cpp",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.cpp",
+              "RelativeToolTip": "src\\minimum-dominating-set.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAABuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-05T13:21:38.76Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "graph_io.cpp",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.cpp",
+              "RelativeDocumentMoniker": "src\\graph\\graph_io.cpp",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.cpp",
+              "RelativeToolTip": "src\\graph\\graph_io.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-05T13:18:08.498Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "minimum-dominating-set.h",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.h",
+              "RelativeDocumentMoniker": "src\\minimum-dominating-set.h",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\minimum-dominating-set.h",
+              "RelativeToolTip": "src\\minimum-dominating-set.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-02-05T13:17:59.777Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "reduce.h",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.h",
+              "RelativeDocumentMoniker": "src\\reduce.h",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\reduce.h",
+              "RelativeToolTip": "src\\reduce.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-02-05T13:17:58.554Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "graph_io.h",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.h",
+              "RelativeDocumentMoniker": "src\\graph\\graph_io.h",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\src\\graph\\graph_io.h",
+              "RelativeToolTip": "src\\graph\\graph_io.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-02-05T13:16:25.797Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "CMakeLists.txt",
+              "DocumentMoniker": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakeLists.txt",
+              "RelativeDocumentMoniker": "CMakeLists.txt",
+              "ToolTip": "C:\\Users\\Flori\\OneDrive\\Documenten\\GitHub\\minimum-dominating-set\\CMakeLists.txt",
+              "RelativeToolTip": "CMakeLists.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-02-05T13:16:18.217Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "CMake Overview Pages",
+              "DocumentMoniker": "CMake Overview Pages",
+              "ToolTip": "CMake Overview Pages",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-02-05T13:16:12.087Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+#pragma once
+
+#include "graph_io.h"  // Ensure this contains adjacencyListBoost definition
+
+class MDS_CONTEXT {
+    public:
+    // Member variables
+    std::vector<int> included;
+    std::vector<int> dominated;
+    std::vector<int> removed;
+
+    adjacencyListBoost graph;
+    int num_nodes;
+
+    int cnt_sol;   // Size of the current solution.
+    int cnt_dom;   // Number of dominated vertices.
+    int cnt_rem_v; // Number of removed vertices.
+    int cnt_rem_e; // Number of removed edges.
+
+    // Constructor
+    MDS_CONTEXT(const adjacencyListBoost& g);
+
+    adjacencyListBoost& get_graph();
+
+    int get_num_nodes();
+};

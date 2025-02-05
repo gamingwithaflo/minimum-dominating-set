@@ -1,0 +1,3 @@
+C:/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/out/build/x64-debug/CMakeFiles/minimum-dominating-set.dir
+C:/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/out/build/x64-debug/CMakeFiles/edit_cache.dir
+C:/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/out/build/x64-debug/CMakeFiles/rebuild_cache.dir
