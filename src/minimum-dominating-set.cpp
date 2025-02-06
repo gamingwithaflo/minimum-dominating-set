@@ -10,7 +10,7 @@
 int main()
 {
 	//const char* path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
-	const char* path = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
+	const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_single_vertex.gr";
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 	adjacencyListBoost* pointerGraph = &adjLBoost;
 	const adjacencyListBoost& refGraph = adjLBoost;
@@ -20,7 +20,7 @@ int main()
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 	MDS_CONTEXT& refContext = mds_context;
 	reduce::reduce_graph(refContext);
-
+	printf("check");
 
 	return 0;
 }

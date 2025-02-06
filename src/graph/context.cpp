@@ -25,7 +25,26 @@ int MDS_CONTEXT::get_num_nodes() {
 	return(num_nodes);
 }
 
+void MDS_CONTEXT::remove_vertex(int index) {
+	removed[index] = 1;
+}
 
+void MDS_CONTEXT::include_vertex(int index) {
+	included[index] = 1;
+}
+
+void MDS_CONTEXT::dominate_vertex(int index) {
+	dominated[index] = 1;
+}
+
+bool MDS_CONTEXT::is_removed(int index) {
+	if (removed[index] == 1) {
+		return (true);
+	}
+	else {
+		return (false);
+	}
+}
 
 
 

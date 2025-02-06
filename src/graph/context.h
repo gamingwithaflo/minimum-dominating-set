@@ -23,4 +23,12 @@ class MDS_CONTEXT {
     adjacencyListBoost& get_graph();
 
     int get_num_nodes();
+
+    void remove_vertex(int index);
+
+    void include_vertex(int index);
+
+    void dominate_vertex(int index);
+
+    bool is_removed(int index);
 };
