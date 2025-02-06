@@ -21,16 +21,15 @@ namespace reduce {
 	}
 	void reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
 		//check whether the vertex is removed in previous reductions.
-		if (mds_context.is_removed((int)u)) {
+		if (mds_context.is_removed(u)) {
    			return;
 		}
 
 		//get adjacencyList (itteratable)
-		adjacencyListBoost& graph = mds_context.get_graph();
-		int num_vertices = mds_context.get_num_nodes();
-		auto [neigh_itt_u, neigh_itt_u_end] = boost::adjacent_vertices(u, graph);
+		auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(u);
 
-		//create adjacencyLookup table 
+		//create adjacencyLookup table
+		int num_vertices = mds_context.get_total_vertices();
 		std::vector<int>lookup = std::vector<int>(num_vertices, 0);
 		lookup[u] = 1;
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
@@ -44,7 +43,7 @@ namespace reduce {
 		//Identify exit_vertices
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			//for each vertex v get the neighborhood
-			auto [neigh_itt_v, neigh_itt_v_end] = boost::adjacent_vertices(*v, graph);
+			auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
 			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
 			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 				if (lookup[*neigh_itt_v] == 0) {
@@ -61,7 +60,7 @@ namespace reduce {
 			}
 			else {
 				bool guard_trigger = false;
-				auto [neigh_itt_v, neigh_itt_v_end] = boost::adjacent_vertices(*v, graph);
+				auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
 				for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 					//Check if it is a guard_vertex.
 					if (std::find(exit_vertices.begin(), exit_vertices.end(), *neigh_itt_v) != exit_vertices.end()) {
@@ -78,7 +77,7 @@ namespace reduce {
 		}
 		//Check whether the graph can be reduced.
 		if (prison_vertices.size() > 0) {
-				mds_context.include_vertex((int)u);
+				mds_context.include_vertex(u);
 				mds_context.remove_vertex(u);
 				//Remove all Prison vertices for complete graph.
 				for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {

@@ -3,6 +3,8 @@
 #include "graph_io.h"  // Ensure this contains adjacencyListBoost definition
 
 typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
+typedef boost::graph_traits<adjacencyListBoost>::adjacency_iterator adjacency_itt;
+typedef boost::graph_traits<adjacencyListBoost>::vertex_iterator vertex_itt;
 
 class MDS_CONTEXT {
     public:
@@ -10,6 +12,7 @@ class MDS_CONTEXT {
     std::vector<int> included;
     std::vector<int> dominated;
     std::vector<int> removed;
+    std::vector<vertex> vertices;
 
     adjacencyListBoost graph;
     int num_nodes;
@@ -24,13 +27,19 @@ class MDS_CONTEXT {
 
     adjacencyListBoost& get_graph();
 
-    int get_num_nodes();
+    void update_vertices();
+
+    std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> get_vertices_itt();
+
+    int get_total_vertices();
 
     void remove_vertex(vertex v);
 
-    void include_vertex(int index);
+    void include_vertex(vertex v);
 
-    void dominate_vertex(int index);
+    void dominate_vertex(vertex v);
 
-    bool is_removed(int index);
+    bool is_removed(vertex v);
+
+    std::pair<adjacency_itt, adjacency_itt> get_neighborhood_itt(vertex v);
 };
