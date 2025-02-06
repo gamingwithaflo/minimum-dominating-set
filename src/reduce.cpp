@@ -11,8 +11,8 @@ namespace reduce {
 	
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
-		adjacencyListBoost& test = mds_context.get_graph();
-		auto [vert_itt, vert_itt_end] = boost::vertices(test);
+		adjacencyListBoost& graph = mds_context.get_graph();
+		auto [vert_itt, vert_itt_end] = boost::vertices(graph);
 
 		for (; vert_itt < vert_itt_end; ++vert_itt) {
 			reduce_neighborhood_single_vertex(mds_context, *vert_itt);
@@ -22,7 +22,7 @@ namespace reduce {
 	void reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
 		//check whether the vertex is removed in previous reductions.
 		if (mds_context.is_removed((int)u)) {
-			return;
+   			return;
 		}
 
 		//get adjacencyList (itteratable)
@@ -78,19 +78,19 @@ namespace reduce {
 		}
 		//Check whether the graph can be reduced.
 		if (prison_vertices.size() > 0) {
-			mds_context.include_vertex((int)u);
-			//Remove all Prison vertices for complete graph.
-			for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
-				mds_context.remove_vertex(*itt);
-			}
-			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
-				mds_context.remove_vertex(*itt);
-			}
-			for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
-				mds_context.dominate_vertex(*itt);
-			}
+				mds_context.include_vertex((int)u);
+				mds_context.remove_vertex(u);
+				//Remove all Prison vertices for complete graph.
+				for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
+					mds_context.remove_vertex(*itt);
+				}
+				for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
+					mds_context.remove_vertex(*itt);
+				}
+				for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
+					mds_context.dominate_vertex(*itt);
 
-			//Remove all guard vertices for complete graph.
+				}
 		}
 	}
 }

@@ -3,7 +3,7 @@
 #include "context.h"
 #include <vector>
 
-MDS_CONTEXT::MDS_CONTEXT(const adjacencyListBoost& g) {
+MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	graph = g;
 	num_nodes = boost::num_vertices(g);
 
@@ -25,8 +25,9 @@ int MDS_CONTEXT::get_num_nodes() {
 	return(num_nodes);
 }
 
-void MDS_CONTEXT::remove_vertex(int index) {
-	removed[index] = 1;
+void MDS_CONTEXT::remove_vertex(vertex v) {
+	removed[v] = 1;
+	boost::clear_vertex(v, graph);
 }
 
 void MDS_CONTEXT::include_vertex(int index) {

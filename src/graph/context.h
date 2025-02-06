@@ -2,6 +2,8 @@
 
 #include "graph_io.h"  // Ensure this contains adjacencyListBoost definition
 
+typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
+
 class MDS_CONTEXT {
     public:
     // Member variables
@@ -18,13 +20,13 @@ class MDS_CONTEXT {
     int cnt_rem_e; // Number of removed edges.
 
     // Constructor
-    MDS_CONTEXT(const adjacencyListBoost& g);
+    MDS_CONTEXT(adjacencyListBoost& g);
 
     adjacencyListBoost& get_graph();
 
     int get_num_nodes();
 
-    void remove_vertex(int index);
+    void remove_vertex(vertex v);
 
     void include_vertex(int index);
 
