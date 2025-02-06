@@ -18,11 +18,7 @@ int main()
 	printf("%d\n", is_planar);  // 1: planar, 0: not planar
 	//get the range of vertex iterator
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
-	//test
-	printf("what does it do");
 	MDS_CONTEXT& refContext = mds_context;
 	reduce::reduce_graph(refContext);
-	printf("check");
-
 	return 0;
 }

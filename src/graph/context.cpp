@@ -19,6 +19,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 }
 
 void MDS_CONTEXT::update_vertices() {
+	vertices.clear(); //start over
 	for (int i = 0; i < num_nodes; ++i) {
 		if (removed[i] == 0) {
 			vertex v = boost::vertex(i, graph);
@@ -27,7 +28,7 @@ void MDS_CONTEXT::update_vertices() {
 	}
 }
 
-std::pair<vertex_itt,vertex_itt> MDS_CONTEXT::get_vertices_itt() {
+std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONTEXT::get_vertices_itt() {
 	update_vertices();
 	return std::make_pair(vertices.begin(), vertices.end());
 }

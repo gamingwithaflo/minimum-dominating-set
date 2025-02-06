@@ -11,8 +11,7 @@ namespace reduce {
 	
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
-		adjacencyListBoost& graph = mds_context.get_graph();
-		auto [vert_itt, vert_itt_end] = boost::vertices(graph);
+		auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
 
 		for (; vert_itt < vert_itt_end; ++vert_itt) {
 			reduce_neighborhood_single_vertex(mds_context, *vert_itt);
