@@ -11,17 +11,22 @@ namespace reduce {
 	
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
-		auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+		int cnt_reductions;
+		do {
+			cnt_reductions = 0;
+			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
 
-		for (; vert_itt < vert_itt_end; ++vert_itt) {
-			reduce_neighborhood_single_vertex(mds_context, *vert_itt);
-		}
-
+			for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+				if (reduce_neighborhood_single_vertex(mds_context, *itt)) {
+					++cnt_reductions;
+				}
+			}
+		} while (cnt_reductions > 0);
 	}
-	void reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
+	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
 		//check whether the vertex is removed in previous reductions.
 		if (mds_context.is_removed(u)) {
-   			return;
+   			return false;
 		}
 
 		//get adjacencyList (itteratable)
@@ -89,6 +94,8 @@ namespace reduce {
 					mds_context.dominate_vertex(*itt);
 
 				}
+				return true;
 		}
+		return false;
 	}
 }

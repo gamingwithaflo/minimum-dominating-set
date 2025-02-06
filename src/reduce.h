@@ -7,5 +7,5 @@
 namespace reduce {
     void reduce_graph(MDS_CONTEXT& mds_context);
 
-    void reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
+    bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 }
