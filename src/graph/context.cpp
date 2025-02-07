@@ -33,13 +33,7 @@ std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONT
 	return std::make_pair(vertices.begin(), vertices.end());
 }
 
-std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONTEXT::get_pair_neighborhood_itt(vertex v, vertex w) {
-	
-	
-
-}
-
-std::vector<vertex> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
+std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
 	std::vector<vertex>pair_neighborhood_vector;
 	std::vector<int> lookup = std::vector<int>(num_nodes, 0);
 	auto [vertex_v_itt, vertex_v_itt_end] = boost::adjacent_vertices(v, graph);
@@ -60,7 +54,17 @@ std::vector<vertex> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
 			pair_neighborhood_vector.push_back(*vertex_v_itt);
 		}
 	}
+	return(std::make_pair(lookup, pair_neighborhood_vector));
+}
 
+std::vector<vertex> MDS_CONTEXT::get_undominated_vector(std::vector<vertex>vertices) {
+	std::vector<vertex> undominated_vector;
+	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
+		if (dominated[*i] == 0) {
+			undominated_vector.push_back(*i);
+		}
+	}
+	return undominated_vector;
 }
 
 adjacencyListBoost& MDS_CONTEXT::get_graph() {
