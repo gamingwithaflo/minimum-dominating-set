@@ -92,10 +92,16 @@ namespace reduce {
 				}
 				for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
 					mds_context.dominate_vertex(*itt);
-
 				}
 				return true;
 		}
 		return false;
+	}
+	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
+		{
+			if (mds_context.is_removed(v) || mds_context.is_removed(w)) {
+				return false;
+			}
+		}
 	}
 }

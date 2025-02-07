@@ -33,6 +33,36 @@ std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONT
 	return std::make_pair(vertices.begin(), vertices.end());
 }
 
+std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONTEXT::get_pair_neighborhood_itt(vertex v, vertex w) {
+	
+	
+
+}
+
+std::vector<vertex> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
+	std::vector<vertex>pair_neighborhood_vector;
+	std::vector<int> lookup = std::vector<int>(num_nodes, 0);
+	auto [vertex_v_itt, vertex_v_itt_end] = boost::adjacent_vertices(v, graph);
+	auto [vertex_w_itt, vertex_w_itt_end] = boost::adjacent_vertices(w, graph);
+	//add all adjacent vertices of v
+	lookup[v] = 1;
+	for (;vertex_v_itt < vertex_v_itt_end; ++vertex_v_itt) {
+		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
+			lookup[*vertex_v_itt] = 1;
+			pair_neighborhood_vector.push_back(*vertex_v_itt);
+		}
+	}
+	//add all adjacent vertices of w
+	lookup[w] = 1;
+	for (;vertex_w_itt < vertex_w_itt_end; ++vertex_w_itt) {
+		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
+			lookup[*vertex_v_itt] = 1;
+			pair_neighborhood_vector.push_back(*vertex_v_itt);
+		}
+	}
+
+}
+
 adjacencyListBoost& MDS_CONTEXT::get_graph() {
 	return(graph);
 }
