@@ -43,7 +43,9 @@ class MDS_CONTEXT {
 
     std::pair<adjacency_itt, adjacency_itt> get_neighborhood_itt(vertex v);
 
-    std::pair<std::vector<int>, std::vector<vertex>> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w);
+    std::pair<std::vector<int>, std::vector<vertex>> get_pair_neighborhood(vertex v, vertex w);
 
-    std::vector<vertex> MDS_CONTEXT::get_undominated_vector(std::vector<vertex>vertices);
+    std::vector<vertex> get_undominated_vector(std::vector<vertex>& vertices);
+
+    bool can_be_reduced(std::vector<int>& prison_vertices);
 };

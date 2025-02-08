@@ -57,7 +57,8 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	return(std::make_pair(lookup, pair_neighborhood_vector));
 }
 
-std::vector<vertex> MDS_CONTEXT::get_undominated_vector(std::vector<vertex>vertices) {
+//Of a set of vertices, get the subset which is undominated.
+std::vector<vertex> MDS_CONTEXT::get_undominated_vector(std::vector<vertex>& vertices) {
 	std::vector<vertex> undominated_vector;
 	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
 		if (dominated[*i] == 0) {
@@ -76,9 +77,11 @@ int MDS_CONTEXT::get_total_vertices() {
 }
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
+	//keep track in own list which vertices not to consider anymore.
 	removed[v] = 1;
 	int removed_edges = boost::out_degree(v, graph);
 	cnt_rem_e += removed_edges;
+	//remove all edges going out of v. (So you do not consider unnessecary vertices).
 	boost::clear_vertex(v, graph);
 	cnt_rem_v++;
 	num_nodes--;
@@ -96,6 +99,18 @@ void MDS_CONTEXT::dominate_vertex(vertex v) {
 
 std::pair<adjacency_itt, adjacency_itt> MDS_CONTEXT::get_neighborhood_itt(vertex v) {
 	return (boost::adjacent_vertices(v, graph));
+}
+
+//Check whether the reduction will provide profit.
+bool MDS_CONTEXT::can_be_reduced(std::vector<int>& prison_vertices) {
+	for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+		//you need at least 1.
+		if (dominated[*i] == 0 && removed[*i] == 0) {
+			return true;
+		}
+	}
+	//If all prison vertices are dominated, this reduction will not guarentee profit.
+	return false;
 }
 
 bool MDS_CONTEXT::is_removed(vertex v) {

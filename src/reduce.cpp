@@ -80,7 +80,7 @@ namespace reduce {
 			}
 		}
 		//Check whether the graph can be reduced.
-		if (prison_vertices.size() > 0) {
+		if (mds_context.can_be_reduced(prison_vertices)) {
 				mds_context.include_vertex(u);
 				mds_context.remove_vertex(u);
 				//Remove all Prison vertices for complete graph.
@@ -102,6 +102,10 @@ namespace reduce {
 			if (mds_context.is_removed(v) || mds_context.is_removed(w)) {
 				return false;
 			}
+
+			auto [lookup, pair_neighborhood_vector] = mds_context.get_pair_neighborhood(v, w);
+
+			return true;
 		}
 	}
 }

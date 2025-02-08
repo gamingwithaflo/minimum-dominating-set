@@ -9,5 +9,5 @@ namespace reduce {
 
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 
-    bool reduce_neighborhood_pair_vertex(MDS_CONTEXT& mds_context, vertex v, vertex w);
+    bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w);
 }
