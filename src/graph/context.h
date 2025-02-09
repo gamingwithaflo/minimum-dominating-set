@@ -48,4 +48,6 @@ class MDS_CONTEXT {
     std::vector<vertex> get_undominated_vector(std::vector<vertex>& vertices);
 
     bool can_be_reduced(std::vector<int>& prison_vertices);
+
+    void MDS_CONTEXT::add_vertex()
 };

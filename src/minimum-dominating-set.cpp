@@ -10,7 +10,7 @@
 int main()
 {
 	//const char* path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
-	const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_single_vertex.gr";
+	const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_pair_vertex.gr";
 	//const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_1000_1000_0.gr";
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 	adjacencyListBoost* pointerGraph = &adjLBoost;

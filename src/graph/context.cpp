@@ -49,9 +49,9 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	//add all adjacent vertices of w
 	lookup[w] = 1;
 	for (;vertex_w_itt < vertex_w_itt_end; ++vertex_w_itt) {
-		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
-			lookup[*vertex_v_itt] = 1;
-			pair_neighborhood_vector.push_back(*vertex_v_itt);
+		if (lookup[*vertex_w_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
+			lookup[*vertex_w_itt] = 1;
+			pair_neighborhood_vector.push_back(*vertex_w_itt);
 		}
 	}
 	return(std::make_pair(lookup, pair_neighborhood_vector));
@@ -120,6 +120,20 @@ bool MDS_CONTEXT::is_removed(vertex v) {
 	else {
 		return false;
 	}
+}
+
+void MDS_CONTEXT::add_edge(vertex v, vertex w) {
+	auto new_edge = boost::add_edge(v, w, graph);
+}
+
+vertex MDS_CONTEXT::add_vertex(){
+	vertex new_vertex = boost::add_vertex(graph);
+	//assumption new vertex id is just 1 higher.
+	included.push_back(0);
+	dominated.push_back(0);
+	removed.push_back(0);
+	num_nodes++;
+	return new_vertex;
 }
 
 
