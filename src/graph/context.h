@@ -49,5 +49,7 @@ class MDS_CONTEXT {
 
     bool can_be_reduced(std::vector<int>& prison_vertices);
 
-    void MDS_CONTEXT::add_vertex()
+    vertex add_vertex();
+
+    void add_edge(vertex v, vertex w);
 };

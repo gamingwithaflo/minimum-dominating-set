@@ -124,6 +124,7 @@ bool MDS_CONTEXT::is_removed(vertex v) {
 
 void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	auto new_edge = boost::add_edge(v, w, graph);
+	return;
 }
 
 vertex MDS_CONTEXT::add_vertex(){

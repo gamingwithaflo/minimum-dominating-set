@@ -17,7 +17,7 @@ namespace reduce {
 			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
 
 			//TEST
-			for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+			for (auto itt = vert_itt; itt < vert_itt_end -1; ++itt) {
 				auto next_vertex = itt + 1;
 				bool test = reduce_neighborhood_pair_vertices(mds_context, *itt, *next_vertex);
 			}
@@ -206,9 +206,18 @@ namespace reduce {
 					mds_context.add_edge(v, z3);
 					mds_context.add_edge(w, z3);
 
+					//remove prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 						mds_context.remove_vertex(*i);
 					}
+					for (auto i = guard_vertices.begin(); i < guard_vertices.end(); ++i) {
+						auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+						auto [neigh_itt_w, neigh_itt_w_end] = mds_context.get_neighborhood_itt(w);
+						if (std::find(neigh_itt_v, neigh_itt_v_end, *i) != neigh_itt_v_end && std::find(neigh_itt_w, neigh_itt_w_end, *i) != neigh_itt_w_end) {
+							mds_context.remove_vertex(*i);
+						}
+					}
+
 				}
 				if (dominated_by_v) {
 					// the optimal is to choose v.
@@ -222,7 +231,7 @@ namespace reduce {
 					for (; neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 						//dominate neighborhood of w, because it gets included.
 						mds_context.dominate_vertex(*neigh_itt_v);
-						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_v) != exit_vertices.end()) {
+						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_v) != guard_vertices.end()) {
 							//if it is a guard it can be removed.
 							mds_context.remove_vertex(*neigh_itt_v);
 						}
@@ -242,7 +251,7 @@ namespace reduce {
 					for (; neigh_itt_w < neigh_itt_w_end; ++neigh_itt_w) {
 						//dominate neighborhood of w, because it gets included.
 						mds_context.dominate_vertex(*neigh_itt_w);
-						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_w) != exit_vertices.end()) {
+						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_w) != guard_vertices.end()) {
 							//if it is a guard it can be removed.
 							mds_context.remove_vertex(*neigh_itt_w);
 						}
