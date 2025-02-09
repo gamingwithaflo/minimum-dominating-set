@@ -19,7 +19,9 @@ namespace reduce {
 			//TEST
 			for (auto itt = vert_itt; itt < vert_itt_end -1; ++itt) {
 				auto next_vertex = itt + 1;
-				bool test = reduce_neighborhood_pair_vertices(mds_context, *itt, *next_vertex);
+				if (reduce_neighborhood_pair_vertices(mds_context, *itt, *next_vertex)) {
+					++cnt_reductions;
+				}
 			}
 
 			for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
@@ -119,7 +121,7 @@ namespace reduce {
 
 			//Identify exit_vertices (TODO: could be abstracted).
 			for (auto u = pair_neighborhood_vector.begin(); u < pair_neighborhood_vector.end(); ++u) {
-				//for each vertex v get the neighborhood
+				//for each vertex get the neighborhood
 				auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
 				//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
 				for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
@@ -217,7 +219,7 @@ namespace reduce {
 							mds_context.remove_vertex(*i);
 						}
 					}
-
+					return true;
 				}
 				if (dominated_by_v) {
 					// the optimal is to choose v.
@@ -238,6 +240,7 @@ namespace reduce {
 					}
 					mds_context.include_vertex(v);
 					mds_context.remove_vertex(v);
+					return true;
 				}
 				if (dominated_by_w) {
 					// the optimal is to choose w.
@@ -258,7 +261,7 @@ namespace reduce {
 					}
 					mds_context.include_vertex(w);
 					mds_context.remove_vertex(w);
-
+					return true;
 				}
 				//the optimal is to choose both v & w.
 				mds_context.include_vertex(v);

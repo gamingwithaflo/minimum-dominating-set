@@ -35,11 +35,12 @@ std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONT
 
 std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
 	std::vector<vertex>pair_neighborhood_vector;
-	std::vector<int> lookup = std::vector<int>(num_nodes, 0);
+	std::vector<int> lookup = std::vector<int>(get_total_vertices(), 0);
 	auto [vertex_v_itt, vertex_v_itt_end] = boost::adjacent_vertices(v, graph);
 	auto [vertex_w_itt, vertex_w_itt_end] = boost::adjacent_vertices(w, graph);
-	//add all adjacent vertices of v
 	lookup[v] = 1;
+	lookup[w] = 1;
+	//add all adjacent vertices of v
 	for (;vertex_v_itt < vertex_v_itt_end; ++vertex_v_itt) {
 		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_v_itt] = 1;
@@ -47,7 +48,6 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 		}
 	}
 	//add all adjacent vertices of w
-	lookup[w] = 1;
 	for (;vertex_w_itt < vertex_w_itt_end; ++vertex_w_itt) {
 		if (lookup[*vertex_w_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_w_itt] = 1;
@@ -78,6 +78,7 @@ int MDS_CONTEXT::get_total_vertices() {
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
+	dominated[v] = 1; //vertex can only be removed if it is dominatedz
 	removed[v] = 1;
 	int removed_edges = boost::out_degree(v, graph);
 	cnt_rem_e += removed_edges;
