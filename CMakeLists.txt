@@ -11,6 +11,8 @@ endif()
 
 project ("minimum-dominating-set")
 
+include_directories("C:/boost_1_82_0")
+
 #Create a sources variable with a lik to all cpp files to compile
 set(SOURCES
     src/minimum-dominating-set.cpp

@@ -10,4 +10,12 @@ namespace reduce {
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 
     bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w);
+
+    bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v);
+
+    bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v);
+
+    bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v);
+
+    bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v);
 }

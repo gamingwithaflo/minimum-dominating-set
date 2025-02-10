@@ -12,6 +12,7 @@ class MDS_CONTEXT {
     std::vector<int> included;
     std::vector<int> dominated;
     std::vector<int> removed;
+    std::vector<int> ignored;
     std::vector<vertex> vertices;
 
     adjacencyListBoost graph;
@@ -33,7 +34,7 @@ class MDS_CONTEXT {
 
     int get_total_vertices();
 
-    vector<vertex> get_dominated_vertices();
+    std::vector<vertex> get_dominated_vertices();
 
     void remove_vertex(vertex v);
 
@@ -41,9 +42,15 @@ class MDS_CONTEXT {
 
     void dominate_vertex(vertex v);
 
+    bool is_dominated(vertex v);
+
     bool is_removed(vertex v);
 
+    bool edge_exists(vertex v, vertex w);
+
     int get_out_degree_vertex(vertex v);
+
+    vertex get_vertex_from_index(int index);
 
     std::pair<adjacency_itt, adjacency_itt> get_neighborhood_itt(vertex v);
 
@@ -55,9 +62,11 @@ class MDS_CONTEXT {
 
     vertex add_vertex();
 
-    void remove_edge();
+    void remove_edge(vertex v, vertex w);
 
     bool is_ignored(vertex v);
 
     void add_edge(vertex v, vertex w);
+
+    void output_graph();
 };

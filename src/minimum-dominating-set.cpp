@@ -11,8 +11,9 @@
 int main()
 {
 	//const char* path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
-	const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_pair_vertex3.gr";
-	//const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_1000_1000_0.gr";
+	//const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_pair_vertex3.gr";
+	const char* path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_500_500_2.gr";
+	const char* name = parse::getNameFile(path);
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 	adjacencyListBoost* pointerGraph = &adjLBoost;
 	adjacencyListBoost& refGraph = adjLBoost;
@@ -23,5 +24,6 @@ int main()
 	MDS_CONTEXT& refContext = mds_context;
 	reduce::reduce_graph(refContext);
 	mds_context.update_vertices();
+	int total_vertices = mds_context.get_total_vertices();
 	return 0;
 }

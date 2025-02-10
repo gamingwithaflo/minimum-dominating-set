@@ -18,4 +18,8 @@ namespace parse {
     adjacencyListBoost read_pace_2024(std::istream& is);
 
     adjacencyListBoost load_pace_2024(char const* path);
+
+    void output_pace_2024(adjacencyListBoost& graph);
+
+    const char* getNameFile(const char* path);
 } 

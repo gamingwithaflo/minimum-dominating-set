@@ -10,7 +10,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	included = std::vector<int>(num_nodes, 0);
 	dominated = std::vector<int>(num_nodes, 0);
 	removed = std::vector<int>(num_nodes, 0);
-	ignored = std::vector<int>(num_nodes, 0);
+	ignored = std::vector<int>(num_nodes, 0); //must be dominated, cannot be chosen.
 	update_vertices();
 
 	cnt_sol = 0;
@@ -77,15 +77,20 @@ int MDS_CONTEXT::get_total_vertices() {
 	return(boost::num_vertices(graph));
 }
 
+vertex MDS_CONTEXT::get_vertex_from_index(int index) {
+	vertex v = boost::vertex(index, graph);
+	return v;
+}
+
 //update vertices before.
-vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
-	vector<vertex> dominated_vertices;
+std::vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
+	std::vector<vertex> dominated_vertices;
 	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
 		if (dominated[*i] == 1) {
 			dominated_vertices.push_back(*i);
 		}
 	}
-	return dominated_vertices();
+	return dominated_vertices;
 }
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
@@ -144,6 +149,19 @@ bool MDS_CONTEXT::is_removed(vertex v) {
 		return false;
 	}
 }
+
+bool MDS_CONTEXT::edge_exists(vertex v, vertex w) {
+	auto [edge,exists] = boost::edge(v, w, graph);
+	return exists;
+}
+
+bool MDS_CONTEXT::is_dominated(vertex v) {
+	if (dominated[v] == 1) {
+		return true;
+	}
+	return false;
+}
+
 
 bool MDS_CONTEXT::is_ignored(vertex v) {
 	if (ignored[v] == 1) {

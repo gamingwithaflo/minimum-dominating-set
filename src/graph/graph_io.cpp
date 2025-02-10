@@ -1,8 +1,8 @@
 #pragma once
 #include "graph_io.h"
 
-namespace parse {
 
+namespace parse {
     adjacencyListBoost construct_AdjacencyList_Boost(int n, std::vector<std::pair<int, int>> const& edges) {
         adjacencyListBoost g(n);
         for (auto& p : edges) {
@@ -44,5 +44,16 @@ namespace parse {
         }
         //return read_pace_2024(f);
         return read_pace_2024(f);
+    }
+
+    void output_pace_2024(adjacencyListBoost& graph) {
+
+    }
+
+    const char* getNameFile(const char* path) {
+        char* name;
+        const char* lastSlash = strrchr(path, '/'); // Find last occurrence of '/'
+        const char* name_with_extention = (lastSlash) ? lastSlash + 1 : path; // Return substring after last '/'
+        return name_with_extention;        
     }
 }

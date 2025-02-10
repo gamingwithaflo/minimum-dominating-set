@@ -12,25 +12,65 @@ namespace reduce {
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
 		int cnt_reductions;
+		bool first_time = false;
 		do {
 			cnt_reductions = 0;
 			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-
-			//TEST
-			for (auto itt = vert_itt; itt < vert_itt_end -1; ++itt) {
-				auto next_vertex = itt + 1;
-				if (reduce_neighborhood_pair_vertices(mds_context, *itt, *next_vertex)) {
+			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices();
+			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
+				if (simple_rule_one(mds_context, *itt)) {
+					++cnt_reductions;
+				}
+				if (simple_rule_two(mds_context, *itt)) {
+					++cnt_reductions;
+				}
+				if (simple_rule_two(mds_context, *itt)) {
+					++cnt_reductions;
+				}
+				if (simple_rule_three(mds_context, *itt)) {
+					++cnt_reductions;
+				}
+				if (simple_rule_four(mds_context, *itt)) {
 					++cnt_reductions;
 				}
 			}
-
 			for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
 				if (reduce_neighborhood_single_vertex(mds_context, *itt)) {
 					++cnt_reductions;
 				}
 			}
+			if (cnt_reductions == 0 && first_time) {
+				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+					//distance vector.
+					std::vector<int>distance (mds_context.get_total_vertices(), -1);
+					distance[*itt] = 0; //source.
+					//fill distance vector (up to dist 3).
+					auto [neigh_itt_itt, neigh_itt_itt_end] = mds_context.get_neighborhood_itt(*itt);
+					for (;neigh_itt_itt < neigh_itt_itt_end; ++neigh_itt_itt) {
+						if (distance[*neigh_itt_itt] != 0) {
+							distance[*neigh_itt_itt] = 1;
+						}
+						auto [neigh_itt_itt_itt, neigh_itt_itt_itt_end] = mds_context.get_neighborhood_itt(*neigh_itt_itt);
+						for (;neigh_itt_itt_itt < neigh_itt_itt_itt_end; ++neigh_itt_itt_itt) {
+							if (distance[*neigh_itt_itt_itt] != 0) {
+								distance[*neigh_itt_itt_itt] = 1;
+							}
+						}
+					}
+					for (size_t i = 0; i < distance.size(); ++i) {
+						if (distance[i] == 1) {
+							if (reduce_neighborhood_pair_vertices(mds_context, *itt, mds_context.get_vertex_from_index(i))) {
+								++cnt_reductions;
+							}
+						}
+					}
+				}
+				first_time = false; //TEMP ON TRUE NORMALLY FALSE
+			}
 		} while (cnt_reductions > 0);
 	}
+
+	
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
 		//check whether the vertex is removed in previous reductions.
@@ -287,11 +327,11 @@ namespace reduce {
 		}
 	}
 
-	bool simple_rule_one(vertex v) {
+	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
 		auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
 		bool reduced = false;
 		for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
-			if (is_dominated(*neigh_v_itt)) {
+			if (mds_context.is_dominated(*neigh_v_itt)) {
 				mds_context.remove_edge(v, *neigh_v_itt);
 				reduced = true;
 			}
@@ -299,7 +339,7 @@ namespace reduce {
 		return reduced;
 	}
 
-	bool simple_rule_two(vertex v) {
+	bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v) {
 		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
 			return false;
 		}
@@ -307,9 +347,10 @@ namespace reduce {
 			mds_context.remove_vertex(v);
 			return true;
 		}
+		return false;
 	}
 
-	bool simple_rule_three(vertex v) {
+	bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v) {
 		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
 			return false;
 		}
@@ -318,28 +359,16 @@ namespace reduce {
 			vertex u_one = *neigh_v_itt;
 			vertex u_two = *++neigh_v_itt;
 			//rule 3.1
-			auto [edge, exists] = boost::edge(u_one, u_two);
-			if (exists) {
+			if (mds_context.edge_exists(u_one, u_two)) {
 				mds_context.remove_vertex(v);
 				return true;
 			}
 			//rule 3.2
 			auto [neigh_u_one_itt, neigh_u_one_itt_end] = mds_context.get_neighborhood_itt(u_one);
-			auto [neigh_u_two_itt, neigh_u_two_itt_end] = mds_context.get_neighborhood_itt(u_one);
-			//Sort
-			std::sort(neigh_u_one_itt, neigh_u_one_itt_end);
-			std::sort(neigh_u_two_itt, neigh_u_two_itt_end);
-			//Is there a dist. 3 path from u_one to u_two (besides through v)
-			while (neigh_u_one_itt != neigh_u_one_itt_end && neigh_u_two_itt != neigh_u_two_itt_end) {
-				if (*neigh_u_one_itt == *neigh_u_two_itt && *neigh_u_one_itt != v) {
-					//intersection found
+			for (;neigh_u_one_itt < neigh_u_one_itt_end; ++neigh_u_one_itt) {
+				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two)) {
 					mds_context.remove_vertex(v);
-				}
-				else if (*neigh_u_one_itt < *neigh_u_two_itt) {
-					++neigh_u_one_itt;
-				}
-				else {
-					++neigh_u_two_itt;
+					return true;
 				}
 			}
 			//no intersection found.
@@ -347,7 +376,7 @@ namespace reduce {
 		}
 		return false;
 	}
-	bool simple_rule_four(vertex v) {
+	bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v) {
 		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
 			return false;
 		}
@@ -357,10 +386,14 @@ namespace reduce {
 			vertex u_two = *++neigh_v_itt;
 			vertex u_three = *++neigh_v_itt;
 			//rule 3.1
-			auto [edge, exists] = boost::edge(u_one, u_two);
-			auto [edge_2, exists_2] = boost::edge(u_two, u_three);
+			bool exists = mds_context.edge_exists(u_one, u_two);
+			auto exists_2 = mds_context.edge_exists(u_two, u_three);
 			if (exists && exists_2) {
 				mds_context.remove_vertex(v);
 				return true;
 			}
+			return false;
+		}
+		return false;
+	}
 }
