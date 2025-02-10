@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.18)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -17,9 +17,8 @@ set(SOURCES
     src/graph/graph_io.cpp
     src/graph/context.cpp
     src/reduce.cpp
+    src/solver.cpp
 )
-
-include_directories("C:/boost_1_82_0")
 
 # Add source to this project's executable.
 add_executable (minimum-dominating-set ${SOURCES})

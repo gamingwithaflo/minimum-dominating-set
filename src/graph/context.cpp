@@ -10,6 +10,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	included = std::vector<int>(num_nodes, 0);
 	dominated = std::vector<int>(num_nodes, 0);
 	removed = std::vector<int>(num_nodes, 0);
+	ignored = std::vector<int>(num_nodes, 0);
 	update_vertices();
 
 	cnt_sol = 0;
@@ -21,7 +22,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 void MDS_CONTEXT::update_vertices() {
 	vertices.clear(); //start over
 	for (int i = 0; i < num_nodes; ++i) {
-		if (removed[i] == 0) {
+		if (removed[i] == 0 && ignored[i] == 0) {
 			vertex v = boost::vertex(i, graph);
 			vertices.push_back(v);
 		}
@@ -76,6 +77,17 @@ int MDS_CONTEXT::get_total_vertices() {
 	return(boost::num_vertices(graph));
 }
 
+//update vertices before.
+vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
+	vector<vertex> dominated_vertices;
+	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
+		if (dominated[*i] == 1) {
+			dominated_vertices.push_back(*i);
+		}
+	}
+	return dominated_vertices();
+}
+
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
 	dominated[v] = 1; //vertex can only be removed if it is dominatedz
@@ -102,6 +114,16 @@ std::pair<adjacency_itt, adjacency_itt> MDS_CONTEXT::get_neighborhood_itt(vertex
 	return (boost::adjacent_vertices(v, graph));
 }
 
+int MDS_CONTEXT::get_out_degree_vertex(vertex v) {
+	int degree = boost::out_degree(v, graph);
+	return degree;
+}
+
+void MDS_CONTEXT::remove_edge(vertex v, vertex w) {
+	boost::remove_edge(v, w, graph);
+	cnt_rem_e++;
+}
+
 //Check whether the reduction will provide profit.
 bool MDS_CONTEXT::can_be_reduced(std::vector<int>& prison_vertices) {
 	for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
@@ -123,6 +145,15 @@ bool MDS_CONTEXT::is_removed(vertex v) {
 	}
 }
 
+bool MDS_CONTEXT::is_ignored(vertex v) {
+	if (ignored[v] == 1) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	auto new_edge = boost::add_edge(v, w, graph);
 	return;
@@ -134,6 +165,7 @@ vertex MDS_CONTEXT::add_vertex(){
 	included.push_back(0);
 	dominated.push_back(0);
 	removed.push_back(0);
+	ignored.push_back(0);
 	num_nodes++;
 	return new_vertex;
 }

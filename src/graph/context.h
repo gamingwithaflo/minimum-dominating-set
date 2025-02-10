@@ -33,6 +33,8 @@ class MDS_CONTEXT {
 
     int get_total_vertices();
 
+    vector<vertex> get_dominated_vertices();
+
     void remove_vertex(vertex v);
 
     void include_vertex(vertex v);
@@ -40,6 +42,8 @@ class MDS_CONTEXT {
     void dominate_vertex(vertex v);
 
     bool is_removed(vertex v);
+
+    int get_out_degree_vertex(vertex v);
 
     std::pair<adjacency_itt, adjacency_itt> get_neighborhood_itt(vertex v);
 
@@ -50,6 +54,10 @@ class MDS_CONTEXT {
     bool can_be_reduced(std::vector<int>& prison_vertices);
 
     vertex add_vertex();
+
+    void remove_edge();
+
+    bool is_ignored(vertex v);
 
     void add_edge(vertex v, vertex w);
 };

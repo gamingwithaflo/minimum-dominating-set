@@ -286,4 +286,81 @@ namespace reduce {
 			return false;
 		}
 	}
+
+	bool simple_rule_one(vertex v) {
+		auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
+		bool reduced = false;
+		for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
+			if (is_dominated(*neigh_v_itt)) {
+				mds_context.remove_edge(v, *neigh_v_itt);
+				reduced = true;
+			}
+		}
+		return reduced;
+	}
+
+	bool simple_rule_two(vertex v) {
+		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+			return false;
+		}
+		if (mds_context.get_out_degree_vertex(v) <= 1) {
+			mds_context.remove_vertex(v);
+			return true;
+		}
+	}
+
+	bool simple_rule_three(vertex v) {
+		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+			return false;
+		}
+		if (mds_context.get_out_degree_vertex(v) == 2) {
+			auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v); //This should be 2 vertices.
+			vertex u_one = *neigh_v_itt;
+			vertex u_two = *++neigh_v_itt;
+			//rule 3.1
+			auto [edge, exists] = boost::edge(u_one, u_two);
+			if (exists) {
+				mds_context.remove_vertex(v);
+				return true;
+			}
+			//rule 3.2
+			auto [neigh_u_one_itt, neigh_u_one_itt_end] = mds_context.get_neighborhood_itt(u_one);
+			auto [neigh_u_two_itt, neigh_u_two_itt_end] = mds_context.get_neighborhood_itt(u_one);
+			//Sort
+			std::sort(neigh_u_one_itt, neigh_u_one_itt_end);
+			std::sort(neigh_u_two_itt, neigh_u_two_itt_end);
+			//Is there a dist. 3 path from u_one to u_two (besides through v)
+			while (neigh_u_one_itt != neigh_u_one_itt_end && neigh_u_two_itt != neigh_u_two_itt_end) {
+				if (*neigh_u_one_itt == *neigh_u_two_itt && *neigh_u_one_itt != v) {
+					//intersection found
+					mds_context.remove_vertex(v);
+				}
+				else if (*neigh_u_one_itt < *neigh_u_two_itt) {
+					++neigh_u_one_itt;
+				}
+				else {
+					++neigh_u_two_itt;
+				}
+			}
+			//no intersection found.
+			return false;
+		}
+		return false;
+	}
+	bool simple_rule_four(vertex v) {
+		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+			return false;
+		}
+		if (mds_context.get_out_degree_vertex(v) == 3) {
+			auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v); //This should be 2 vertices.
+			vertex u_one = *neigh_v_itt;
+			vertex u_two = *++neigh_v_itt;
+			vertex u_three = *++neigh_v_itt;
+			//rule 3.1
+			auto [edge, exists] = boost::edge(u_one, u_two);
+			auto [edge_2, exists_2] = boost::edge(u_two, u_three);
+			if (exists && exists_2) {
+				mds_context.remove_vertex(v);
+				return true;
+			}
 }

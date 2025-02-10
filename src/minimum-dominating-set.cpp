@@ -6,6 +6,7 @@
 #include "graph/graph_io.h"
 #include "graph/context.h"
 #include "reduce.h"
+#include "solver.h"
 
 int main()
 {
