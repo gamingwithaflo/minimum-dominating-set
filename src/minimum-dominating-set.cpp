@@ -24,6 +24,7 @@ int main()
 	MDS_CONTEXT& refContext = mds_context;
 	operations_research::solve_dominating_set(mds_context);
 	reduce::reduce_graph(refContext);
+	operations_research::solve_dominating_set(mds_context);
 	mds_context.update_vertices();
 	int total_vertices = mds_context.get_total_vertices();
 	return 0;

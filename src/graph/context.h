@@ -36,7 +36,7 @@ class MDS_CONTEXT {
 
     std::vector<vertex> get_dominated_vertices();
 
-    std::vector<int> get_undetermined_vertices();
+    std::pair<std::vector<int>, std::map<int, int>> get_undetermined_vertices();
 
     void remove_vertex(vertex v);
 
@@ -47,6 +47,8 @@ class MDS_CONTEXT {
     bool is_dominated(vertex v);
 
     bool is_removed(vertex v);
+
+    bool is_undetermined(vertex v);
 
     bool edge_exists(vertex v, vertex w);
 

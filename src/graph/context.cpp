@@ -180,15 +180,27 @@ void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	return;
 }
 
-std::vector<int> MDS_CONTEXT::get_undetermined_vertices() {
+std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_vertices() {
 	std::vector<int>undetermined;
 	int total_vertices = get_total_vertices();
+	int index = 0;
+	std::map<int, int> translation_pace_to_ilp;
+	//std::map<int, int> translation_ilp_to_pace; TODO later
 	for (int i = 0; i < total_vertices; ++i) {
 		if (ignored[i] == 0 && removed[i] == 0) {
+			translation_pace_to_ilp[i] = index;
 			undetermined.push_back(i);
+			index++;
 		}
 	}
-	return undetermined;
+	return (std::make_pair(undetermined, translation_pace_to_ilp));
+}
+
+bool MDS_CONTEXT::is_undetermined(vertex v) {
+	if (ignored[v] == 0 && removed[v] == 0) {
+		return true;
+	}
+	return false;
 }
 
 vertex MDS_CONTEXT::add_vertex(){
