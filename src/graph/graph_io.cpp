@@ -37,7 +37,7 @@ namespace parse {
         return construct_AdjacencyList_Boost(n, edges);
     }
 
-    adjacencyListBoost load_pace_2024(char const* path) {
+    adjacencyListBoost load_pace_2024(std::string path) {
         std::ifstream f(path);
         if (f.fail()) {
             throw std::invalid_argument("Failed to open file");
@@ -46,14 +46,12 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    void output_pace_2024(MDS_CONTEXT& mds_context) {
+    void output_pace_2024(MDS_CONTEXT& mds_context, std::string name) {
 
     }
 
-    const char* getNameFile(const char* path) {
-        char* name;
-        const char* lastSlash = strrchr(path, '/'); // Find last occurrence of '/'
-        const char* name_with_extention = (lastSlash) ? lastSlash + 1 : path; // Return substring after last '/'
-        return name_with_extention;        
+    std::string getNameFile(std::string& path) {
+        size_t lastSlash = path.find_last_of("/\\"); // Handles both '/' and '\' for cross-platform support
+        return (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
     }
 }

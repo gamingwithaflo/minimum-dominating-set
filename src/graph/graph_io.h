@@ -3,25 +3,14 @@
 #include <fstream>
 #include <sstream>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/boyer_myrvold_planar_test.hpp>
-
-#include "context.h"
-
-typedef boost::adjacency_list<                    
-    boost::vecS,                                  // Param:OutEdgeList (cointainer used for edge-list (vector))
-    boost::vecS,                                  // Param:VertexList (cointainer used for vectexList (vector))
-    boost::undirectedS,                           // Param:Directed
-    boost::property<boost::vertex_index_t, int>,  // Param: Properties of the indecies
-    boost::property<boost::edge_index_t, int>>    // Param: Properties of the indecies
-    adjacencyListBoost;
+#include <context.h>
 
 namespace parse {
     adjacencyListBoost read_pace_2024(std::istream& is);
 
-    adjacencyListBoost load_pace_2024(char const* path);
+    adjacencyListBoost load_pace_2024(std::string path);
 
-    void output_pace_2024(MDS_CONTEXT& mds_context);
+    //void output_pace_2024(MDS_CONTEXT& mds_context);
 
-    const char* getNameFile(const char* path);
+    std::string getNameFile(std::string& path);
 } 
