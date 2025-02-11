@@ -46,8 +46,23 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    void output_pace_2024(MDS_CONTEXT& mds_context, std::string name) {
+    void output_pace_2024(MDS_CONTEXT& mds_context, std::string& path) {
+        std::string prefix = "./output/reduced";
+        std::string name = getNameFile(path);
+        std::string output_path = prefix + name;
 
+        std::ofstream outFile(output_path);
+
+        if (!outFile) {
+            printf("error with writing to file");
+            return;
+        }
+
+        //TODO: WRITE DOMINATED
+        //TODO: WRITE REMOVED
+        //TODO: WRITE IGNORED
+        //TODO: WRITE SELECTED
+        //WRITE ADJACENCYGRAPH (Format to be determined)
     }
 
     std::string getNameFile(std::string& path) {
