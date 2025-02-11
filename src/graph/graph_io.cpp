@@ -46,7 +46,7 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    void output_pace_2024(adjacencyListBoost& graph) {
+    void output_pace_2024(MDS_CONTEXT& mds_context) {
 
     }
 

@@ -6,6 +6,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/boyer_myrvold_planar_test.hpp>
 
+#include "context.h"
+
 typedef boost::adjacency_list<                    
     boost::vecS,                                  // Param:OutEdgeList (cointainer used for edge-list (vector))
     boost::vecS,                                  // Param:VertexList (cointainer used for vectexList (vector))
@@ -19,7 +21,7 @@ namespace parse {
 
     adjacencyListBoost load_pace_2024(char const* path);
 
-    void output_pace_2024(adjacencyListBoost& graph);
+    void output_pace_2024(MDS_CONTEXT& mds_context);
 
     const char* getNameFile(const char* path);
 } 

@@ -48,9 +48,6 @@ namespace operations_research {
                 a.value_.push_back(1);
                 cnt++;
             }
-            else {
-                continue;
-            }
             for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
                 if (mds_context.is_undetermined(*neigh_v_itt)) {
                     a.index_.push_back(map_pace_to_ilp[*neigh_v_itt]);

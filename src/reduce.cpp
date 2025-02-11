@@ -12,7 +12,7 @@ namespace reduce {
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
 		int cnt_reductions;
-		bool first_time = false;
+		bool first_time = true;
 		do {
 			cnt_reductions = 0;
 			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
@@ -65,7 +65,7 @@ namespace reduce {
 						}
 					}
 				}
-				first_time = false; //TEMP ON TRUE NORMALLY FALSE
+				first_time = false;
 			}
 		} while (cnt_reductions > 0);
 	}
