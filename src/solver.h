@@ -1,5 +1,7 @@
 #pragma once
 
+
 namespace operations_research {
-    void BasicExample();
+
+    void solve_dominating_set(MDS_CONTEXT& mds_context);
 }

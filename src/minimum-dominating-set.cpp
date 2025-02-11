@@ -22,6 +22,7 @@ int main()
 	//get the range of vertex iterator
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 	MDS_CONTEXT& refContext = mds_context;
+	operations_research::solve_dominating_set(mds_context);
 	reduce::reduce_graph(refContext);
 	mds_context.update_vertices();
 	int total_vertices = mds_context.get_total_vertices();

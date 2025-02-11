@@ -73,8 +73,8 @@ namespace reduce {
 	
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
-		//check whether the vertex is removed in previous reductions.
-		if (mds_context.is_removed(u)) {
+		//check whether the vertex is removed in previous reductions. (if vertex is ignored there exists an better option so will never be chosen).
+		if (mds_context.is_removed(u) || mds_context.is_ignored(u)) {
    			return false;
 		}
 
@@ -105,7 +105,7 @@ namespace reduce {
 				}
 			}
 		}
-		//Identify if remaining vertices go into guard_vertices or prisonn_vertices.
+		//Identify if remaining vertices go into guard_vertices or prison_vertices.
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			//check if vertex is not a exit_vertex.
 			if (std::find(exit_vertices.begin(), exit_vertices.end(), *v) != exit_vertices.end()) {
@@ -131,7 +131,6 @@ namespace reduce {
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
 				mds_context.include_vertex(u);
-				mds_context.remove_vertex(u);
 				//Remove all Prison vertices for complete graph.
 				for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
 					mds_context.remove_vertex(*itt);
@@ -148,7 +147,7 @@ namespace reduce {
 	}
 	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
 		{
-			if (mds_context.is_removed(v) || mds_context.is_removed(w)) {
+			if (mds_context.is_removed(v) || mds_context.is_removed(w) || mds_context.is_ignored(v) || mds_context.is_ignored(w)) {
 				return false;
 			}
 			// get adjacency lookup table & itteratable list of all neighbors of v & w (lookup includes v&w while itt. excludes them).
@@ -223,7 +222,6 @@ namespace reduce {
 				}
 				//Check if undominated N_prison can be dominated by a single N_guard.
 				for (auto i = guard_vertices.begin(); i < guard_vertices.end(); ++i) {
-					int size = undominated_prison_vertices.size();
 					if (domination[*i] == size) {
 						return false;
 					}
@@ -279,7 +277,6 @@ namespace reduce {
 						}
 					}
 					mds_context.include_vertex(v);
-					mds_context.remove_vertex(v);
 					return true;
 				}
 				if (dominated_by_w) {
@@ -300,15 +297,12 @@ namespace reduce {
 						}
 					}
 					mds_context.include_vertex(w);
-					mds_context.remove_vertex(w);
 					return true;
 				}
 				//the optimal is to choose both v & w.
 				mds_context.include_vertex(v);
-				mds_context.remove_vertex(v);
 
 				mds_context.include_vertex(w);
-				mds_context.remove_vertex(w);
 
 				//dominate pair_neighborhood
 				for (auto u = prison_vertices.begin(); u < prison_vertices.end(); ++u) {
@@ -328,6 +322,9 @@ namespace reduce {
 	}
 
 	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
+		if (mds_context.is_removed(v)) {
+			return false;
+		}
 		auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
 		bool reduced = false;
 		for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
@@ -338,9 +335,9 @@ namespace reduce {
 		}
 		return reduced;
 	}
-
+	//works only for dominated vertices.
 	bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
 		if (mds_context.get_out_degree_vertex(v) <= 1) {
@@ -351,7 +348,7 @@ namespace reduce {
 	}
 
 	bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
 		if (mds_context.get_out_degree_vertex(v) == 2) {
@@ -377,7 +374,7 @@ namespace reduce {
 		return false;
 	}
 	bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) && mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
 		if (mds_context.get_out_degree_vertex(v) == 3) {

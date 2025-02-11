@@ -11,7 +11,19 @@ endif()
 
 project ("minimum-dominating-set")
 
+set(HIGHS_INCLUDE_DIR "/mnt/c/HiGHS/src")
+set(HIGHS_LIBRARY_DIR "/mnt/c/HiGHS/build/lib")
+set(HIGHS_CONFIG_DIR "/mnt/c/HiGHS/build/")
+
+
+# Include the directory
+include_directories(${HIGHS_INCLUDE_DIR})
+include_directories(${HIGHS_CONFIG_DIR})
+link_directories(${HIGHS_LIBRARY_DIR})
+
 include_directories("C:/boost_1_82_0")
+
+include_directories("'/mnt/c/HiGHS/src")
 
 #Create a sources variable with a lik to all cpp files to compile
 set(SOURCES
@@ -24,3 +36,5 @@ set(SOURCES
 
 # Add source to this project's executable.
 add_executable (minimum-dominating-set ${SOURCES})
+
+target_link_libraries(minimum-dominating-set highs)

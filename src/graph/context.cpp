@@ -95,7 +95,7 @@ std::vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
-	dominated[v] = 1; //vertex can only be removed if it is dominatedz
+	dominate_vertex(v);
 	removed[v] = 1;
 	int removed_edges = boost::out_degree(v, graph);
 	cnt_rem_e += removed_edges;
@@ -107,12 +107,15 @@ void MDS_CONTEXT::remove_vertex(vertex v) {
 
 void MDS_CONTEXT::include_vertex(vertex v) {
 	included[v] = 1;
-	cnt_sol++; //TODO: if you remove an dominated vertex, make the counter go lower.
+	cnt_sol++; 
+	remove_vertex(v); //Also dominates it for you.
 }
 
 void MDS_CONTEXT::dominate_vertex(vertex v) {
-	dominated[v] = 1;
-	cnt_dom++;
+	if (dominated[v] == 0) {
+		cnt_dom++;
+		dominated[v] = 1;
+	}
 }
 
 std::pair<adjacency_itt, adjacency_itt> MDS_CONTEXT::get_neighborhood_itt(vertex v) {
@@ -177,13 +180,24 @@ void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	return;
 }
 
+std::vector<int> MDS_CONTEXT::get_undetermined_vertices() {
+	std::vector<int>undetermined;
+	int total_vertices = get_total_vertices();
+	for (int i = 0; i < total_vertices; ++i) {
+		if (ignored[i] == 0 && removed[i] == 0) {
+			undetermined.push_back(i);
+		}
+	}
+	return undetermined;
+}
+
 vertex MDS_CONTEXT::add_vertex(){
 	vertex new_vertex = boost::add_vertex(graph);
 	//assumption new vertex id is just 1 higher.
 	included.push_back(0);
 	dominated.push_back(0);
 	removed.push_back(0);
-	ignored.push_back(0);
+	ignored.push_back(1);
 	num_nodes++;
 	return new_vertex;
 }

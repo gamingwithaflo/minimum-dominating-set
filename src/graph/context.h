@@ -36,6 +36,8 @@ class MDS_CONTEXT {
 
     std::vector<vertex> get_dominated_vertices();
 
+    std::vector<int> get_undetermined_vertices();
+
     void remove_vertex(vertex v);
 
     void include_vertex(vertex v);
