@@ -32,6 +32,7 @@ set(SOURCES
     src/graph/context.cpp
     src/reduce.cpp
     src/solver.cpp
+    src/timer.cpp
 )
 
 # Add source to this project's executable.
