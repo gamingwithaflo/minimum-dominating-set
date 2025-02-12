@@ -1,5 +1,8 @@
 #pragma once
 #include "graph_io.h"
+#include <filesystem>
+#include <boost/graph/adjacency_list.hpp>
+#include <cstdlib>
 
 
 namespace parse {
@@ -46,8 +49,8 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    void output_pace_2024(MDS_CONTEXT& mds_context, std::string& path) {
-        std::string prefix = "./output/reduced";
+    void output_context(MDS_CONTEXT& mds_context, std::string& path) {
+        std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/reduced_"; //TODO:: TEMPORARY
         std::string name = getNameFile(path);
         std::string output_path = prefix + name;
 
@@ -58,11 +61,44 @@ namespace parse {
             return;
         }
 
-        //TODO: WRITE DOMINATED
-        //TODO: WRITE REMOVED
-        //TODO: WRITE IGNORED
-        //TODO: WRITE SELECTED
+        //write domination
+        outFile << "dominated ";
+        for (int i : mds_context.dominated) {
+            outFile << i << " ";
+        }
+        outFile << std::endl;
+        //write removed
+        outFile << "removed ";
+        for (int i : mds_context.removed) {
+            outFile << i << " ";
+        }
+        outFile << std::endl;
+        //write ignored
+        outFile << "ignored ";
+        for (int i : mds_context.ignored) {
+            outFile << i << " ";
+        }
+        outFile << std::endl;
+        //todo: included
+        outFile << "included ";
+        for (int i : mds_context.included) {
+            outFile << i << " ";
+        }
+        outFile << std::endl;
         //WRITE ADJACENCYGRAPH (Format to be determined)
+        size_t num_vertices = mds_context.get_total_vertices();
+        size_t num_edges = mds_context.get_total_edges();
+
+        auto [edges_itt, edge_itt_end] = mds_context.get_edge_itt();
+
+        outFile << "p ds " << num_vertices << " " << num_edges << std::endl;
+        for (; edges_itt != edge_itt_end; ++edges_itt) {
+            vertex source = mds_context.get_source_edge(*edges_itt);
+            vertex target = mds_context.get_target_edge(*edges_itt);
+            outFile << source << " " << target << std::endl;
+        }
+
+        outFile.close();
     }
 
     std::string getNameFile(std::string& path) {

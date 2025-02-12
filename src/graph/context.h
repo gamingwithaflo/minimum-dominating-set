@@ -12,8 +12,10 @@ typedef boost::adjacency_list<
 
 
 typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
+typedef boost::graph_traits<adjacencyListBoost>::edge_descriptor edge;
 typedef boost::graph_traits<adjacencyListBoost>::adjacency_iterator adjacency_itt;
 typedef boost::graph_traits<adjacencyListBoost>::vertex_iterator vertex_itt;
+typedef boost::graph_traits<adjacencyListBoost>::edge_iterator edge_itt;
 
 class MDS_CONTEXT {
     public:
@@ -42,6 +44,14 @@ class MDS_CONTEXT {
     std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> get_vertices_itt();
 
     int get_total_vertices();
+
+    int get_total_edges();
+
+    std::pair<edge_itt, edge_itt> get_edge_itt();
+
+    vertex get_source_edge(edge e);
+
+    vertex get_target_edge(edge e);
 
     std::vector<vertex> get_dominated_vertices();
 
@@ -80,6 +90,4 @@ class MDS_CONTEXT {
     bool is_ignored(vertex v);
 
     void add_edge(vertex v, vertex w);
-
-    void output_graph();
 };

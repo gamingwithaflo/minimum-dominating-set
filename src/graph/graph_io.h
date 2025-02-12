@@ -10,7 +10,7 @@ namespace parse {
 
     adjacencyListBoost load_pace_2024(std::string path);
 
-    void output_pace_2024(MDS_CONTEXT& mds_context, std::string& path);
+    void output_context(MDS_CONTEXT& mds_context, std::string& path);
 
     std::string getNameFile(std::string& path);
 } 

@@ -121,6 +121,14 @@ std::pair<adjacency_itt, adjacency_itt> MDS_CONTEXT::get_neighborhood_itt(vertex
 	return (boost::adjacent_vertices(v, graph));
 }
 
+std::pair<edge_itt, edge_itt> MDS_CONTEXT::get_edge_itt() {
+	return (boost::edges(graph));
+}
+
+int MDS_CONTEXT::get_total_edges() {
+	return(boost::num_edges(graph));
+}
+
 int MDS_CONTEXT::get_out_degree_vertex(vertex v) {
 	int degree = boost::out_degree(v, graph);
 	return degree;
@@ -200,6 +208,14 @@ bool MDS_CONTEXT::is_undetermined(vertex v) {
 		return true;
 	}
 	return false;
+}
+
+vertex MDS_CONTEXT::get_source_edge(edge e) {
+	return(boost::source(e, graph));
+}
+
+vertex MDS_CONTEXT::get_target_edge(edge e) {
+	return(boost::target(e, graph));
 }
 
 vertex MDS_CONTEXT::add_vertex(){
