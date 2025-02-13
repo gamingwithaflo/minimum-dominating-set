@@ -77,6 +77,12 @@ namespace operations_research {
         return_status = highs.run();
         if (return_status == HighsStatus::kOk) {
             const HighsSolution& solution = highs.getSolution();
+            vector<int>selected_vertices;
+            for (auto i = 0; i < num_vars; ++i) {
+                if (solution.col_value[i] == 1) {
+                    selected_vertices.push_back(i); //TODO rewrite it to set of vertices. :)
+                }
+            }
             return false;
         }
         else if (return_status == HighsStatus::kWarning) {

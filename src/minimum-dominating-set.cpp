@@ -18,9 +18,9 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_pair_vertex3.gr";
-	bool dir_mode = true;
+	bool dir_mode = false;
 	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_50_50_0.gr";
-	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace_test/";
+	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/";
 	if (dir_mode) {
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			reduction_info(entry.path());

@@ -17,6 +17,9 @@ public:
 	static int cnt_reduce_neighborhood_single_vertex;
 	static int cnt_reduce_neighborhood_pair_vertex;
 
+	static int solution_without_reduction;
+	static int solution_with_reduction;
+
 	static int att_simple_rule_one;
 	static int att_simple_rule_two;
 	static int att_simple_rule_three;
