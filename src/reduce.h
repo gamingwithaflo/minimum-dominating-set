@@ -6,6 +6,8 @@
 namespace reduce {
     void reduce_graph(MDS_CONTEXT& mds_context);
 
+    void log_reduce_graph(MDS_CONTEXT& mds_context);
+
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 
     bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w);

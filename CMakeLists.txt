@@ -27,12 +27,13 @@ include_directories("'/mnt/c/HiGHS/src")
 
 #Create a sources variable with a lik to all cpp files to compile
 set(SOURCES
+    src/util/logger.cpp
     src/minimum-dominating-set.cpp
     src/graph/graph_io.cpp
     src/graph/context.cpp
     src/reduce.cpp
     src/solver.cpp
-    src/timer.cpp
+    src/util/timer.cpp
 )
 
 # Add source to this project's executable.

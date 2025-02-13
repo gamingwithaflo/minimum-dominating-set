@@ -5,13 +5,94 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <algorithm>
 
+#include "util/logger.h"
+
 
 namespace reduce {
 	
+	void log_reduce_graph(MDS_CONTEXT& mds_context) {
+		bool first_time = true;
+		int cnt_reductions;
+		do {
+			cnt_reductions = 0;
+			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices();
+			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
+				if (Logger::flag_sr_1) {
+					++Logger::att_simple_rule_one;
+					if (simple_rule_one(mds_context, *itt)) {
+						++cnt_reductions;
+						++Logger::cnt_simple_rule_one;
+					}
+				}
+				if (Logger::flag_sr_2) {
+					++Logger::att_simple_rule_two;
+					if (simple_rule_two(mds_context, *itt)) {
+						++cnt_reductions;
+						++Logger::cnt_simple_rule_two;
+					}
+				}
+				if (Logger::flag_sr_3) {
+					++Logger::att_simple_rule_three;
+					if (simple_rule_three(mds_context, *itt)) {
+						++cnt_reductions;
+						++Logger::cnt_simple_rule_three;
+					}
+				}
+				if (Logger::flag_sr_4) {
+					++Logger::att_simple_rule_four;
+					if (simple_rule_four(mds_context, *itt)) {
+						++cnt_reductions;
+						++Logger::cnt_simple_rule_four;
+					}
+				}
+			}
+			if (Logger::flag_neigh_single) {
+				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+					++Logger::att_reduce_neighborhood_single_vertex;
+					if (reduce_neighborhood_single_vertex(mds_context, *itt)) {
+						++cnt_reductions;
+						++Logger::cnt_reduce_neighborhood_single_vertex;
+					}
+				}
+			}
+			if (cnt_reductions == 0 && first_time && Logger::flag_neigh_pair) {
+				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+					//distance vector.
+					std::vector<int>distance (mds_context.get_total_vertices(), -1);
+					distance[*itt] = 0; //source.
+					//fill distance vector (up to dist 3).
+					auto [neigh_itt_itt, neigh_itt_itt_end] = mds_context.get_neighborhood_itt(*itt);
+					for (;neigh_itt_itt < neigh_itt_itt_end; ++neigh_itt_itt) {
+						if (distance[*neigh_itt_itt] != 0) {
+							distance[*neigh_itt_itt] = 1;
+						}
+						auto [neigh_itt_itt_itt, neigh_itt_itt_itt_end] = mds_context.get_neighborhood_itt(*neigh_itt_itt);
+						for (;neigh_itt_itt_itt < neigh_itt_itt_itt_end; ++neigh_itt_itt_itt) {
+							if (distance[*neigh_itt_itt_itt] != 0) {
+								distance[*neigh_itt_itt_itt] = 1;
+							}
+						}
+					}
+					for (size_t i = 0; i < distance.size(); ++i) {
+						if (distance[i] == 1) {
+							if (reduce_neighborhood_pair_vertices(mds_context, *itt, mds_context.get_vertex_from_index(i))) {
+								++cnt_reductions;
+								++Logger::cnt_reduce_neighborhood_pair_vertex;
+							}
+						}
+					}
+				}
+				first_time = false;
+			}
+		} while (cnt_reductions > 0);
+	}
+
 	void reduce_graph(MDS_CONTEXT& mds_context) {
 		//Get itterator for the vertices.
 		int cnt_reductions;
 		bool first_time = true;
+
 		do {
 			cnt_reductions = 0;
 			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
