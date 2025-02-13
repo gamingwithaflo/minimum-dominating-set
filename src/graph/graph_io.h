@@ -12,5 +12,7 @@ namespace parse {
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path);
 
+    
+
     std::string getNameFile(std::string& path);
 } 

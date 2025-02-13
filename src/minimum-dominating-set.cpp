@@ -42,5 +42,9 @@ int main()
 	
 	mds_context.update_vertices();
 	parse::output_context(mds_context, path);
+
+	//Log info
+	std::string name = parse::getNameFile(path);
+	output_loginfo(name);
 	return 0;
 }

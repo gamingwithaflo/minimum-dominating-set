@@ -9,7 +9,7 @@ timer::timer() {
 // Function to calculate elapsed time in seconds (could be changed)
 long long timer::count() const {
 	auto elapsed = std::chrono::system_clock::now() - t_start;
-	return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+	return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 }
 
 //use case: start timer by creating timer t;

@@ -76,6 +76,7 @@ namespace reduce {
 					}
 					for (size_t i = 0; i < distance.size(); ++i) {
 						if (distance[i] == 1) {
+							++Logger::att_reduce_neighborhood_pair_vertex;
 							if (reduce_neighborhood_pair_vertices(mds_context, *itt, mds_context.get_vertex_from_index(i))) {
 								++cnt_reductions;
 								++Logger::cnt_reduce_neighborhood_pair_vertex;

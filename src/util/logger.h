@@ -30,3 +30,5 @@ public:
 
 	static bool is_planar;
 };
+
+void output_loginfo(std::string& path);

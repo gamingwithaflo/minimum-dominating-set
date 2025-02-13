@@ -67,8 +67,6 @@ namespace operations_research {
         Highs highs;
         HighsStatus return_status;
 
-
-
         return_status = highs.passModel(ds_model);
         assert(return_status == HighsStatus::kOk);
         const HighsLp& lp = highs.getLp();
