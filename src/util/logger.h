@@ -29,6 +29,4 @@ public:
 	static long long execution_reduction;
 
 	static bool is_planar;
-
-	static void output_log(std::string path);
 };
