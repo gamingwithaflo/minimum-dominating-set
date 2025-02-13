@@ -8,5 +8,7 @@
 
 int main();
 
+void reduction_info(std::string path);
+
 
 // TODO: Reference additional headers your program requires here.

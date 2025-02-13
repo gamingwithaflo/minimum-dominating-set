@@ -3,5 +3,5 @@
 
 namespace operations_research {
 
-    void solve_dominating_set(MDS_CONTEXT& mds_context);
+    bool solve_dominating_set(MDS_CONTEXT& mds_context);
 }

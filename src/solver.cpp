@@ -2,12 +2,13 @@
 #include<cassert>
 #include "Highs.h"
 #include "graph/context.h"
+#include <stdexcept>
 
 
 namespace operations_research {
-    void solve_dominating_set(MDS_CONTEXT& mds_context) {
+    bool solve_dominating_set(MDS_CONTEXT& mds_context) {
         //initialize the needed information.
-        auto [undetermined,map_pace_to_ilp] = mds_context.get_undetermined_vertices();
+        auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
         int num_vars = undetermined.size();
         int total_vertices = mds_context.get_total_vertices();
         int num_constraints = total_vertices - mds_context.cnt_dom;
@@ -66,12 +67,25 @@ namespace operations_research {
         //create a highs instance
         Highs highs;
         HighsStatus return_status;
+        double time_limit = 5 * 60; //time_limit in seconds. 
+        highs.setOptionValue("time_limit", time_limit);
 
         return_status = highs.passModel(ds_model);
         assert(return_status == HighsStatus::kOk);
         const HighsLp& lp = highs.getLp();
+
         return_status = highs.run();
-        assert(return_status == HighsStatus::kOk);
-        const HighsSolution& solution = highs.getSolution();
+        if (return_status == HighsStatus::kOk) {
+            const HighsSolution& solution = highs.getSolution();
+            return false;
+        }
+        else if (return_status == HighsStatus::kWarning) {
+            //time limit reached.
+            return true;
+        }
+        else {
+            //should never happen (set a breakpoint for sure);
+            return true;
+        }
     }
 }  
