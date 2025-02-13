@@ -20,7 +20,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 
 void MDS_CONTEXT::update_vertices() {
 	vertices.clear(); //start over
-	for (int i = 0; i < num_nodes; ++i) {
+	for (int i = 0; i < boost::num_vertices(graph); ++i) {
 		if (removed[i] == 0 && ignored[i] == 0) {
 			vertex v = boost::vertex(i, graph);
 			vertices.push_back(v);
