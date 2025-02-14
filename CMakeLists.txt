@@ -23,7 +23,7 @@ link_directories(${HIGHS_LIBRARY_DIR})
 
 include_directories("C:/boost_1_82_0")
 
-include_directories("'/mnt/c/HiGHS/src")
+include_directories("/mnt/c/HiGHS/src")
 
 #Create a sources variable with a lik to all cpp files to compile
 set(SOURCES

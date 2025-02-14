@@ -290,6 +290,7 @@ namespace reduce {
 				int num_vertices = mds_context.get_total_vertices();
 				std::vector<int>domination = std::vector<int>(num_vertices, 0);
 				for (auto i = undominated_prison_vertices.begin(); i < undominated_prison_vertices.end(); ++i) {
+					domination[*i]++; //dominate himself.
 					auto [edge_itt, edge_itt_end] = mds_context.get_neighborhood_itt(*i);
 					for (;edge_itt, edge_itt < edge_itt_end; ++edge_itt) {
 						domination[*edge_itt]++;
