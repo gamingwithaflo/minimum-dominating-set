@@ -7,6 +7,17 @@
 
 
 namespace operations_research {
+    double roundToInteger(double value) {
+        const double tolerance = 1e-6;
+        if (std::abs(value - 1.0) < tolerance) {
+            return 1;
+        }
+        if (std::abs(value - 0.0) < tolerance) {
+            return 0;
+        }
+        return value;  // Otherwise, return the original value
+    }
+
     bool solve_dominating_set(MDS_CONTEXT& mds_context, bool is_reduced) {
         //initialize the needed information.
         auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
@@ -60,13 +71,17 @@ namespace operations_research {
                 continue; //dominated vertices  do not need a contraint.
             }
             auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
+            std::vector<vertex>index;
             if (mds_context.is_undetermined(v)) {
+                index.push_back(map_pace_to_ilp[v]);
                 a.index_.push_back(map_pace_to_ilp[v]);
                 a.value_.push_back(1);
                 cnt++;
             }
+
             for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
                 if (mds_context.is_undetermined(*neigh_v_itt)) {
+                    index.push_back(map_pace_to_ilp[*neigh_v_itt]);
                     a.index_.push_back(map_pace_to_ilp[*neigh_v_itt]);
                     a.value_.push_back(1);
                     cnt++;
@@ -88,15 +103,17 @@ namespace operations_research {
 
         return_status = highs.passModel(ds_model);
         assert(return_status == HighsStatus::kOk);
-        const HighsLp& lp = highs.getLp();
+        //const HighsLp& lp = highs.getLp();
 
         return_status = highs.run();
         if (return_status == HighsStatus::kOk) {
+            const HighsModelStatus& model_status = highs.getModelStatus();
+            assert(model_status == HighsModelStatus::kOptimal);
             const HighsSolution& solution = highs.getSolution();
             vector<int>selected_vertices;
             for (auto i = 0; i < num_vars; ++i) {
-                if (solution.col_value[i] == 1) {
-                    selected_vertices.push_back(map_ilp_to_pace[i]); 
+                if (roundToInteger(solution.col_value[i]) == 1) { // is needed as there could be a very small int violation.
+                    selected_vertices.push_back(map_ilp_to_pace[i]);
                 }
             }
             for (auto i = 0; i < mds_context.included.size(); ++i) {
