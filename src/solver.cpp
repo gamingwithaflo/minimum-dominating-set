@@ -3,21 +3,31 @@
 #include "Highs.h"
 #include "graph/context.h"
 #include <stdexcept>
+#include "util/logger.h"
 
 
 namespace operations_research {
-    bool solve_dominating_set(MDS_CONTEXT& mds_context) {
+    bool solve_dominating_set(MDS_CONTEXT& mds_context, bool is_reduced) {
         //initialize the needed information.
         auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
+        if (undetermined.size() == 0) {
+            Logger::no_undetermined_vertices = true;
+            for (auto i = 0; i < mds_context.included.size(); ++i) {
+                if (mds_context.included[i] == 1) {
+                    Logger::solution_vector_with_reduction.push_back(i);
+                }
+            }
+            return false;
+        }
         std::map<int, int> map_ilp_to_pace;
         int num_vars = undetermined.size();
         int total_vertices = mds_context.get_total_vertices();
         int num_constraints = total_vertices - mds_context.cnt_dom;
 
         //create a map which can read out the solution ILP
-        //for (const auto& pair : map_pace_to_ilp) {
-        //    map_ilp_to_pace[pair.second] = pair.first;  // Swap key and value
-        //}
+        for (const auto& pair : map_pace_to_ilp) {
+            map_ilp_to_pace[pair.second] = pair.first;  // Swap key and value
+        }
 
         //Create model
         HighsModel ds_model;
@@ -86,7 +96,7 @@ namespace operations_research {
             vector<int>selected_vertices;
             for (auto i = 0; i < num_vars; ++i) {
                 if (solution.col_value[i] == 1) {
-                    selected_vertices.push_back(map_ilp_to_pace[i]); //TODO rewrite it to set of vertices. :)
+                    selected_vertices.push_back(map_ilp_to_pace[i]); 
                 }
             }
             for (auto i = 0; i < mds_context.included.size(); ++i) {
@@ -94,6 +104,13 @@ namespace operations_research {
                     selected_vertices.push_back(i);
                 }
             }
+            if (is_reduced == true) {
+                Logger::solution_vector_with_reduction = selected_vertices;
+            }
+            else {
+                Logger::solution_vector_without_reduction = selected_vertices;
+            }
+
             return false;
         }
         else if (return_status == HighsStatus::kWarning) {

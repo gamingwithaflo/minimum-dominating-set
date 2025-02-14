@@ -25,8 +25,10 @@ int Logger::att_simple_rule_four = 0;
 int Logger::att_reduce_neighborhood_single_vertex = 0;
 int Logger::att_reduce_neighborhood_pair_vertex = 0;
 
-int Logger::solution_without_reduction = -1;
-int Logger::solution_with_reduction = -1;
+
+bool Logger::no_undetermined_vertices = false;
+std::vector<int> Logger::solution_vector_with_reduction = {};
+std::vector<int> Logger::solution_vector_without_reduction = {};
 
 // Initialize static long long execution times
 long long Logger::execution_ilp_without_reduction = 0;
@@ -60,8 +62,17 @@ void output_loginfo(std::string& name) {
     outFile << "Attempts to reduce neighborhood (single vertex): " << Logger::att_reduce_neighborhood_single_vertex << " | Successful neighborhood reductions (single vertex): " << Logger::cnt_reduce_neighborhood_single_vertex << std::endl;
     outFile << "Attempts to reduce neighborhood (pair vertex): " << Logger::att_reduce_neighborhood_pair_vertex << " | Successful neighborhood reductions (pair vertex): " << Logger::cnt_reduce_neighborhood_pair_vertex << std::endl;
 
-    outFile << "Size Optimal solution with reduction rules:" << Logger::solution_with_reduction << std::endl;
-    outFile << "Size optimal solution without reduction rules:" << Logger::solution_without_reduction << std::endl;
+    outFile << "Size Optimal solution with reduction rules:" << Logger::solution_vector_with_reduction.size() << std::endl;
+    outFile << "optimal solution with reduction rules: ";
+    for (int num : Logger::solution_vector_with_reduction) {
+        outFile << num << " ";
+    }
+    outFile << std::endl;
+    outFile << "Size optimal solution without reduction rules:" << Logger::solution_vector_without_reduction.size() << std::endl;
+    outFile << "optimal solution without reduction rules: ";
+    for (int num : Logger::solution_vector_without_reduction) {
+        outFile << num << " ";
+    }
 
     outFile.close();
 }

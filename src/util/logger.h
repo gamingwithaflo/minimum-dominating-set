@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 class Logger {
 public:
@@ -17,8 +18,9 @@ public:
 	static int cnt_reduce_neighborhood_single_vertex;
 	static int cnt_reduce_neighborhood_pair_vertex;
 
-	static int solution_without_reduction;
-	static int solution_with_reduction;
+	static bool no_undetermined_vertices;
+	static std::vector<int> solution_vector_with_reduction;
+	static std::vector<int> solution_vector_without_reduction;
 
 	static int att_simple_rule_one;
 	static int att_simple_rule_two;
