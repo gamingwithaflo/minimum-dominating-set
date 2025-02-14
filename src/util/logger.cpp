@@ -96,7 +96,8 @@ void output_loginfo(std::string& name) {
 
     outFile << "Attempts to reduce neighborhood (single vertex): " << Logger::att_reduce_neighborhood_single_vertex << " | Successful neighborhood reductions (single vertex): " << Logger::cnt_reduce_neighborhood_single_vertex << std::endl;
     outFile << "Attempts to reduce neighborhood (pair vertex): " << Logger::att_reduce_neighborhood_pair_vertex << " | Successful neighborhood reductions (pair vertex): " << Logger::cnt_reduce_neighborhood_pair_vertex << std::endl;
-
+    outFile << "is planer? " << Logger::is_planar << std::endl;
+    outFile << "no undetermined vertices: " << Logger::no_undetermined_vertices << std::endl;
     outFile << "Size Optimal solution with reduction rules:" << Logger::solution_vector_with_reduction.size() << std::endl;
     outFile << "optimal solution with reduction rules: ";
     for (int num : Logger::solution_vector_with_reduction) {

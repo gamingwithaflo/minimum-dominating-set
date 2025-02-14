@@ -67,11 +67,13 @@ namespace reduce {
 						if (distance[*neigh_itt_itt] != 0) {
 							distance[*neigh_itt_itt] = 1;
 						}
-						auto [neigh_itt_itt_itt, neigh_itt_itt_itt_end] = mds_context.get_neighborhood_itt(*neigh_itt_itt);
-						for (;neigh_itt_itt_itt < neigh_itt_itt_itt_end; ++neigh_itt_itt_itt) {
-							if (distance[*neigh_itt_itt_itt] != 0) {
-								distance[*neigh_itt_itt_itt] = 1;
+						auto [neigh_depth_two, neigh_depth_two_end] = mds_context.get_neighborhood_itt(*neigh_itt_itt);
+						for (;neigh_depth_two < neigh_depth_two_end; ++neigh_depth_two) {
+							if (distance[*neigh_depth_two] != 0) {
+								distance[*neigh_depth_two] = 1;
 							}
+							auto [neigh_depth_three, neigh_depth_three_end] = mds_context.get_neighborhood_itt(*neigh_depth_two)
+							for (;) //add depth 3
 						}
 					}
 					for (size_t i = 0; i < distance.size(); ++i) {
