@@ -104,6 +104,7 @@ namespace operations_research {
                     selected_vertices.push_back(i);
                 }
             }
+            std::sort(selected_vertices.begin(), selected_vertices.end());
             if (is_reduced == true) {
                 Logger::solution_vector_with_reduction = selected_vertices;
             }

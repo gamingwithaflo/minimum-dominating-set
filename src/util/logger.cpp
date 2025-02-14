@@ -2,12 +2,47 @@
 
 #include <fstream>
 
+void initialize_logger() {
+    Logger::flag_sr_1 = true;
+    Logger::flag_sr_2 = true;
+    Logger::flag_sr_3 = true;
+    Logger::flag_sr_4 = true;
+    Logger::flag_neigh_single = true;
+    Logger::flag_neigh_pair = true;
+
+    // Initialize static integer counters
+    Logger::cnt_simple_rule_one = 0;
+    Logger::cnt_simple_rule_two = 0;
+    Logger::cnt_simple_rule_three = 0;
+    Logger::cnt_simple_rule_four = 0;
+    Logger::cnt_reduce_neighborhood_single_vertex = 0;
+    Logger::cnt_reduce_neighborhood_pair_vertex = 0;
+
+    Logger::att_simple_rule_one = 0;
+    Logger::att_simple_rule_two = 0;
+    Logger::att_simple_rule_three = 0;
+    Logger::att_simple_rule_four = 0;
+    Logger::att_reduce_neighborhood_single_vertex = 0;
+    Logger::att_reduce_neighborhood_pair_vertex = 0;
+
+
+    Logger::no_undetermined_vertices = false;
+    Logger::solution_vector_with_reduction = {};
+    Logger::solution_vector_without_reduction = {};
+
+    // Initialize static long long execution times
+    Logger::execution_ilp_without_reduction = 0;
+    Logger::execution_ilp_with_reduction = 0;
+    Logger::execution_reduction = 0;
+
+    Logger::is_planar = true; //temp value, gets updated
+}
 // Initialize static boolean flags
 bool Logger::flag_sr_1 = true;
 bool Logger::flag_sr_2 = true;
 bool Logger::flag_sr_3 = true;
 bool Logger::flag_sr_4 = true;
-bool Logger::flag_neigh_single = false;
+bool Logger::flag_neigh_single = true;
 bool Logger::flag_neigh_pair = true;
 
 // Initialize static integer counters

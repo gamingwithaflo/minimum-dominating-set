@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+void initialize_logger();
+
 class Logger {
 public:
 	static bool flag_sr_1;
