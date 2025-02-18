@@ -218,6 +218,10 @@ vertex MDS_CONTEXT::get_target_edge(edge e) {
 	return(boost::target(e, graph));
 }
 
+void MDS_CONTEXT::ignore_vertex(vertex v) {
+	ignored[v] = 1;
+}
+
 vertex MDS_CONTEXT::add_vertex(){
 	vertex new_vertex = boost::add_vertex(graph);
 	//assumption new vertex id is just 1 higher.

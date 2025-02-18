@@ -10,5 +10,6 @@ int main();
 
 void reduction_info(std::string path);
 
+void reduction(std::string path);
 
 // TODO: Reference additional headers your program requires here.

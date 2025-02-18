@@ -15,21 +15,69 @@
 int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/testing_reduction/test_reduce_neighborhood_pair_vertex3.gr";
-	bool dir_mode = true;
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_50_50_0.gr";
+	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
-	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/";
+	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1PACE/";
 	if (dir_mode) {
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			initialize_logger();
-			reduction_info(entry.path());
+			reduction(entry.path());
 		}
 	}
 	else {
-		reduction_info(path);
+		reduction(path);
 	}
 
 	return 0;
+}
+
+void reduction(std::string path) {
+	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
+	adjacencyListBoost& refGraph = adjLBoost;
+
+	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
+	Logger::is_planar = is_planar;
+
+	//create context of the graph.
+	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
+
+	timer t_reduction;
+	reduce::log_reduce_graph(mds_context);
+	Logger::execution_reduction = t_reduction.count();
+
+	mds_context.update_vertices();
+	parse::output_context(mds_context, path);
+
+	//get reduction results
+	std::vector<int>dominated;
+	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
+		if (mds_context.dominated[i] == 1) {
+			dominated.push_back(i);
+		}
+	}
+	std::vector<int>included;
+	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
+		if (mds_context.included[i] == 1) {
+			included.push_back(i);
+		}
+	}
+	std::vector<int>removed;
+	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
+		if (mds_context.removed[i] == 1) {
+			removed.push_back(i);
+		}
+	}
+	std::vector<int>ignored;
+	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
+		if (mds_context.ignored[i] == 1) {
+			ignored.push_back(i);
+		}
+	}
+
+	//Log info
+	std::string name = parse::getNameFile(path);
+	output_loginfo(name, included, dominated, removed, ignored);
 }
 
 void reduction_info(std::string path) {

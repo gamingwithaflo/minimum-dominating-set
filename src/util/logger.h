@@ -15,10 +15,14 @@ public:
 
 	static int cnt_simple_rule_one;
 	static int cnt_simple_rule_two;
-	static int cnt_simple_rule_three;
+	static int cnt_simple_rule_three_dot_one;
+	static int cnt_simple_rule_three_dot_two;
 	static int cnt_simple_rule_four;
-	static int cnt_reduce_neighborhood_single_vertex;
-	static int cnt_reduce_neighborhood_pair_vertex;
+	static int cnt_reduce_neighborhood_single_vertex; //reduce a vertex.
+	static int cnt_reduce_neighborhood_single_vertex_guard;
+	static int cnt_reduce_neighborhood_pair_vertex_single; //can be dominated by only v or only w
+	static int cnt_reduce_neighborhood_pair_vertex_both; //dont know whether to choose v or w
+	static int cnt_reduce_neighborhood_pair_vertex_either; //has to be dominated by both v and w.
 
 	static bool no_undetermined_vertices;
 	static std::vector<int> solution_vector_with_reduction;
@@ -38,4 +42,4 @@ public:
 	static bool is_planar;
 };
 
-void output_loginfo(std::string& path);
+void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored);

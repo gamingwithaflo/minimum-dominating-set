@@ -90,4 +90,6 @@ class MDS_CONTEXT {
     bool is_ignored(vertex v);
 
     void add_edge(vertex v, vertex w);
+
+    void ignore_vertex(vertex v);
 };
