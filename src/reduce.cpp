@@ -163,6 +163,8 @@ namespace reduce {
    			return false;
 		}
 
+		bool is_reduced = false;
+
 		//get adjacencyList (itteratable)
 		auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(u);
 
@@ -213,7 +215,10 @@ namespace reduce {
 			}
 			//combination of excluded vertices and dominated / ignored vertices.
 			if (all_excluded_flag == true && prison == false) {
-				mds_context.is_ignored(u);
+				if (!mds_context.is_ignored(u)) {
+					mds_context.ignore_vertex(u);
+					is_reduced = true;
+				}
 				exit_vertices.push_back(*v);
 				continue;
 			}
@@ -255,6 +260,7 @@ namespace reduce {
 		}
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
+			is_reduced = true;
 			mds_context.include_vertex(u);
 			++Logger::cnt_reduce_neighborhood_single_vertex;
 			//Remove all Prison vertices for complete graph.
@@ -274,10 +280,12 @@ namespace reduce {
 				mds_context.exclude_vertex(*itt);
 				mds_context.dominate_vertex(*itt);
 			}
-			return true;
+			return is_reduced;
 		} else if (guard_vertices.size() > 0) {
-			mds_context.ignore_vertex(u);
-			bool is_reduced = false;
+			if (!mds_context.is_ignored(u)) {
+				mds_context.ignore_vertex(u);
+				is_reduced = true;
+			}
 			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
 				if (!mds_context.is_excluded(*itt)) {
 					mds_context.exclude_vertex(*itt); //same as exclude. also add
@@ -288,6 +296,7 @@ namespace reduce {
 				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
 					if (!mds_context.is_excluded(*itt)) {
 						mds_context.exclude_vertex(*itt); //same as exclude. also add
+						is_reduced = true;
 					}
 				}
 			}
@@ -297,11 +306,11 @@ namespace reduce {
 			return is_reduced; // actually just the subset rule.
 		}
 		else if (non_exit_vertices.size() > 0) {
-			bool is_reduced = false;
 			if (non_exit_vertices.size() > 0) {
 				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
 					if (!mds_context.is_excluded(*itt)) {
 						mds_context.exclude_vertex(*itt); //same as exclude. also add
+						is_reduced = true;
 					}
 				}
 			}
@@ -310,7 +319,7 @@ namespace reduce {
 			}
 			return is_reduced; // actually just the subset rule.
 		}
-		return false;
+		return is_reduced;
 	}
 	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
 		{

@@ -126,7 +126,7 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
         outFile << index << " ";
     }
     outFile << std::endl;
-    outFile << "number of excluded vertices " << excluded.size() << " index removed verticies: ";
+    outFile << "number of excluded vertices " << excluded.size() << " index excluded verticies: ";
     for (int index : excluded) {
         outFile << index << " ";
     }
