@@ -98,7 +98,7 @@ namespace operations_research {
         //create a highs instance
         Highs highs;
         HighsStatus return_status;
-        double time_limit = 5 * 60; //time_limit in seconds. 
+        double time_limit = 30 * 60; //time_limit in seconds. 
         highs.setOptionValue("time_limit", time_limit);
 
         return_status = highs.passModel(ds_model);

@@ -9,7 +9,8 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	included = std::vector<int>(num_nodes, 0);
 	dominated = std::vector<int>(num_nodes, 0);
 	removed = std::vector<int>(num_nodes, 0);
-	ignored = std::vector<int>(num_nodes, 0); //must be dominated, cannot be chosen.
+	excluded = std::vector<int>(num_nodes, 0); 
+	ignored = std::vector<int>(num_nodes, 0);
 	update_vertices();
 
 	cnt_sol = 0;
@@ -21,7 +22,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 void MDS_CONTEXT::update_vertices() {
 	vertices.clear(); //start over
 	for (int i = 0; i < boost::num_vertices(graph); ++i) {
-		if (removed[i] == 0 && ignored[i] == 0) {
+		if (removed[i] == 0 && excluded[i] == 0) {
 			vertex v = boost::vertex(i, graph);
 			vertices.push_back(v);
 		}
@@ -173,8 +174,8 @@ bool MDS_CONTEXT::is_dominated(vertex v) {
 }
 
 
-bool MDS_CONTEXT::is_ignored(vertex v) {
-	if (ignored[v] == 1) {
+bool MDS_CONTEXT::is_excluded(vertex v) {
+	if (excluded[v] == 1) {
 		return true;
 	}
 	else {
@@ -194,7 +195,7 @@ std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_ver
 	std::map<int, int> translation_pace_to_ilp;
 	//std::map<int, int> translation_ilp_to_pace; TODO later
 	for (int i = 0; i < total_vertices; ++i) {
-		if (ignored[i] == 0 && removed[i] == 0) {
+		if (excluded[i] == 0 && removed[i] == 0) {
 			translation_pace_to_ilp[i] = index;
 			undetermined.push_back(i);
 			index++;
@@ -204,7 +205,7 @@ std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_ver
 }
 
 bool MDS_CONTEXT::is_undetermined(vertex v) {
-	if (ignored[v] == 0 && removed[v] == 0) {
+	if (excluded[v] == 0 && removed[v] == 0) {
 		return true;
 	}
 	return false;
@@ -218,8 +219,16 @@ vertex MDS_CONTEXT::get_target_edge(edge e) {
 	return(boost::target(e, graph));
 }
 
+void MDS_CONTEXT::exclude_vertex(vertex v) {
+	excluded[v] = 1;
+}
+
 void MDS_CONTEXT::ignore_vertex(vertex v) {
 	ignored[v] = 1;
+}
+
+bool MDS_CONTEXT::is_ignored(vertex v) {
+	return (ignored[v] == 1);
 }
 
 vertex MDS_CONTEXT::add_vertex(){
@@ -228,7 +237,8 @@ vertex MDS_CONTEXT::add_vertex(){
 	included.push_back(0);
 	dominated.push_back(0);
 	removed.push_back(0);
-	ignored.push_back(1);
+	excluded.push_back(1);
+	ignored.push_back(0);
 	num_nodes++;
 	return new_vertex;
 }

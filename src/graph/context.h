@@ -18,11 +18,12 @@ typedef boost::graph_traits<adjacencyListBoost>::vertex_iterator vertex_itt;
 typedef boost::graph_traits<adjacencyListBoost>::edge_iterator edge_itt;
 
 class MDS_CONTEXT {
-    public:
+public:
     // Member variables
     std::vector<int> included;
     std::vector<int> dominated;
     std::vector<int> removed;
+    std::vector<int> excluded;
     std::vector<int> ignored;
     std::vector<vertex> vertices;
 
@@ -87,9 +88,13 @@ class MDS_CONTEXT {
 
     void remove_edge(vertex v, vertex w);
 
-    bool is_ignored(vertex v);
+    bool is_excluded(vertex v);
 
     void add_edge(vertex v, vertex w);
 
+    void exclude_vertex(vertex v);
+
     void ignore_vertex(vertex v);
+
+    bool is_ignored(vertex v);
 };

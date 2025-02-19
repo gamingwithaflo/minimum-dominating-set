@@ -15,7 +15,8 @@
 int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1Pace/dat_50_50_0.gr";
+	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph_300.gr";
 	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1PACE/";
@@ -45,6 +46,14 @@ void reduction(std::string path) {
 	timer t_reduction;
 	reduce::log_reduce_graph(mds_context);
 	Logger::execution_reduction = t_reduction.count();
+
+	timer t_ilp_reduction;
+	if (operations_research::solve_dominating_set(mds_context, true)) {
+		Logger::execution_ilp_without_reduction = -1; //timelimit reached.
+	}
+	else {
+		Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
+	}
 
 	mds_context.update_vertices();
 	parse::output_context(mds_context, path);
@@ -78,6 +87,9 @@ void reduction(std::string path) {
 	//Log info
 	std::string name = parse::getNameFile(path);
 	output_loginfo(name, included, dominated, removed, ignored);
+
+	mds_context.update_vertices();
+	parse::output_context(mds_context, path);
 }
 
 void reduction_info(std::string path) {
@@ -116,5 +128,5 @@ void reduction_info(std::string path) {
 
 	//Log info
 	std::string name = parse::getNameFile(path);
-	output_loginfo(name);
+	//output_loginfo(name); TODO::DONT FORGET TO RETURN
 }

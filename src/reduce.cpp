@@ -158,8 +158,8 @@ namespace reduce {
 	
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
-		//check whether the vertex is removed in previous reductions. (if vertex is ignored there exists an better option so will never be chosen).
-		if (mds_context.is_removed(u) || mds_context.is_ignored(u)) {
+		//check whether the vertex is removed in previous reductions. (if vertex is excluded there exists an better option so will never be chosen).
+		if (mds_context.is_removed(u) || mds_context.is_excluded(u)) {
    			return false;
 		}
 
@@ -173,7 +173,8 @@ namespace reduce {
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			lookup[*v] = 1;
 		}
-		// partition neighborhood u into 3 sets. (COULD: maybe reserve some memory?)
+		// partition neighborhood u into 4 sets.
+		std::vector<int>non_exit_vetices; //new! (can be excluded but doesnt allow ignored.
 		std::vector<int>exit_vertices; //N_{3}
 		std::vector<int>guard_vertices; //N_{2}
 		std::vector<int>prison_vertices; //N_{1}
@@ -183,17 +184,33 @@ namespace reduce {
 			//for each vertex v get the neighborhood
 			auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
 			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
+			bool non_exit_flag = false;
 			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 				if (lookup[*neigh_itt_v] == 0) {
+					if (mds_context.is_excluded(*neigh_itt_v)) {
+						continue;
+					}
+					if (mds_context.is_dominated(*neigh_itt_v) || mds_context.is_ignored(*neigh_itt_v)) { //should also handle actual excluded.
+						non_exit_flag = true;
+						continue;
+					}
 					exit_vertices.push_back(*v);
 					break;
 				}
+			}
+			//If all neighbors are dominated or excluded.
+			if (non_exit_flag == true) {
+				non_exit_vetices.push_back(*v);
 			}
 		}
 		//Identify if remaining vertices go into guard_vertices or prison_vertices.
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			//check if vertex is not a exit_vertex.
 			if (std::find(exit_vertices.begin(), exit_vertices.end(), *v) != exit_vertices.end()) {
+				continue;
+			}
+			//check if vertex is not a non-exit.
+			if (std::find(non_exit_vetices.begin(), non_exit_vetices.end(), *v) != non_exit_vetices.end()) {
 				continue;
 			}
 			else {
@@ -215,24 +232,32 @@ namespace reduce {
 		}
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
-				mds_context.include_vertex(u);
-				++Logger::cnt_reduce_neighborhood_single_vertex;
-				//Remove all Prison vertices for complete graph.
-				for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
-					mds_context.remove_vertex(*itt);
-				}
-				for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
-					mds_context.remove_vertex(*itt);
-				}
-				for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
-					mds_context.dominate_vertex(*itt);
-				}
-				return true;
-		} else if (guard_vertices.size() > 0) {
+			mds_context.ignore_vertex(u);
+			mds_context.include_vertex(u);
+			++Logger::cnt_reduce_neighborhood_single_vertex;
+			//Remove all Prison vertices for complete graph.
+			for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
+				mds_context.remove_vertex(*itt);
+			}
+			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
+				mds_context.remove_vertex(*itt);
+			}
+			for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
+				mds_context.dominate_vertex(*itt);
+			}
+			return true;
+		} else if (guard_vertices.size() > 0 || non_exit_vetices.size() > 0) {
+			mds_context.ignore_vertex(u);
 			bool is_reduced = false;
 			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
-				if (!mds_context.is_ignored(*itt)) {
-					mds_context.ignore_vertex(*itt); //same as exclude.
+				if (!mds_context.is_excluded(*itt)) {
+					mds_context.exclude_vertex(*itt); //same as exclude. also add
+					is_reduced = true;
+				}
+			}
+			for (auto itt = non_exit_vetices.begin(); itt < non_exit_vetices.end(); ++itt) {
+				if (!mds_context.is_excluded(*itt)) {
+					mds_context.exclude_vertex(*itt);
 					is_reduced = true;
 				}
 			}
@@ -245,7 +270,7 @@ namespace reduce {
 	}
 	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
 		{
-			if (mds_context.is_removed(v) || mds_context.is_removed(w) || mds_context.is_ignored(v) || mds_context.is_ignored(w)) {
+			if (mds_context.is_removed(v) || mds_context.is_removed(w) || mds_context.is_excluded(v) || mds_context.is_excluded(w)) {
 				return false;
 			}
 			// get adjacency lookup table & itteratable list of all neighbors of v & w (lookup includes v&w while itt. excludes them).
@@ -334,7 +359,7 @@ namespace reduce {
 					++Logger::cnt_reduce_neighborhood_pair_vertex_either;
 					//the optimal is either to choose v, w (or both)
 
-					//Create gadget which forces either v, w or both. (because we ignore this vertex, you dont need the gadget)
+					//Create gadget which forces either v, w or both. (because we excluded this vertex, you dont need the gadget)
 					vertex z1 = mds_context.add_vertex();
 
 					mds_context.add_edge(v, z1);
@@ -450,10 +475,10 @@ namespace reduce {
 		//in principle could u1 & u2 not be dominated because all edges between dominated vertices should be removed by a previous rule.
 		if (mds_context.get_out_degree_vertex(v) == 2) {
 			auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v); //This should be 2 vertices.
-			//Not both vertices should be ignored.
+			//Not both vertices should be excluded.
 			vertex u_one = *neigh_v_itt;
-			vertex u_two = *++neigh_v_itt;
-			if (mds_context.is_ignored(u_one) && mds_context.is_ignored(u_two)) {
+			vertex u_two = *++neigh_v_itt; 
+			if (mds_context.is_excluded(u_one) && mds_context.is_excluded(u_two)) {
 				return false;
 			}
 			//rule 3.1
@@ -465,7 +490,7 @@ namespace reduce {
 			//rule 3.2
 			auto [neigh_u_one_itt, neigh_u_one_itt_end] = mds_context.get_neighborhood_itt(u_one);
 			for (;neigh_u_one_itt < neigh_u_one_itt_end; ++neigh_u_one_itt) {
-				//u_2 must be not dominated & not ignored (or undetermined)
+				//u_2 must be not dominated & not excluded (or undetermined)
 				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && !mds_context.is_undetermined(*neigh_u_one_itt)) {
 					mds_context.remove_vertex(v);
 					++Logger::cnt_simple_rule_three_dot_two;
