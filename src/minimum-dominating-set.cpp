@@ -16,7 +16,7 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph_300.gr";
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph_20.gr";
 	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1PACE/";
@@ -83,10 +83,16 @@ void reduction(std::string path) {
 			ignored.push_back(i);
 		}
 	}
+	std::vector<int>excluded;
+	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
+		if (mds_context.excluded[i] == 1) {
+			excluded.push_back(i);
+		}
+	}
 
 	//Log info
 	std::string name = parse::getNameFile(path);
-	output_loginfo(name, included, dominated, removed, ignored);
+	output_loginfo(name, included, dominated, removed, ignored, excluded);
 
 	mds_context.update_vertices();
 	parse::output_context(mds_context, path);

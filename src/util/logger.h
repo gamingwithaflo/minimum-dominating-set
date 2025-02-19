@@ -42,4 +42,4 @@ public:
 	static bool is_planar;
 };
 
-void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored);
+void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded);

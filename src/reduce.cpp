@@ -173,8 +173,8 @@ namespace reduce {
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			lookup[*v] = 1;
 		}
-		// partition neighborhood u into 4 sets.
-		std::vector<int>non_exit_vetices; //new! (can be excluded but doesnt allow ignored.
+		// partition neighborhood u into 4 sets
+		std::vector<int>non_exit_vertices;
 		std::vector<int>exit_vertices; //N_{3}
 		std::vector<int>guard_vertices; //N_{2}
 		std::vector<int>prison_vertices; //N_{1}
@@ -184,23 +184,46 @@ namespace reduce {
 			//for each vertex v get the neighborhood
 			auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
 			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
-			bool non_exit_flag = false;
+			bool all_dominated_flag = true;
+			bool all_excluded_flag = true;
+			bool prison = true;
 			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 				if (lookup[*neigh_itt_v] == 0) {
 					if (mds_context.is_excluded(*neigh_itt_v)) {
-						continue;
+						all_dominated_flag = false;
+						prison = false;
+						if (all_excluded_flag) {
+							continue;
+						}
+						break;
 					}
 					if (mds_context.is_dominated(*neigh_itt_v) || mds_context.is_ignored(*neigh_itt_v)) { //should also handle actual excluded.
-						non_exit_flag = true;
-						continue;
+						all_excluded_flag = false;
+						prison = false;
+						if (all_dominated_flag) {
+							continue;
+						}
+						break;
 					}
-					exit_vertices.push_back(*v);
+					prison = false;
+					all_dominated_flag = false;
+					all_excluded_flag = false;
 					break;
 				}
 			}
+			//combination of excluded vertices and dominated / ignored vertices.
+			if (all_excluded_flag == true && prison == false) {
+				mds_context.is_ignored(u);
+				exit_vertices.push_back(*v);
+				continue;
+			}
 			//If all neighbors are dominated or excluded.
-			if (non_exit_flag == true) {
-				non_exit_vetices.push_back(*v);
+			if (all_dominated_flag == true && prison == false) {
+				non_exit_vertices.push_back(*v);
+				continue;
+			}
+			if (prison == false) {
+				exit_vertices.push_back(*v);
 			}
 		}
 		//Identify if remaining vertices go into guard_vertices or prison_vertices.
@@ -210,7 +233,7 @@ namespace reduce {
 				continue;
 			}
 			//check if vertex is not a non-exit.
-			if (std::find(non_exit_vetices.begin(), non_exit_vetices.end(), *v) != non_exit_vetices.end()) {
+			if (std::find(non_exit_vertices.begin(), non_exit_vertices.end(), *v) != non_exit_vertices.end()) {
 				continue;
 			}
 			else {
@@ -232,7 +255,6 @@ namespace reduce {
 		}
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
-			mds_context.ignore_vertex(u);
 			mds_context.include_vertex(u);
 			++Logger::cnt_reduce_neighborhood_single_vertex;
 			//Remove all Prison vertices for complete graph.
@@ -246,7 +268,7 @@ namespace reduce {
 				mds_context.dominate_vertex(*itt);
 			}
 			return true;
-		} else if (guard_vertices.size() > 0 || non_exit_vetices.size() > 0) {
+		} else if (guard_vertices.size() > 0) {
 			mds_context.ignore_vertex(u);
 			bool is_reduced = false;
 			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
@@ -255,10 +277,25 @@ namespace reduce {
 					is_reduced = true;
 				}
 			}
-			for (auto itt = non_exit_vetices.begin(); itt < non_exit_vetices.end(); ++itt) {
-				if (!mds_context.is_excluded(*itt)) {
-					mds_context.exclude_vertex(*itt);
-					is_reduced = true;
+			if (non_exit_vertices.size() > 0) {
+				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
+					if (!mds_context.is_excluded(*itt)) {
+						mds_context.exclude_vertex(*itt); //same as exclude. also add
+					}
+				}
+			}
+			if (is_reduced) {
+				++Logger::cnt_reduce_neighborhood_single_vertex_guard;
+			}
+			return is_reduced; // actually just the subset rule.
+		}
+		else if (non_exit_vertices.size() > 0) {
+			bool is_reduced = false;
+			if (non_exit_vertices.size() > 0) {
+				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
+					if (!mds_context.is_excluded(*itt)) {
+						mds_context.exclude_vertex(*itt); //same as exclude. also add
+					}
 				}
 			}
 			if (is_reduced) {

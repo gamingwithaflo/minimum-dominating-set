@@ -43,10 +43,10 @@ void initialize_logger() {
     Logger::is_planar = true; //temp value, gets updated
 }
 // Initialize static boolean flags
-bool Logger::flag_sr_1 = true;
-bool Logger::flag_sr_2 = true;
-bool Logger::flag_sr_3 = true;
-bool Logger::flag_sr_4 = true;
+bool Logger::flag_sr_1 = false;
+bool Logger::flag_sr_2 = false;
+bool Logger::flag_sr_3 = false;
+bool Logger::flag_sr_4 = false;
 bool Logger::flag_neigh_single = true;
 bool Logger::flag_neigh_pair = false;
 
@@ -81,7 +81,7 @@ long long Logger::execution_reduction = 0;
 
 bool Logger::is_planar = true; //temp value, gets updated
 
-void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored) {
+void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded) {
     std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/log_info/loginfo_";
     std::string output_path = prefix + name;
 
@@ -126,7 +126,11 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
         outFile << index << " ";
     }
     outFile << std::endl;
-
+    outFile << "number of excluded vertices " << excluded.size() << " index removed verticies: ";
+    for (int index : excluded) {
+        outFile << index << " ";
+    }
+    outFile << std::endl;
     outFile << "number of ignored vertices " << ignored.size() << " index ignored verticies: ";
     for (int index : ignored) {
         outFile << index << " ";
