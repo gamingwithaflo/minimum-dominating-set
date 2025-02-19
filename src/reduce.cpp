@@ -259,12 +259,19 @@ namespace reduce {
 			++Logger::cnt_reduce_neighborhood_single_vertex;
 			//Remove all Prison vertices for complete graph.
 			for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
+				mds_context.exclude_vertex(*itt);
 				mds_context.remove_vertex(*itt);
 			}
 			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
+				mds_context.exclude_vertex(*itt);
+				mds_context.remove_vertex(*itt);
+			}
+			for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
+				mds_context.exclude_vertex(*itt);
 				mds_context.remove_vertex(*itt);
 			}
 			for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
+				mds_context.exclude_vertex(*itt);
 				mds_context.dominate_vertex(*itt);
 			}
 			return true;
