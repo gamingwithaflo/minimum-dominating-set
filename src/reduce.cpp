@@ -591,17 +591,23 @@ namespace reduce {
 	bool dominated_subset_rule(MDS_CONTEXT& mds_context, vertex v) {
 		//find all vertices.
 		std::vector<vertex> need_to_dominate;
+
 		std::vector<vertex> potential_supersets;
-		int frequency_v = mds_context.get_out_degree_vertex(v);
 
 		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
-		for (;neigh_itt_v, neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
-			if (mds_context.is_dominated(*neigh_itt_v) || mds_context.is_ignored(*neigh_itt_v)) {
-				need_to_dominate.push_back(*neigh_itt_v);
-			}
-			auto [neigh_itt_depth_2, neigh_itt_depth_2_end] = mds_context.get_neighborhood_itt(*neigh_itt_v);
-			for (neigh_itt_depth_2; neigh_itt_depth_2 < neigh_itt_depth_2_end; ++neigh_itt_depth_2) {
-				int frequency_w = mds_context.get_out_degree_vertex(*neigh_itt_depth_2);
+		need_to_dominate = mds_context.get_frequency(v);
+		//get the number of valuable outgoing vertices.
+		int frequency_v = need_to_dominate.size();
+
+		// get all neighbors of v.
+		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt){
+			auto [neigh_itt_depth_2, neigh_itt_depth_2_end] = mds_context.get_neighborhood_itt(*itt);
+			//get all vertices of distance 2.
+			for (; neigh_itt_depth_2 < neigh_itt_depth_2_end; ++neigh_itt_depth_2) {
+				//calculate their coverage / frequency. (could be that excluded vertices do not count).
+				std::vector<vertex> coverage;
+				coverage = mds_context.get_frequency(*neigh_itt_depth_2);
+				int frequency_w = coverage.size();
 				//This guarantees that v never gets in potential_supersets.
 				if (frequency_w > frequency_v) {
 					if (std::find(potential_supersets.begin(), potential_supersets.end(), *neigh_itt_depth_2) != potential_supersets.end()) {

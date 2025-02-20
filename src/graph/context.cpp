@@ -211,6 +211,17 @@ bool MDS_CONTEXT::is_undetermined(vertex v) {
 	return false;
 }
 
+std::vector<vertex> MDS_CONTEXT::get_frequency(vertex v) {
+	std::vector<vertex> need_to_dominate;
+	auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+	for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
+		if (!is_dominated(*itt) && !is_ignored(*itt)) {
+			need_to_dominate.push_back(*itt);
+		}
+	}
+	return need_to_dominate;
+}
+
 vertex MDS_CONTEXT::get_source_edge(edge e) {
 	return(boost::source(e, graph));
 }

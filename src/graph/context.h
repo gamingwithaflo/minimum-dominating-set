@@ -96,5 +96,7 @@ public:
 
     void ignore_vertex(vertex v);
 
+    std::vector<vertex> get_frequency(vertex v);
+
     bool is_ignored(vertex v);
 };
