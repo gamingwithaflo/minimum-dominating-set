@@ -17,6 +17,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	cnt_dom = 0;
 	cnt_rem_v = 0;
 	cnt_rem_e = 0;
+	cnt_ign = 0;
 }
 
 void MDS_CONTEXT::update_vertices() {

@@ -34,6 +34,7 @@ public:
     int cnt_dom;   // Number of dominated vertices.
     int cnt_rem_v; // Number of removed vertices.
     int cnt_rem_e; // Number of removed edges.
+    int cnt_ign;
 
     // Constructor
     MDS_CONTEXT(adjacencyListBoost& g);

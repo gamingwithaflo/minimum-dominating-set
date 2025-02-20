@@ -19,6 +19,9 @@ namespace reduce {
 			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices(); //vertices list get updated in mds_context object by get_vertices_itt.
 			//these rules currently are only applied to undetermined, dominated vertices.
 			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
+				if (dominated_subset_rule(mds_context, *itt)) {
+					++cnt_reductions;
+				}
 				if (Logger::flag_sr_1) {
 					++Logger::att_simple_rule_one;
 					if (simple_rule_one(mds_context, *itt)) {
@@ -45,9 +48,6 @@ namespace reduce {
 						++cnt_reductions;
 						++Logger::cnt_simple_rule_four;
 					}
-				}
-				if (dominated_subset_rule(mds_context, *itt)) {
-					++cnt_reductions;
 				}
 			}
 			if (Logger::flag_neigh_single) {
@@ -504,10 +504,10 @@ namespace reduce {
 			return false;
 		}
 	}
-	//remove edges between dominated vertices.
+	//remove edges between dominated vertices. (NOT IGNORED, only actual dominated vertices)
 	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
 		//given the vertex is dominated.
-		if (mds_context.is_removed(v)) {
+		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
 			return false;
 		}
 		auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
@@ -522,7 +522,7 @@ namespace reduce {
 	}
 	//works only for dominated vertices.
 	bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v)) {
+		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
 			return false;
 		}
 		if (mds_context.get_out_degree_vertex(v) <= 1) {
@@ -533,7 +533,7 @@ namespace reduce {
 	}
 
 	bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v)) {
+		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
 			return false;
 		}
 		//in principle could u1 & u2 not be dominated because all edges between dominated vertices should be removed by a previous rule.
@@ -541,8 +541,12 @@ namespace reduce {
 			auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v); //This should be 2 vertices.
 			//Not both vertices should be excluded.
 			vertex u_one = *neigh_v_itt;
-			vertex u_two = *++neigh_v_itt; 
-			if (mds_context.is_excluded(u_one) && mds_context.is_excluded(u_two)) {
+			vertex u_two = *++neigh_v_itt;
+			if (mds_context.is_undetermined(u_one) || mds_context.is_undetermined(u_two)) {
+				return false;
+			}
+			//the rule is for back black neighboring vertices. (should already not be possible after simple rule 1 but if that one is not on.
+			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) || mds_context.is_ignored(u_one) || mds_context.is_ignored(u_two)) {
 				return false;
 			}
 			//rule 3.1
@@ -554,8 +558,8 @@ namespace reduce {
 			//rule 3.2
 			auto [neigh_u_one_itt, neigh_u_one_itt_end] = mds_context.get_neighborhood_itt(u_one);
 			for (;neigh_u_one_itt < neigh_u_one_itt_end; ++neigh_u_one_itt) {
-				//u_2 must be not dominated & not excluded (or undetermined)
-				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && !mds_context.is_undetermined(*neigh_u_one_itt)) {
+				//u_2 must be not dominated & not excluded (or undetermined) (is allowed to be ignored /dominated)
+				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && mds_context.is_undetermined(*neigh_u_one_itt)) { //pretty sure this is a bug.
 					mds_context.remove_vertex(v);
 					++Logger::cnt_simple_rule_three_dot_two;
 					return true;
@@ -567,7 +571,7 @@ namespace reduce {
 		return false;
 	}
 	bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v)) {
+		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
 			return false;
 		}
 
@@ -576,7 +580,9 @@ namespace reduce {
 			vertex u_one = *neigh_v_itt;
 			vertex u_two = *++neigh_v_itt;
 			vertex u_three = *++neigh_v_itt;
-
+			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) || mds_context.is_ignored(u_one) || mds_context.is_ignored(u_two) || mds_context.is_dominated(u_three) || mds_context.is_ignored(u_three)) {
+				return false;
+			}
 			//rule 4
 			bool exists = mds_context.edge_exists(u_one, u_two);
 			auto exists_2 = mds_context.edge_exists(u_two, u_three);

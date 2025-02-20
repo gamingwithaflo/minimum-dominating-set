@@ -30,12 +30,19 @@ namespace operations_research {
             }
             return false;
         }
+
         std::map<int, int> map_ilp_to_pace;
         int num_vars = undetermined.size();
         int total_vertices = mds_context.get_total_vertices();
-        int num_constraints = total_vertices - mds_context.cnt_dom;
+        int counter_ign_dom = 0;
+        //number of vertices you can ignore.
+        for (int i = 0; i < total_vertices; ++i) {
+            if (mds_context.dominated[i] == 1 || mds_context.ignored[i] == 1) {
+                counter_ign_dom++;
+            }
+        }
 
-        //create a map which can read out the solution ILP
+        int num_constraints = total_vertices - counter_ign_dom;
         for (const auto& pair : map_pace_to_ilp) {
             map_ilp_to_pace[pair.second] = pair.first;  // Swap key and value
         }
@@ -67,7 +74,7 @@ namespace operations_research {
         for (int i = 0; i < total_vertices; i++) {
             HighsInt cnt = 0;
             vertex v = mds_context.get_vertex_from_index(i);
-            if (mds_context.is_dominated(v)) {
+            if (mds_context.is_dominated(v) || mds_context.is_ignored(v)) { //should be faster right?
                 continue; //dominated vertices  do not need a contraint.
             }
             auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);

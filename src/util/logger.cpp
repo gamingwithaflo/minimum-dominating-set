@@ -43,10 +43,10 @@ void initialize_logger() {
     Logger::is_planar = true; //temp value, gets updated
 }
 // Initialize static boolean flags
-bool Logger::flag_sr_1 = false;
-bool Logger::flag_sr_2 = false;
-bool Logger::flag_sr_3 = false;
-bool Logger::flag_sr_4 = false;
+bool Logger::flag_sr_1 = true;
+bool Logger::flag_sr_2 = true;
+bool Logger::flag_sr_3 = true;
+bool Logger::flag_sr_4 = true;
 bool Logger::flag_neigh_single = true;
 bool Logger::flag_neigh_pair = true;
 
