@@ -19,4 +19,6 @@ namespace reduce {
     bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v);
 
     bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v);
+
+    bool dominated_subset_rule(MDS_CONTEXT& mds_context, vertex v);
 }

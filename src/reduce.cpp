@@ -46,6 +46,9 @@ namespace reduce {
 						++Logger::cnt_simple_rule_four;
 					}
 				}
+				if (dominated_subset_rule(mds_context, *itt)) {
+					++cnt_reductions;
+				}
 			}
 			if (Logger::flag_neigh_single) {
 				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
@@ -216,7 +219,7 @@ namespace reduce {
 			//combination of excluded vertices and dominated / ignored vertices.
 			if (all_excluded_flag == true && prison == false) {
 				if (!mds_context.is_ignored(u)) {
-					mds_context.ignore_vertex(u);
+ 					mds_context.ignore_vertex(u);
 					is_reduced = true;
 				}
 				exit_vertices.push_back(*v);
@@ -277,7 +280,6 @@ namespace reduce {
 				mds_context.remove_vertex(*itt);
 			}
 			for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
-				mds_context.exclude_vertex(*itt);
 				mds_context.dominate_vertex(*itt);
 			}
 			return is_reduced;
@@ -288,6 +290,9 @@ namespace reduce {
 			}
 			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
 				if (!mds_context.is_excluded(*itt)) {
+					if (mds_context.is_dominated(*itt)) {
+						mds_context.remove_vertex(*itt);
+					}
 					mds_context.exclude_vertex(*itt); //same as exclude. also add
 					is_reduced = true;
 				}
@@ -295,6 +300,9 @@ namespace reduce {
 			if (non_exit_vertices.size() > 0) {
 				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
 					if (!mds_context.is_excluded(*itt)) {
+						if (mds_context.is_dominated(*itt)) {
+							mds_context.remove_vertex(*itt);
+						}
 						mds_context.exclude_vertex(*itt); //same as exclude. also add
 						is_reduced = true;
 					}
@@ -309,6 +317,9 @@ namespace reduce {
 			if (non_exit_vertices.size() > 0) {
 				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
 					if (!mds_context.is_excluded(*itt)) {
+						if (mds_context.is_dominated(*itt)) {
+							mds_context.remove_vertex(*itt);
+						}
 						mds_context.exclude_vertex(*itt); //same as exclude. also add
 						is_reduced = true;
 					}
@@ -574,6 +585,46 @@ namespace reduce {
 				return true;
 			}
 			return false;
+		}
+		return false;
+	}
+	bool dominated_subset_rule(MDS_CONTEXT& mds_context, vertex v) {
+		//find all vertices.
+		std::vector<vertex> need_to_dominate;
+		std::vector<vertex> potential_supersets;
+		int frequency_v = mds_context.get_out_degree_vertex(v);
+
+		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+		for (;neigh_itt_v, neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+			if (mds_context.is_dominated(*neigh_itt_v) || mds_context.is_ignored(*neigh_itt_v)) {
+				need_to_dominate.push_back(*neigh_itt_v);
+			}
+			auto [neigh_itt_depth_2, neigh_itt_depth_2_end] = mds_context.get_neighborhood_itt(*neigh_itt_v);
+			for (neigh_itt_depth_2; neigh_itt_depth_2 < neigh_itt_depth_2_end; ++neigh_itt_depth_2) {
+				int frequency_w = mds_context.get_out_degree_vertex(*neigh_itt_depth_2);
+				//This guarantees that v never gets in potential_supersets.
+				if (frequency_w > frequency_v) {
+					if (std::find(potential_supersets.begin(), potential_supersets.end(), *neigh_itt_depth_2) != potential_supersets.end()) {
+						continue;
+					}
+					potential_supersets.push_back(*neigh_itt_depth_2);
+				}
+			}
+		}
+		//check whether potential_supersets have edges to all need_to_dominate.
+		for (auto superset = potential_supersets.begin(); superset < potential_supersets.end(); ++superset) {
+			bool all_edges_present = true;
+			for (auto dominated = need_to_dominate.begin(); dominated < need_to_dominate.end(); ++dominated) {
+				if (!mds_context.edge_exists(*superset, *dominated)) {
+					all_edges_present = false;
+					break;
+				}
+			}
+			if (all_edges_present) {
+				mds_context.exclude_vertex(v);
+				mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
+				return true;
+			}
 		}
 		return false;
 	}

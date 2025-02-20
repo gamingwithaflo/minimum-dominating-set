@@ -86,7 +86,7 @@ vertex MDS_CONTEXT::get_vertex_from_index(int index) {
 std::vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
 	std::vector<vertex> dominated_vertices;
 	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
-		if (dominated[*i] == 1) {
+		if (dominated[*i] == 1 || ignored[*i] == 1) {
 			dominated_vertices.push_back(*i);
 		}
 	}
