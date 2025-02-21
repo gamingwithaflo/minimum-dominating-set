@@ -10,6 +10,57 @@
 
 namespace reduce {
 	
+
+	void refractored_reduce_graph(MDS_CONTEXT& mds_context) {
+		auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+		bool first_time = true;
+		int cnt_reductions;
+		do {
+			//reset counter
+			cnt_reductions = 0;
+
+			//the first time bool only gets false if, reduce_neigh_pair gets called.
+			if (!first_time) {
+				auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+			}
+
+			for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex) {
+				//simple reduction rules.
+				if (mds_context.is_removed(*vertex)) {
+					continue;
+				}
+				if (mds_context.is_dominated(*vertex)) {
+					if (dominated_subset_rule(mds_context, *vertex)) {
+						++cnt_reductions;
+					}
+					if (simple_rule_one(mds_context, *vertex)) {
+						++cnt_reductions;
+					}
+					if (simple_rule_two(mds_context, *vertex)) {
+							++cnt_reductions;
+					}
+					if (simple_rule_three(mds_context, *vertex)) {
+							++cnt_reductions;
+					}
+					if (simple_rule_four(mds_context, *vertex)) {
+							++cnt_reductions;
+					}
+				}
+				if (mds_context.is_ignored(*vertex) && !mds_context.is_dominated(*vertex)) {
+					if (dominated_subset_rule(mds_context, *vertex)) {
+						++cnt_reductions;
+					}
+				}
+				if (!mds_context.is_excluded(*vertex)) { // if removed is checked above.
+					if (reduce_neighborhood_single_vertex(mds_context, *vertex)) {
+						++cnt_reductions;
+					}
+				}
+			}
+		} while (cnt_reductions > 0);
+	}
+
+
 	void log_reduce_graph(MDS_CONTEXT& mds_context) {
 		bool first_time = true;
 		int cnt_reductions;
@@ -19,9 +70,9 @@ namespace reduce {
 			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices(); //vertices list get updated in mds_context object by get_vertices_itt.
 			//these rules currently are only applied to undetermined, dominated vertices.
 			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
-				if (dominated_subset_rule(mds_context, *itt)) {
+				/*if (dominated_subset_rule(mds_context, *itt)) {
 					++cnt_reductions;
-				}
+				}*/
 				if (Logger::flag_sr_1) {
 					++Logger::att_simple_rule_one;
 					if (simple_rule_one(mds_context, *itt)) {
@@ -161,11 +212,6 @@ namespace reduce {
 	
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
-		//check whether the vertex is removed in previous reductions. (if vertex is excluded there exists an better option so will never be chosen).
-		if (mds_context.is_removed(u) || mds_context.is_excluded(u)) {
-   			return false;
-		}
-
 		bool is_reduced = false;
 
 		//get adjacencyList (itteratable)
@@ -179,7 +225,7 @@ namespace reduce {
 			lookup[*v] = 1;
 		}
 		// partition neighborhood u into 4 sets
-		std::vector<int>non_exit_vertices;
+		std::vector<int>non_exit_vertices; //N_new
 		std::vector<int>exit_vertices; //N_{3}
 		std::vector<int>guard_vertices; //N_{2}
 		std::vector<int>prison_vertices; //N_{1}
@@ -507,9 +553,6 @@ namespace reduce {
 	//remove edges between dominated vertices. (NOT IGNORED, only actual dominated vertices)
 	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
 		//given the vertex is dominated.
-		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
-			return false;
-		}
 		auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
 		bool reduced = false;
 		for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
@@ -598,44 +641,54 @@ namespace reduce {
 		//find all vertices.
 		std::vector<vertex> need_to_dominate;
 
-		std::vector<vertex> potential_supersets;
+		vertex vertex_lowest_frequency;
 
 		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
-		need_to_dominate = mds_context.get_frequency(v);
-		//get the number of valuable outgoing vertices.
-		int frequency_v = need_to_dominate.size();
+
+		int num_edges_v = mds_context.get_out_degree_vertex(v);
+		if (num_edges_v == 0) {
+			mds_context.exclude_vertex(v);
+			mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
+			return true;
+		}
 
 		// get all neighbors of v.
-		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt){
-			auto [neigh_itt_depth_2, neigh_itt_depth_2_end] = mds_context.get_neighborhood_itt(*itt);
-			//get all vertices of distance 2.
-			for (; neigh_itt_depth_2 < neigh_itt_depth_2_end; ++neigh_itt_depth_2) {
-				//calculate their coverage / frequency. (could be that excluded vertices do not count).
-				std::vector<vertex> coverage;
-				coverage = mds_context.get_frequency(*neigh_itt_depth_2);
-				int frequency_w = coverage.size();
-				//This guarantees that v never gets in potential_supersets.
-				if (frequency_w > frequency_v) {
-					if (std::find(potential_supersets.begin(), potential_supersets.end(), *neigh_itt_depth_2) != potential_supersets.end()) {
-						continue;
-					}
-					potential_supersets.push_back(*neigh_itt_depth_2);
-				}
+		int best_possible_frequency = std::numeric_limits<int>::max();;
+		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
+			if (!mds_context.is_dominated(*itt) && !mds_context.is_ignored(*itt)) {
+				need_to_dominate.push_back(*itt);
+			}
+			//find lowest frequency vertex.
+			std::vector<vertex> coverage;
+			coverage = mds_context.get_frequency(*itt);
+			int frequency_w = coverage.size();
+			if (best_possible_frequency > frequency_w) {
+				vertex_lowest_frequency = *itt;
+				best_possible_frequency = frequency_w;
 			}
 		}
-		//check whether potential_supersets have edges to all need_to_dominate.
-		for (auto superset = potential_supersets.begin(); superset < potential_supersets.end(); ++superset) {
-			bool all_edges_present = true;
-			for (auto dominated = need_to_dominate.begin(); dominated < need_to_dominate.end(); ++dominated) {
-				if (!mds_context.edge_exists(*superset, *dominated)) {
-					all_edges_present = false;
-					break;
+		if (need_to_dominate.size() == 0) {
+			mds_context.exclude_vertex(v);
+			mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
+			return true;
+		}
+
+		auto [neigh_itt_w, neigh_itt_w_end] = mds_context.get_neighborhood_itt(vertex_lowest_frequency);
+		bool all_edges_present;
+		for (auto itt = neigh_itt_w; itt < neigh_itt_w_end; ++itt) {
+			if (*itt != v) {
+				bool all_edges_present = true;
+				for (auto dominated = need_to_dominate.begin(); dominated < need_to_dominate.end(); ++dominated) {
+					if (!mds_context.edge_exists(*itt, *dominated)) {
+							all_edges_present = false;
+							break;
+					}
 				}
-			}
-			if (all_edges_present) {
-				mds_context.exclude_vertex(v);
-				mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
-				return true;
+				if (all_edges_present) {
+					mds_context.exclude_vertex(v);
+					mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
+					return true;
+				}
 			}
 		}
 		return false;

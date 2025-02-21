@@ -4,6 +4,8 @@
 #include <boost/graph/graph_traits.hpp>
 
 namespace reduce {
+    void refractored_reduce_graph(MDS_CONTEXT& mds_context);
+
     void reduce_graph(MDS_CONTEXT& mds_context);
 
     void log_reduce_graph(MDS_CONTEXT& mds_context);

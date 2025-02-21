@@ -6,4 +6,6 @@ out/
 
 output/
 
+build-dir/
+
 log_info/

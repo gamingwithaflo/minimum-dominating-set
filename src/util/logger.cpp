@@ -8,7 +8,7 @@ void initialize_logger() {
     Logger::flag_sr_3 = true;
     Logger::flag_sr_4 = true;
     Logger::flag_neigh_single = true;
-    Logger::flag_neigh_pair = false;
+    Logger::flag_neigh_pair = true;
 
     // Initialize static integer counters
 // Initialize static integer counters
@@ -48,7 +48,7 @@ bool Logger::flag_sr_2 = true;
 bool Logger::flag_sr_3 = true;
 bool Logger::flag_sr_4 = true;
 bool Logger::flag_neigh_single = true;
-bool Logger::flag_neigh_pair = true;
+bool Logger::flag_neigh_pair = false;
 
 // Initialize static integer counters
 int Logger::cnt_simple_rule_one = 0;

@@ -16,10 +16,10 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph_300.gr";
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
 	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
-	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/T1PACE/";
+	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	if (dir_mode) {
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			initialize_logger();
@@ -43,17 +43,19 @@ void reduction(std::string path) {
 	//create context of the graph.
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
+	//operations_research::solve_dominating_set(mds_context, true);
+
 	timer t_reduction;
-	reduce::log_reduce_graph(mds_context);
+	reduce::refractored_reduce_graph(mds_context);
 	Logger::execution_reduction = t_reduction.count();
 
 	timer t_ilp_reduction;
-	if (operations_research::solve_dominating_set(mds_context, true)) {
-		Logger::execution_ilp_without_reduction = -1; //timelimit reached.
-	}
-	else {
-		Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
-	}
+	//if (operations_research::solve_dominating_set(mds_context, true)) {
+	//	Logger::execution_ilp_without_reduction = -1; //timelimit reached.
+	//}
+	//else {
+	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
+	//}
 
 	mds_context.update_vertices();
 	parse::output_context(mds_context, path);

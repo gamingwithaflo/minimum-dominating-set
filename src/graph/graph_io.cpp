@@ -81,6 +81,11 @@ namespace parse {
             outFile << i << " ";
         }
         outFile << std::endl;
+        outFile << "excluded ";
+        for (int i : mds_context.excluded) {
+            outFile << i << " ";
+        }
+        outFile << std::endl;
         //todo: included
         outFile << "included ";
         for (int i : mds_context.included) {
