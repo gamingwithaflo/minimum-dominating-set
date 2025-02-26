@@ -8,14 +8,18 @@
 
 
 namespace parse {
-    adjacencyListBoost construct_AdjacencyList_Boost(int n, std::vector<std::pair<int, int>> const& edges) {
+    adjacencyListBoost construct_AdjacencyList_Boost(int n, std::vector<std::pair<int, int>> edges) {
         adjacencyListBoost g(n);
+        std::sort(edges.begin(), edges.end());
+        //adjacencyList is sorted.
         for (auto& p : edges) {
             boost::add_edge(p.first, p.second, g);
         }
         return g;
     }
     
+    
+
     adjacencyListBoost read_pace_2024(std::istream& is) {
         std::vector<std::pair<int, int>> edges;
 
@@ -88,7 +92,7 @@ namespace parse {
         outFile << std::endl;
         //todo: included
         outFile << "included ";
-        for (int i : mds_context.included) {
+        for (int i : mds_context.selected) {
             outFile << i << " ";
         }
         outFile << std::endl;

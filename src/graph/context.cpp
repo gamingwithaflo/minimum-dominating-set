@@ -6,33 +6,113 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	graph = g;
 	num_nodes = boost::num_vertices(g);
 
-	included = std::vector<int>(num_nodes, 0);
+	selected = std::vector<int>(num_nodes, 0);
 	dominated = std::vector<int>(num_nodes, 0);
 	removed = std::vector<int>(num_nodes, 0);
 	excluded = std::vector<int>(num_nodes, 0); 
 	ignored = std::vector<int>(num_nodes, 0);
-	update_vertices();
 
-	cnt_sol = 0;
-	cnt_dom = 0;
-	cnt_rem_v = 0;
-	cnt_rem_e = 0;
-	cnt_ign = 0;
+	c_d = std::vector<int>(num_nodes, 0);
+	c_nd = std::vector<int>(num_nodes, 0);
+	c_x = std::vector<int>(num_nodes, 0);
+
+	cnt_sel = 0;   
+	cnt_dom = 0;   
+	cnt_excl = 0;
 }
 
-void MDS_CONTEXT::update_vertices() {
-	vertices.clear(); //start over
-	for (int i = 0; i < boost::num_vertices(graph); ++i) {
-		if (removed[i] == 0 && excluded[i] == 0) {
-			vertex v = boost::vertex(i, graph);
-			vertices.push_back(v);
+void MDS_CONTEXT::select_vertex(vertex v) {
+	selected[v] = 1;
+	cnt_sel++;
+	auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+	dominate_vertex(v);
+	for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+		dominate_vertex(*neigh_itt_v);
+	}
+}
+
+bool MDS_CONTEXT::is_selected(vertex v) {
+	return selected[v] == 1;
+}
+
+void MDS_CONTEXT::dominate_vertex(vertex v) {
+	if (!is_dominated(v)) {
+		cnt_dom++;
+		dominated[v] = 1;
+		c_nd[v]++;
+		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+		for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+			c_nd[*neigh_itt_v]++;
 		}
 	}
 }
 
-std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> MDS_CONTEXT::get_vertices_itt() {
-	update_vertices();
-	return std::make_pair(vertices.begin(), vertices.end());
+bool MDS_CONTEXT::is_dominated(vertex v) {
+	return dominated[v] == 1;
+}
+
+void MDS_CONTEXT::exclude_vertex(vertex v) {
+	if (!is_excluded(v)) {
+		cnt_excl++;
+		excluded[v] = 1;
+		c_x[v]++;
+		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+		if (!is_dominated(v) && get_frequency(v) == 1) {
+			for (auto itt = neigh_itt_v ;itt < neigh_itt_v_end; ++itt) {
+				if (!is_excluded(*neigh_itt_v)) {
+					select_vertex(v);
+					break;
+				}
+			}
+		}
+		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
+			c_x[*itt]++;
+			if (!is_dominated(*itt) && get_frequency(*itt) == 1) {
+				auto [neigh_itt, neigh_itt_end] = get_neighborhood_itt(*itt);
+				for (;neigh_itt < neigh_itt_end; ++neigh_itt) {
+					if (!is_excluded(*neigh_itt)) {
+						select_vertex(*neigh_itt);
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+bool MDS_CONTEXT::is_excluded(vertex v) {
+	return excluded[v] == 1;
+}
+
+void MDS_CONTEXT::ignore_vertex(vertex v) {
+	if (!is_ignored(v)) {
+		ignored[v] = 1;  // TODO: make rules between difference dominated & ignored.
+		dominate_vertex(v);
+	}
+}
+
+bool MDS_CONTEXT::is_ignored(vertex v) {
+	return (ignored[v] == 1);
+}
+
+bool MDS_CONTEXT::is_undetermined(vertex v) {
+	if (!is_excluded(v) && !is_selected(v)) {
+		return true;
+	}
+	return false;
+}
+
+//select v into solution will dominate |N[v]| - c_nd[u] more vertices.
+//coverage: how many more vertices will be dominated if you select this vertex.
+int MDS_CONTEXT::get_coverage_size(vertex v) {
+	//v must be undetermined.
+	int num_closed_neighborhood = get_out_degree_vertex(v) + 1;
+	return num_closed_neighborhood - c_nd[v];
+}
+
+int MDS_CONTEXT::get_frequency(vertex v) {
+	int num_closed_neighborhood = get_out_degree_vertex(v) + 1;
+	return num_closed_neighborhood - c_x[v];
 }
 
 std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
@@ -59,17 +139,6 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	return(std::make_pair(lookup, pair_neighborhood_vector));
 }
 
-//Of a set of vertices, get the subset which is undominated.
-std::vector<vertex> MDS_CONTEXT::get_undominated_vector(std::vector<vertex>& vertices) {
-	std::vector<vertex> undominated_vector;
-	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
-		if (dominated[*i] == 0) {
-			undominated_vector.push_back(*i);
-		}
-	}
-	return undominated_vector;
-}
-
 adjacencyListBoost& MDS_CONTEXT::get_graph() {
 	return(graph);
 }
@@ -83,15 +152,8 @@ vertex MDS_CONTEXT::get_vertex_from_index(int index) {
 	return v;
 }
 
-//update vertices before.
-std::vector<vertex> MDS_CONTEXT::get_dominated_vertices() {
-	std::vector<vertex> dominated_vertices;
-	for (auto i = vertices.begin(); i < vertices.end(); ++i) {
-		if (dominated[*i] == 1 || ignored[*i] == 1) {
-			dominated_vertices.push_back(*i);
-		}
-	}
-	return dominated_vertices;
+std::pair<vertex_itt, vertex_itt>  MDS_CONTEXT::get_vertices_itt() {
+	return (boost::vertices(graph));
 }
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
@@ -99,24 +161,9 @@ void MDS_CONTEXT::remove_vertex(vertex v) {
 	dominate_vertex(v);
 	removed[v] = 1;
 	int removed_edges = boost::out_degree(v, graph);
-	cnt_rem_e += removed_edges;
 	//remove all edges going out of v. (So you do not consider unnessecary vertices).
 	boost::clear_vertex(v, graph);
-	cnt_rem_v++;
 	num_nodes--;
-}
-
-void MDS_CONTEXT::include_vertex(vertex v) {
-	included[v] = 1;
-	cnt_sol++; 
-	remove_vertex(v); //Also dominates it for you.
-}
-
-void MDS_CONTEXT::dominate_vertex(vertex v) {
-	if (dominated[v] == 0) {
-		cnt_dom++;
-		dominated[v] = 1;
-	}
 }
 
 std::pair<adjacency_itt, adjacency_itt> MDS_CONTEXT::get_neighborhood_itt(vertex v) {
@@ -138,7 +185,6 @@ int MDS_CONTEXT::get_out_degree_vertex(vertex v) {
 
 void MDS_CONTEXT::remove_edge(vertex v, vertex w) {
 	boost::remove_edge(v, w, graph);
-	cnt_rem_e++;
 }
 
 //Check whether the reduction will provide profit.
@@ -167,23 +213,6 @@ bool MDS_CONTEXT::edge_exists(vertex v, vertex w) {
 	return exists;
 }
 
-bool MDS_CONTEXT::is_dominated(vertex v) {
-	if (dominated[v] == 1) {
-		return true;
-	}
-	return false;
-}
-
-
-bool MDS_CONTEXT::is_excluded(vertex v) {
-	if (excluded[v] == 1) {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-
 void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	auto new_edge = boost::add_edge(v, w, graph);
 	return;
@@ -205,24 +234,6 @@ std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_ver
 	return (std::make_pair(undetermined, translation_pace_to_ilp));
 }
 
-bool MDS_CONTEXT::is_undetermined(vertex v) {
-	if (excluded[v] == 0 && removed[v] == 0) {
-		return true;
-	}
-	return false;
-}
-
-std::vector<vertex> MDS_CONTEXT::get_frequency(vertex v) {
-	std::vector<vertex> need_to_dominate;
-	auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
-	for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
-		if (!is_dominated(*itt) && !is_ignored(*itt)) {
-			need_to_dominate.push_back(*itt);
-		}
-	}
-	return need_to_dominate;
-}
-
 vertex MDS_CONTEXT::get_source_edge(edge e) {
 	return(boost::source(e, graph));
 }
@@ -231,22 +242,10 @@ vertex MDS_CONTEXT::get_target_edge(edge e) {
 	return(boost::target(e, graph));
 }
 
-void MDS_CONTEXT::exclude_vertex(vertex v) {
-	excluded[v] = 1;
-}
-
-void MDS_CONTEXT::ignore_vertex(vertex v) {
-	ignored[v] = 1;
-}
-
-bool MDS_CONTEXT::is_ignored(vertex v) {
-	return (ignored[v] == 1);
-}
-
 vertex MDS_CONTEXT::add_vertex(){
 	vertex new_vertex = boost::add_vertex(graph);
 	//assumption new vertex id is just 1 higher.
-	included.push_back(0);
+	selected.push_back(0);
 	dominated.push_back(0);
 	removed.push_back(0);
 	excluded.push_back(1);

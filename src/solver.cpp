@@ -23,8 +23,8 @@ namespace operations_research {
         auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
         if (undetermined.size() == 0) {
             Logger::no_undetermined_vertices = true;
-            for (auto i = 0; i < mds_context.included.size(); ++i) {
-                if (mds_context.included[i] == 1) {
+            for (auto i = 0; i < mds_context.selected.size(); ++i) {
+                if (mds_context.selected[i] == 1) {
                     Logger::solution_vector_with_reduction.push_back(i);
                 }
             }
@@ -58,7 +58,7 @@ namespace operations_research {
         ds_model.lp_.col_upper_ = vector<double>(num_vars, 1); //Decision variables <= 1.
         ds_model.lp_.row_lower_ = vector<double>(num_constraints, 1);
         ds_model.lp_.row_upper_ = vector<double>(num_constraints, kHighsInf);
-        ds_model.lp_.offset_ = mds_context.cnt_sol; //temp to check if they overlap.
+        ds_model.lp_.offset_ = mds_context.cnt_sel; //temp to check if they overlap.
 
         //integrality
         ds_model.lp_.integrality_.resize(num_vars);
@@ -74,7 +74,7 @@ namespace operations_research {
         for (int i = 0; i < total_vertices; i++) {
             HighsInt cnt = 0;
             vertex v = mds_context.get_vertex_from_index(i);
-            if (mds_context.is_dominated(v) || mds_context.is_ignored(v)) { //should be faster right?
+            if (mds_context.is_dominated(v)) { //should be faster right?
                 continue; //dominated vertices  do not need a contraint.
             }
             auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
@@ -123,8 +123,8 @@ namespace operations_research {
                     selected_vertices.push_back(map_ilp_to_pace[i]);
                 }
             }
-            for (auto i = 0; i < mds_context.included.size(); ++i) {
-                if (mds_context.included[i] == 1) {
+            for (auto i = 0; i < mds_context.selected.size(); ++i) {
+                if (mds_context.selected[i] == 1) {
                     selected_vertices.push_back(i);
                 }
             }

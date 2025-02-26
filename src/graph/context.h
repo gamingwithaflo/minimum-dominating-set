@@ -19,35 +19,35 @@ typedef boost::graph_traits<adjacencyListBoost>::edge_iterator edge_itt;
 
 class MDS_CONTEXT {
 public:
-    // Member variables
-    std::vector<int> included;
+    int num_nodes;
+    adjacencyListBoost graph;
+
+    std::vector<int> selected;
     std::vector<int> dominated;
     std::vector<int> removed;
     std::vector<int> excluded;
     std::vector<int> ignored;
-    std::vector<vertex> vertices;
 
-    adjacencyListBoost graph;
-    int num_nodes;
+    std::vector<int> c_d;
+    std::vector<int> c_nd;
+    std::vector<int> c_x;
 
-    int cnt_sol;   // Size of the current solution.
+    int cnt_sel;   // Size of the current solution.
     int cnt_dom;   // Number of dominated vertices.
-    int cnt_rem_v; // Number of removed vertices.
-    int cnt_rem_e; // Number of removed edges.
-    int cnt_ign;
+    int cnt_excl; // Number of removed vertices.
 
     // Constructor
     MDS_CONTEXT(adjacencyListBoost& g);
 
     adjacencyListBoost& get_graph();
 
-    void update_vertices();
-
-    std::pair<std::vector<vertex>::iterator, std::vector<vertex>::iterator> get_vertices_itt();
+    std::pair<vertex_itt, vertex_itt> get_vertices_itt();
 
     int get_total_vertices();
 
     int get_total_edges();
+
+    int get_coverage_size(vertex v);
 
     std::pair<edge_itt, edge_itt> get_edge_itt();
 
@@ -55,19 +55,19 @@ public:
 
     vertex get_target_edge(edge e);
 
-    std::vector<vertex> get_dominated_vertices();
-
     std::pair<std::vector<int>, std::map<int, int>> get_undetermined_vertices();
 
     void remove_vertex(vertex v);
 
-    void include_vertex(vertex v);
+    void select_vertex(vertex v);
 
     void dominate_vertex(vertex v);
 
     bool is_dominated(vertex v);
 
     bool is_removed(vertex v);
+
+    bool is_selected(vertex v);
 
     bool is_undetermined(vertex v);
 
@@ -97,7 +97,7 @@ public:
 
     void ignore_vertex(vertex v);
 
-    std::vector<vertex> get_frequency(vertex v);
+    int get_frequency(vertex v);
 
     bool is_ignored(vertex v);
 };

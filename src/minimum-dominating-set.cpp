@@ -16,7 +16,7 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_50.gr";
 	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
@@ -46,7 +46,7 @@ void reduction(std::string path) {
 	//operations_research::solve_dominating_set(mds_context, true);
 
 	timer t_reduction;
-	reduce::refractored_reduce_graph(mds_context);
+	reduce::reduce_ijcai(mds_context);
 	Logger::execution_reduction = t_reduction.count();
 
 	timer t_ilp_reduction;
@@ -57,7 +57,6 @@ void reduction(std::string path) {
 	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
 	//}
 
-	mds_context.update_vertices();
 	parse::output_context(mds_context, path);
 
 	//get reduction results
@@ -67,10 +66,10 @@ void reduction(std::string path) {
 			dominated.push_back(i);
 		}
 	}
-	std::vector<int>included;
+	std::vector<int>selected;
 	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.included[i] == 1) {
-			included.push_back(i);
+		if (mds_context.selected[i] == 1) {
+			selected.push_back(i);
 		}
 	}
 	std::vector<int>removed;
@@ -94,9 +93,7 @@ void reduction(std::string path) {
 
 	//Log info
 	std::string name = parse::getNameFile(path);
-	output_loginfo(name, included, dominated, removed, ignored, excluded);
-
-	mds_context.update_vertices();
+	output_loginfo(name, selected, dominated, removed, ignored, excluded);
 	parse::output_context(mds_context, path);
 }
 
@@ -120,7 +117,7 @@ void reduction_info(std::string path) {
 	}
 
 	timer t_reduction;
-	reduce::log_reduce_graph(mds_context);
+	//reduce::log_reduce_graph(mds_context);
 	Logger::execution_reduction = t_reduction.count();
 
 	timer t_ilp_reduction;
@@ -131,7 +128,6 @@ void reduction_info(std::string path) {
 		Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
 	}
 
-	mds_context.update_vertices();
 	parse::output_context(mds_context, path);
 
 	//Log info

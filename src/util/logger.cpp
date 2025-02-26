@@ -48,7 +48,7 @@ bool Logger::flag_sr_2 = true;
 bool Logger::flag_sr_3 = true;
 bool Logger::flag_sr_4 = true;
 bool Logger::flag_neigh_single = true;
-bool Logger::flag_neigh_pair = false;
+bool Logger::flag_neigh_pair = true;
 
 // Initialize static integer counters
 int Logger::cnt_simple_rule_one = 0;

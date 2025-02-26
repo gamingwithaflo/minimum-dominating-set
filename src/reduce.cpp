@@ -1,11 +1,8 @@
 #pragma once
 #include "reduce.h"
-#include "graph/context.h"
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <algorithm>
-
-#include "util/logger.h"
 
 
 namespace reduce {
@@ -30,28 +27,22 @@ namespace reduce {
 					continue;
 				}
 				if (mds_context.is_dominated(*vertex)) {
-					if (dominated_subset_rule(mds_context, *vertex)) {
-						++cnt_reductions;
-					}
 					if (simple_rule_one(mds_context, *vertex)) {
 						++cnt_reductions;
 					}
 					if (simple_rule_two(mds_context, *vertex)) {
-							++cnt_reductions;
+						++cnt_reductions;
 					}
 					if (simple_rule_three(mds_context, *vertex)) {
-							++cnt_reductions;
+						++cnt_reductions;
 					}
 					if (simple_rule_four(mds_context, *vertex)) {
-							++cnt_reductions;
-					}
-				}
-				if (mds_context.is_ignored(*vertex) && !mds_context.is_dominated(*vertex)) {
-					if (dominated_subset_rule(mds_context, *vertex)) {
 						++cnt_reductions;
 					}
 				}
-				if (!mds_context.is_excluded(*vertex)) { // if removed is checked above.
+			}
+			for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex) {
+				if (!mds_context.is_excluded(*vertex) && !mds_context.is_removed(*vertex)) { // if removed is checked above.
 					if (reduce_neighborhood_single_vertex(mds_context, *vertex)) {
 						++cnt_reductions;
 					}
@@ -60,324 +51,106 @@ namespace reduce {
 		} while (cnt_reductions > 0);
 	}
 
-
-	void log_reduce_graph(MDS_CONTEXT& mds_context) {
-		bool first_time = true;
-		int cnt_reductions;
-		do {
-			cnt_reductions = 0;
-			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices(); //vertices list get updated in mds_context object by get_vertices_itt.
-			//these rules currently are only applied to undetermined, dominated vertices.
-			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
-				/*if (dominated_subset_rule(mds_context, *itt)) {
-					++cnt_reductions;
-				}*/
-				if (Logger::flag_sr_1) {
-					++Logger::att_simple_rule_one;
-					if (simple_rule_one(mds_context, *itt)) {
-						++cnt_reductions;
-						++Logger::cnt_simple_rule_one;
-					}
-				}
-				if (Logger::flag_sr_2) {
-					++Logger::att_simple_rule_two;
-					if (simple_rule_two(mds_context, *itt)) {
-						++cnt_reductions;
-						++Logger::cnt_simple_rule_two;
-					}
-				}
-				if (Logger::flag_sr_3) {
-					++Logger::att_simple_rule_three;
-					if (simple_rule_three(mds_context, *itt)) {
-						++cnt_reductions;
-					}
-				}
-				if (Logger::flag_sr_4) {
-					++Logger::att_simple_rule_four;
-					if (simple_rule_four(mds_context, *itt)) {
-						++cnt_reductions;
-						++Logger::cnt_simple_rule_four;
-					}
-				}
-			}
-			if (Logger::flag_neigh_single) {
-				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
-					++Logger::att_reduce_neighborhood_single_vertex;
-					if (reduce_neighborhood_single_vertex(mds_context, *itt)) {
-						++cnt_reductions;
-					}
-				}
-			}
-			if (cnt_reductions == 0 && first_time && Logger::flag_neigh_pair) {
-				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
-					//distance vector.
-					std::vector<int>distance (mds_context.get_total_vertices(), -1);
-					distance[*itt] = 0; //source.
-					//fill distance vector (up to dist 3).
-					auto [neigh_depth_one, neigh_depth_one_end] = mds_context.get_neighborhood_itt(*itt);
-					for (;neigh_depth_one < neigh_depth_one_end; ++neigh_depth_one) {
-						if (distance[*neigh_depth_one] != 0) {
-							distance[*neigh_depth_one] = 1;
-						}
-						auto [neigh_depth_two, neigh_depth_two_end] = mds_context.get_neighborhood_itt(*neigh_depth_one);
-						for (;neigh_depth_two < neigh_depth_two_end; ++neigh_depth_two) {
-							if (distance[*neigh_depth_two] != 0) {
-								distance[*neigh_depth_two] = 1;
-							}
-							auto [neigh_depth_three, neigh_depth_three_end] = mds_context.get_neighborhood_itt(*neigh_depth_two);
-							for (;neigh_depth_three < neigh_depth_three_end; ++neigh_depth_three) {
-								if (distance[*neigh_depth_three] != 0) {
-									distance[*neigh_depth_two] = 1; //only possible untill distance 3.
-								}
-							}
-						}
-					}
-					for (size_t i = 0; i < distance.size(); ++i) {
-						if (distance[i] == 1 && *itt < i) { // you do not want to perform it twice.
-							++Logger::att_reduce_neighborhood_pair_vertex;
-							if (reduce_neighborhood_pair_vertices(mds_context, *itt, mds_context.get_vertex_from_index(i))) {
-								++cnt_reductions;
-							}
-						}
-					}
-				}
-				first_time = false;
-			}
-		} while (cnt_reductions > 0);
-	}
-
-	void reduce_graph(MDS_CONTEXT& mds_context) {
-		//Get itterator for the vertices.
-		int cnt_reductions;
-		bool first_time = true;
+	void reduce_ijcai(MDS_CONTEXT& mds_context) {
+		bool reduced;
+		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 
 		do {
-			cnt_reductions = 0;
-			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-			std::vector<vertex>dominated_vertices = mds_context.get_dominated_vertices();
-			for (auto itt = dominated_vertices.begin(); itt < dominated_vertices.end(); ++itt) {
-				if (simple_rule_one(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-				if (simple_rule_two(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-				if (simple_rule_two(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-				if (simple_rule_three(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-				if (simple_rule_four(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-			}
-			for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
-				if (reduce_neighborhood_single_vertex(mds_context, *itt)) {
-					++cnt_reductions;
-				}
-			}
-			if (cnt_reductions == 0 && first_time) {
-				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
-					//distance vector.
-					std::vector<int>distance (mds_context.get_total_vertices(), -1);
-					distance[*itt] = 0; //source.
-					//fill distance vector (up to dist 3).
-					auto [neigh_itt_itt, neigh_itt_itt_end] = mds_context.get_neighborhood_itt(*itt);
-					for (;neigh_itt_itt < neigh_itt_itt_end; ++neigh_itt_itt) {
-						if (distance[*neigh_itt_itt] != 0) {
-							distance[*neigh_itt_itt] = 1;
-						}
-						auto [neigh_itt_itt_itt, neigh_itt_itt_itt_end] = mds_context.get_neighborhood_itt(*neigh_itt_itt);
-						for (;neigh_itt_itt_itt < neigh_itt_itt_itt_end; ++neigh_itt_itt_itt) {
-							if (distance[*neigh_itt_itt_itt] != 0) {
-								distance[*neigh_itt_itt_itt] = 1;
-							}
-						}
-					}
-					for (size_t i = 0; i < distance.size(); ++i) {
-						if (distance[i] == 1) {
-							if (reduce_neighborhood_pair_vertices(mds_context, *itt, mds_context.get_vertex_from_index(i))) {
-								++cnt_reductions;
-							}
-						}
-					}
-				}
-				first_time = false;
-			}
-		} while (cnt_reductions > 0);
-	}
+			reduced = false;
 
-	
+			for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
+				if (mds_context.is_undetermined(*itt)) {
+					reduced |= reduce_subset(mds_context,*itt);
+				}
+				if (!mds_context.is_dominated(*itt)) {
+					reduced |= reduce_single_dominator(mds_context, *itt);
+				}
+				if (!mds_context.is_dominated(*itt)) {
+					reduced |= reduce_ignore(mds_context, *itt);
+				}
+			}
+		} while (reduced);
+	}
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
 		bool is_reduced = false;
-
-		//get adjacencyList (itteratable)
+		
+		//Get neighborhood.
 		auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(u);
 
-		//create adjacencyLookup table
+		//create neighborhood lookup table
 		int num_vertices = mds_context.get_total_vertices();
 		std::vector<int>lookup = std::vector<int>(num_vertices, 0);
 		lookup[u] = 1;
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			lookup[*v] = 1;
 		}
-		// partition neighborhood u into 4 sets
-		std::vector<int>non_exit_vertices; //N_new
-		std::vector<int>exit_vertices; //N_{3}
+
+		std::unordered_set<int>exit_vertices; //N_{3}
 		std::vector<int>guard_vertices; //N_{2}
 		std::vector<int>prison_vertices; //N_{1}
 
-		//Identify exit_vertices
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
-			//for each vertex v get the neighborhood
+			//for each vertex v get the neighborhood.
 			auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
-			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
-			bool all_dominated_flag = true;
-			bool all_excluded_flag = true;
-			bool prison = true;
-			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+			for (; neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+				//If there is at least 1 neighbor is not within the neighborhood of u. It becomes a exit vertex.
 				if (lookup[*neigh_itt_v] == 0) {
-					if (mds_context.is_excluded(*neigh_itt_v)) {
-						all_dominated_flag = false;
-						prison = false;
-						if (all_excluded_flag) {
-							continue;
-						}
-						break;
-					}
-					if (mds_context.is_dominated(*neigh_itt_v) || mds_context.is_ignored(*neigh_itt_v)) { //should also handle actual excluded.
-						all_excluded_flag = false;
-						prison = false;
-						if (all_dominated_flag) {
-							continue;
-						}
-						break;
-					}
-					prison = false;
-					all_dominated_flag = false;
-					all_excluded_flag = false;
+					exit_vertices.insert(*v);
 					break;
 				}
-			}
-			//combination of excluded vertices and dominated / ignored vertices.
-			if (all_excluded_flag == true && prison == false) {
-				if (!mds_context.is_ignored(u)) {
- 					mds_context.ignore_vertex(u);
-					is_reduced = true;
-				}
-				exit_vertices.push_back(*v);
-				continue;
-			}
-			//If all neighbors are dominated or excluded.
-			if (all_dominated_flag == true && prison == false) {
-				non_exit_vertices.push_back(*v);
-				continue;
-			}
-			if (prison == false) {
-				exit_vertices.push_back(*v);
 			}
 		}
 		//Identify if remaining vertices go into guard_vertices or prison_vertices.
 		for (auto v = neigh_itt_u; v < neigh_itt_u_end; ++v) {
 			//check if vertex is not a exit_vertex.
-			if (std::find(exit_vertices.begin(), exit_vertices.end(), *v) != exit_vertices.end()) {
+			if (exit_vertices.count(*v)) {
 				continue;
 			}
-			//check if vertex is not a non-exit.
-			if (std::find(non_exit_vertices.begin(), non_exit_vertices.end(), *v) != non_exit_vertices.end()) {
-				continue;
+			bool guard_trigger = false;
+			auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
+			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+				//Check if it is a guard_vertex.
+				if (exit_vertices.count(*neigh_itt_v)) {
+					guard_vertices.push_back(*v);
+					guard_trigger = true;
+					break;
+				}
 			}
-			else {
-				bool guard_trigger = false;
-				auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(*v);
-				for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
-					//Check if it is a guard_vertex.
-					if (std::find(exit_vertices.begin(), exit_vertices.end(), *neigh_itt_v) != exit_vertices.end()) {
-						guard_vertices.push_back(*v);
-						guard_trigger = true;
-						break;
-					}
-				}
-				//Not adjacent to exit_vertex then it is a: prison vertex.
-				if (guard_trigger == false) {
-					prison_vertices.push_back(*v);
-				}
+			//Not adjacent to exit_vertex then it is a: prison vertex.
+			if (guard_trigger == false) {
+				prison_vertices.push_back(*v);
 			}
 		}
+
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
 			is_reduced = true;
-			mds_context.include_vertex(u);
+			mds_context.select_vertex(u);
 			++Logger::cnt_reduce_neighborhood_single_vertex;
 			//Remove all Prison vertices for complete graph.
-			for (auto itt = prison_vertices.begin(); itt < prison_vertices.end(); ++itt) {
-				mds_context.exclude_vertex(*itt);
-				mds_context.remove_vertex(*itt);
+			for (auto itt : prison_vertices) {
+				mds_context.remove_vertex(itt);
 			}
-			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
-				mds_context.exclude_vertex(*itt);
-				mds_context.remove_vertex(*itt);
+			for (auto itt : guard_vertices) {
+				mds_context.remove_vertex(itt);
 			}
-			for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
-				mds_context.exclude_vertex(*itt);
-				mds_context.remove_vertex(*itt);
+			for (auto itt : exit_vertices) {
+				mds_context.dominate_vertex(itt); //should already be done.
 			}
-			for (auto itt = exit_vertices.begin(); itt < exit_vertices.end(); ++itt) {
-				mds_context.dominate_vertex(*itt);
-			}
-			return is_reduced;
-		} else if (guard_vertices.size() > 0) {
-			if (!mds_context.is_ignored(u)) {
-				mds_context.ignore_vertex(u);
-				is_reduced = true;
-			}
-			for (auto itt = guard_vertices.begin(); itt < guard_vertices.end(); ++itt) {
-				if (!mds_context.is_excluded(*itt)) {
-					if (mds_context.is_dominated(*itt)) {
-						mds_context.remove_vertex(*itt);
-					}
-					mds_context.exclude_vertex(*itt); //same as exclude. also add
+		}
+		else if (guard_vertices.size() > 0) {
+			for (auto itt : guard_vertices) {
+				if (!mds_context.is_excluded(itt)) {
+					mds_context.exclude_vertex(itt);
 					is_reduced = true;
 				}
 			}
-			if (non_exit_vertices.size() > 0) {
-				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
-					if (!mds_context.is_excluded(*itt)) {
-						if (mds_context.is_dominated(*itt)) {
-							mds_context.remove_vertex(*itt);
-						}
-						mds_context.exclude_vertex(*itt); //same as exclude. also add
-						is_reduced = true;
-					}
-				}
-			}
-			if (is_reduced) {
-				++Logger::cnt_reduce_neighborhood_single_vertex_guard;
-			}
-			return is_reduced; // actually just the subset rule.
-		}
-		else if (non_exit_vertices.size() > 0) {
-			if (non_exit_vertices.size() > 0) {
-				for (auto itt = non_exit_vertices.begin(); itt < non_exit_vertices.end(); ++itt) {
-					if (!mds_context.is_excluded(*itt)) {
-						if (mds_context.is_dominated(*itt)) {
-							mds_context.remove_vertex(*itt);
-						}
-						mds_context.exclude_vertex(*itt); //same as exclude. also add
-						is_reduced = true;
-					}
-				}
-			}
-			if (is_reduced) {
-				++Logger::cnt_reduce_neighborhood_single_vertex_guard;
-			}
-			return is_reduced; // actually just the subset rule.
 		}
 		return is_reduced;
 	}
+
+	
 	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
 		{
 			if (mds_context.is_removed(v) || mds_context.is_removed(w) || mds_context.is_excluded(v) || mds_context.is_excluded(w)) {
@@ -505,7 +278,7 @@ namespace reduce {
 							mds_context.remove_vertex(*neigh_itt_v);
 						}
 					}
-					mds_context.include_vertex(v);
+					mds_context.select_vertex(v);
 					return true;
 				}
 				if (dominated_by_w) {
@@ -525,14 +298,14 @@ namespace reduce {
 							mds_context.remove_vertex(*neigh_itt_w);
 						}
 					}
-					mds_context.include_vertex(w);
+					mds_context.select_vertex(w);
 					return true;
 				}
 				//the optimal is to choose both v & w.
 				++Logger::cnt_reduce_neighborhood_pair_vertex_both;
-				mds_context.include_vertex(v);
+				mds_context.select_vertex(v);
 
-				mds_context.include_vertex(w);
+				mds_context.select_vertex(w);
 
 				//dominate pair_neighborhood
 				for (auto u = prison_vertices.begin(); u < prison_vertices.end(); ++u) {
@@ -550,6 +323,7 @@ namespace reduce {
 			return false;
 		}
 	}
+
 	//remove edges between dominated vertices. (NOT IGNORED, only actual dominated vertices)
 	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
 		//given the vertex is dominated.
@@ -563,11 +337,13 @@ namespace reduce {
 		}
 		return reduced;
 	}
+
 	//works only for dominated vertices.
 	bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
+
 		if (mds_context.get_out_degree_vertex(v) <= 1) {
 			mds_context.remove_vertex(v);
 			return true;
@@ -576,7 +352,7 @@ namespace reduce {
 	}
 
 	bool simple_rule_three(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
 		//in principle could u1 & u2 not be dominated because all edges between dominated vertices should be removed by a previous rule.
@@ -589,7 +365,7 @@ namespace reduce {
 				return false;
 			}
 			//the rule is for back black neighboring vertices. (should already not be possible after simple rule 1 but if that one is not on.
-			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) || mds_context.is_ignored(u_one) || mds_context.is_ignored(u_two)) {
+			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) ) {
 				return false;
 			}
 			//rule 3.1
@@ -613,8 +389,9 @@ namespace reduce {
 		}
 		return false;
 	}
+
 	bool simple_rule_four(MDS_CONTEXT& mds_context, vertex v) {
-		if (mds_context.is_removed(v) || mds_context.is_ignored(v)) {
+		if (mds_context.is_removed(v)) {
 			return false;
 		}
 
@@ -623,7 +400,7 @@ namespace reduce {
 			vertex u_one = *neigh_v_itt;
 			vertex u_two = *++neigh_v_itt;
 			vertex u_three = *++neigh_v_itt;
-			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) || mds_context.is_ignored(u_one) || mds_context.is_ignored(u_two) || mds_context.is_dominated(u_three) || mds_context.is_ignored(u_three)) {
+			if (mds_context.is_dominated(u_one) || mds_context.is_dominated(u_two) || mds_context.is_dominated(u_three)) {
 				return false;
 			}
 			//rule 4
@@ -637,60 +414,184 @@ namespace reduce {
 		}
 		return false;
 	}
-	bool dominated_subset_rule(MDS_CONTEXT& mds_context, vertex v) {
-		//find all vertices.
-		std::vector<vertex> need_to_dominate;
 
-		vertex vertex_lowest_frequency;
+	//Helper function: does the closed neighborhood of v, contain u. 
+	// TODO: if we have a adjacencyMatrix could be done much faster.
+	bool contains(MDS_CONTEXT& mds_context, vertex v, vertex u) {
+		if (v == u) {
+			return true;
+		}
+		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+		if (!std::binary_search(neigh_itt_v, neigh_itt_v_end, u)) {
+			return false;
+		}
+		return true;
+	}
+
+	bool check_subset(MDS_CONTEXT& mds_context, vertex v) {
+		//selecting this vertex doesn't provide new dominated vertices. (so it can be excluded)
+		if (mds_context.get_coverage_size(v) == 0) {
+			return true;
+		}
 
 		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+		int minimum_frequency = std::numeric_limits<int>::max();
+		vertex minimum_frequency_vertex;
 
-		int num_edges_v = mds_context.get_out_degree_vertex(v);
-		if (num_edges_v == 0) {
-			mds_context.exclude_vertex(v);
-			mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
-			return true;
+		// Find the vertex in N[u] - N[S] with the lowest frequency.
+		for (auto itt = neigh_itt_v ; itt < neigh_itt_v_end; ++itt) {
+			if (!mds_context.is_dominated(*itt) && (mds_context.get_frequency(*itt) < minimum_frequency)) {
+				minimum_frequency_vertex = *itt;
+				minimum_frequency = mds_context.get_frequency(*itt);
+			}
+		}
+		//to make it a closed neighborhood.
+		if (!mds_context.is_dominated(v) && (mds_context.get_frequency(v) < minimum_frequency)) {
+			minimum_frequency_vertex = v;
+			minimum_frequency = mds_context.get_frequency(v);
 		}
 
-		// get all neighbors of v.
-		int best_possible_frequency = std::numeric_limits<int>::max();;
+		//find vertices which needs to be dominated.
+		std::vector<vertex> needs_to_dominate;
+		if (!mds_context.is_dominated(v) && v != minimum_frequency_vertex) {
+			needs_to_dominate.push_back(v);
+		}
 		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
-			if (!mds_context.is_dominated(*itt) && !mds_context.is_ignored(*itt)) {
-				need_to_dominate.push_back(*itt);
+			if (minimum_frequency_vertex != *itt && !mds_context.is_dominated(*itt)) {
+				needs_to_dominate.push_back(*itt);
 			}
-			//find lowest frequency vertex.
-			std::vector<vertex> coverage;
-			coverage = mds_context.get_frequency(*itt);
-			int frequency_w = coverage.size();
-			if (best_possible_frequency > frequency_w) {
-				vertex_lowest_frequency = *itt;
-				best_possible_frequency = frequency_w;
-			}
-		}
-		if (need_to_dominate.size() == 0) {
-			mds_context.exclude_vertex(v);
-			mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
-			return true;
 		}
 
-		auto [neigh_itt_w, neigh_itt_w_end] = mds_context.get_neighborhood_itt(vertex_lowest_frequency);
-		bool all_edges_present;
-		for (auto itt = neigh_itt_w; itt < neigh_itt_w_end; ++itt) {
-			if (*itt != v) {
-				bool all_edges_present = true;
-				for (auto dominated = need_to_dominate.begin(); dominated < need_to_dominate.end(); ++dominated) {
-					if (!mds_context.edge_exists(*itt, *dominated)) {
-							all_edges_present = false;
-							break;
-					}
-				}
-				if (all_edges_present) {
-					mds_context.exclude_vertex(v);
-					mds_context.remove_vertex(v); // v is dominated so you should just be able to remove it.
-					return true;
+		//get all possible vertices which could be the superset.
+		auto [neigh_itt_mf, neigh_itt_mf_end] = mds_context.get_neighborhood_itt(minimum_frequency_vertex);
+		for (auto itt = neigh_itt_mf; itt < neigh_itt_mf_end; ++itt) {
+			if (*itt == v || mds_context.is_dominated(*itt) || mds_context.get_frequency(*itt) < mds_context.get_frequency(v)) {
+				continue;
+			}
+			// Check whether all vertices which needs to be dominated are adjacent to itt.
+			bool fail = false;
+			for (vertex dominated : needs_to_dominate) {
+				if (!contains(mds_context, dominated, *itt)) {
+					fail = true;
+					break;
 				}
 			}
+			if (!fail) {
+				return true;
+			}
+		}
+		//minimum_frequency_vertex is also a contender for being the superset.
+		if (minimum_frequency_vertex == v || mds_context.is_dominated(minimum_frequency_vertex) || minimum_frequency < mds_context.get_frequency(v)) {
+			return false;
+		}
+		bool fail = false;
+		for (vertex dominated : needs_to_dominate) {
+			if (!contains(mds_context, dominated, minimum_frequency_vertex)) {
+				fail = true;
+				break;
+			}
+		}
+		if (!fail) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	bool reduce_subset(MDS_CONTEXT& mds_context, vertex v) {
+		if (check_subset(mds_context, v)) {
+			mds_context.exclude_vertex(v);
+			return true;
 		}
 		return false;
+	}
+
+	bool reduce_ignore(MDS_CONTEXT& mds_context, vertex v) {
+		bool reduced = false;
+
+		//is a check of mds_context.get_frequency(v) >= 1 needed?
+
+		//find the vertex in n[u] for which the coverage is minimized
+		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+		vertex minimum_coverage_vertex;
+		int minimum_coverage = std::numeric_limits<int>::max();
+
+		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
+			if (!mds_context.is_excluded(*itt) && (mds_context.get_coverage_size(*itt) < minimum_coverage)) {
+				minimum_coverage = mds_context.get_coverage_size(*itt);
+				minimum_coverage_vertex = *itt;
+			}
+		}
+		if (!mds_context.is_excluded(v) && mds_context.get_coverage_size(v) < minimum_coverage) {
+			minimum_coverage = mds_context.get_coverage_size(v);
+			minimum_coverage_vertex = v;
+		}
+
+		std::vector<vertex>need_to_cover;
+		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
+			if (minimum_coverage_vertex != *itt && !mds_context.is_excluded(*itt)) {
+				need_to_cover.push_back(*itt);
+			}
+		}
+		if (minimum_coverage_vertex != v && !mds_context.is_excluded(v)) {
+			need_to_cover.push_back(v);
+		}
+
+		auto [neigh_itt_mc, neigh_itt_mc_end] = mds_context.get_neighborhood_itt(minimum_coverage_vertex);
+		for (auto itt = neigh_itt_mc; itt < neigh_itt_mc_end; ++itt) {
+			if (*itt == v || mds_context.is_dominated(*itt) || mds_context.get_frequency(*itt) < mds_context.get_frequency(v)) {
+				continue;
+			}
+			bool fail = false;
+			for (vertex cover : need_to_cover) {
+				if (!contains(mds_context, cover, *itt)) {
+					fail = true;
+					break;
+				}
+			}
+			if (!fail) {
+				mds_context.ignore_vertex(*itt);
+				reduced = true;
+			}
+		}
+		if (minimum_coverage_vertex == v || mds_context.is_dominated(minimum_coverage_vertex) || mds_context.get_frequency(minimum_coverage_vertex) < mds_context.get_frequency(v)) {
+			return reduced;
+		}
+		else {
+			bool fail = false;
+			for (vertex cover : need_to_cover) {
+				if (!contains(mds_context, cover, minimum_coverage_vertex)) {
+					fail = true;
+					break;
+				}
+			}
+			if (!fail) {
+				mds_context.ignore_vertex(minimum_coverage_vertex);
+				reduced = true;
+			}
+			return reduced;
+		}
+	}
+
+	bool reduce_single_dominator(MDS_CONTEXT& mds_context, vertex v) {
+		if (mds_context.get_frequency(v) != 1) {
+			return false;
+		}
+		if (mds_context.is_undetermined(v)) {
+			mds_context.select_vertex(v);
+			return true;
+		}
+		auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+		for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+			if (!mds_context.is_undetermined(*neigh_itt_v)) {
+				continue;
+			}
+			else {
+				mds_context.select_vertex(*neigh_itt_v);
+				break;
+			}
+		}
+		return true;
 	}
 }
