@@ -57,10 +57,11 @@ void MDS_CONTEXT::exclude_vertex(vertex v) {
 		excluded[v] = 1;
 		c_x[v]++;
 		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+
 		if (!is_dominated(v) && get_frequency(v) == 1) {
 			for (auto itt = neigh_itt_v ;itt < neigh_itt_v_end; ++itt) {
-				if (!is_excluded(*neigh_itt_v)) {
-					select_vertex(v);
+				if (!is_excluded(*itt)) {
+					select_vertex(*itt);
 					break;
 				}
 			}
@@ -69,6 +70,9 @@ void MDS_CONTEXT::exclude_vertex(vertex v) {
 			c_x[*itt]++;
 			if (!is_dominated(*itt) && get_frequency(*itt) == 1) {
 				auto [neigh_itt, neigh_itt_end] = get_neighborhood_itt(*itt);
+				if (!is_excluded(*itt)) {
+					select_vertex(*itt);
+				}
 				for (;neigh_itt < neigh_itt_end; ++neigh_itt) {
 					if (!is_excluded(*neigh_itt)) {
 						select_vertex(*neigh_itt);
