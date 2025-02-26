@@ -19,6 +19,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	cnt_sel = 0;   
 	cnt_dom = 0;   
 	cnt_excl = 0;
+	cnt_ign = 0;
 }
 
 void MDS_CONTEXT::select_vertex(vertex v) {
@@ -39,16 +40,22 @@ void MDS_CONTEXT::dominate_vertex(vertex v) {
 	if (!is_dominated(v)) {
 		cnt_dom++;
 		dominated[v] = 1;
-		c_nd[v]++;
-		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
-		for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
-			c_nd[*neigh_itt_v]++;
+		if (!is_ignored(v)) {
+			c_nd[v]++;
+			auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+				c_nd[*neigh_itt_v]++;
+			}
 		}
 	}
 }
 
 bool MDS_CONTEXT::is_dominated(vertex v) {
 	return dominated[v] == 1;
+}
+
+bool MDS_CONTEXT::is_dominated_ijcai(vertex v) {
+	return (dominated[v] == 1 || ignored[v] == 1);
 }
 
 void MDS_CONTEXT::exclude_vertex(vertex v) {
@@ -58,7 +65,7 @@ void MDS_CONTEXT::exclude_vertex(vertex v) {
 		c_x[v]++;
 		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
 
-		if (!is_dominated(v) && get_frequency(v) == 1) {
+		if (!is_dominated_ijcai(v) && get_frequency(v) == 1) {
 			for (auto itt = neigh_itt_v ;itt < neigh_itt_v_end; ++itt) {
 				if (!is_excluded(*itt)) {
 					select_vertex(*itt);
@@ -68,7 +75,7 @@ void MDS_CONTEXT::exclude_vertex(vertex v) {
 		}
 		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
 			c_x[*itt]++;
-			if (!is_dominated(*itt) && get_frequency(*itt) == 1) {
+			if (!is_dominated_ijcai(*itt) && get_frequency(*itt) == 1) {
 				auto [neigh_itt, neigh_itt_end] = get_neighborhood_itt(*itt);
 				if (!is_excluded(*itt)) {
 					select_vertex(*itt);
@@ -90,8 +97,17 @@ bool MDS_CONTEXT::is_excluded(vertex v) {
 
 void MDS_CONTEXT::ignore_vertex(vertex v) {
 	if (!is_ignored(v)) {
-		ignored[v] = 1;  // TODO: make rules between difference dominated & ignored.
-		dominate_vertex(v);
+		ignored[v] = 1;
+		cnt_ign++;
+
+		//check if it isn't increased because it is already dominated.
+		if (!is_dominated(v)) {
+			c_nd[v]++;
+			auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
+			for (;neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+				c_nd[*neigh_itt_v]++;
+			}
+		}
 	}
 }
 
@@ -130,6 +146,9 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	for (;vertex_v_itt < vertex_v_itt_end; ++vertex_v_itt) {
 		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_v_itt] = 1;
+			if (is_dominated(*vertex_v_itt) && (is_excluded(*vertex_v_itt) || is_selected(*vertex_v_itt))) {
+				continue;
+			}
 			pair_neighborhood_vector.push_back(*vertex_v_itt);
 		}
 	}
@@ -137,6 +156,9 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	for (;vertex_w_itt < vertex_w_itt_end; ++vertex_w_itt) {
 		if (lookup[*vertex_w_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_w_itt] = 1;
+			if (is_dominated(*vertex_w_itt) && (is_excluded(*vertex_w_itt) || is_selected(*vertex_w_itt))) {
+				continue;
+			}
 			pair_neighborhood_vector.push_back(*vertex_w_itt);
 		}
 	}
@@ -252,8 +274,9 @@ vertex MDS_CONTEXT::add_vertex(){
 	selected.push_back(0);
 	dominated.push_back(0);
 	removed.push_back(0);
-	excluded.push_back(1);
+	excluded.push_back(0);
 	ignored.push_back(0);
+	exclude_vertex(new_vertex);
 	num_nodes++;
 	return new_vertex;
 }

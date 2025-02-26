@@ -35,6 +35,7 @@ public:
     int cnt_sel;   // Size of the current solution.
     int cnt_dom;   // Number of dominated vertices.
     int cnt_excl; // Number of removed vertices.
+    int cnt_ign;
 
     // Constructor
     MDS_CONTEXT(adjacencyListBoost& g);
@@ -54,6 +55,8 @@ public:
     vertex get_source_edge(edge e);
 
     vertex get_target_edge(edge e);
+
+    bool is_dominated_ijcai(vertex v);
 
     std::pair<std::vector<int>, std::map<int, int>> get_undetermined_vertices();
 

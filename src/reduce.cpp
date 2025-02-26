@@ -54,6 +54,7 @@ namespace reduce {
 	void reduce_ijcai(MDS_CONTEXT& mds_context) {
 		bool reduced;
 		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
+		bool first_time = true;
 
 		do {
 			reduced = false;
@@ -62,14 +63,53 @@ namespace reduce {
 				if (mds_context.is_undetermined(*itt)) {
 					reduced |= reduce_subset(mds_context,*itt);
 				}
-				if (!mds_context.is_dominated(*itt)) {
+				if (!mds_context.is_dominated_ijcai(*itt)) {
 					reduced |= reduce_single_dominator(mds_context, *itt);
 				}
-				if (!mds_context.is_dominated(*itt)) {
+				if (!mds_context.is_dominated_ijcai(*itt)) {
 					reduced |= reduce_ignore(mds_context, *itt);
 				}
 			}
+			if (!reduced && first_time) {
+				for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
+					if (!mds_context.is_undetermined(*itt)) {
+						continue;
+					}
+
+					auto possible_combinations = get_distance_three(mds_context, *itt);
+					for (vertex poss : possible_combinations) {
+						if (mds_context.is_undetermined(poss)) {
+							reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+						}
+					}
+				}
+				first_time = false;
+			}
 		} while (reduced);
+	}
+
+	std::unordered_set<vertex> get_distance_three(MDS_CONTEXT& mds_context, vertex v) {
+		std::unordered_set<vertex> distance_at_most_three;
+
+		auto [neigh_depth_one, neigh_depth_one_end] = mds_context.get_neighborhood_itt(v);
+		for (;neigh_depth_one < neigh_depth_one_end; ++neigh_depth_one) {
+			//can't have duplicates.
+			distance_at_most_three.insert(*neigh_depth_one);
+
+			auto [neigh_depth_two, neigh_depth_two_end] = mds_context.get_neighborhood_itt(*neigh_depth_one);
+			for (;neigh_depth_two < neigh_depth_two_end; ++neigh_depth_two) {
+				if (!distance_at_most_three.count(*neigh_depth_two)) {
+					distance_at_most_three.insert(*neigh_depth_two);
+				}
+				auto [neigh_depth_three, neigh_depth_three_end] = mds_context.get_neighborhood_itt(*neigh_depth_two);
+				for (;neigh_depth_three < neigh_depth_three_end; ++neigh_depth_three) {
+					if (!distance_at_most_three.count(*neigh_depth_three)) {
+						distance_at_most_three.insert(*neigh_depth_three);
+					}
+				}
+			}
+		}
+		return distance_at_most_three;
 	}
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
@@ -149,7 +189,6 @@ namespace reduce {
 		}
 		return is_reduced;
 	}
-
 	
 	bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w) {
 		{
@@ -171,6 +210,12 @@ namespace reduce {
 				//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
 				for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
 					if (lookup[*neigh_itt_u] == 0) {
+						if (mds_context.is_dominated(*neigh_itt_u) && mds_context.is_excluded(*neigh_itt_u)) {
+							continue;
+						}
+						if (mds_context.is_selected(*neigh_itt_u)) {
+							continue;
+						}
 						exit_vertices.push_back(*u);
 						break;
 					}
@@ -324,6 +369,187 @@ namespace reduce {
 		}
 	}
 
+	bool reduce_neighborhood_pair_vertices_ijcai(MDS_CONTEXT& mds_context, vertex v, vertex w) {
+		{
+			//either already selected, or 
+			if (mds_context.is_excluded(v) || mds_context.is_excluded(w) || mds_context.is_selected(v) || mds_context.is_selected(w)) {
+				return false;
+			}
+			// get adjacency lookup table & itteratable list of all neighbors of v & w (lookup includes v&w while itt. excludes them).
+			auto [lookup, pair_neighborhood_vector] = mds_context.get_pair_neighborhood(v, w);
+
+			// partition neighborhood u into 3 sets.
+			std::vector<int>exit_vertices; //N_{3}
+			std::vector<int>guard_vertices; //N_{2}
+			std::vector<int>prison_vertices; //N_{1}
+
+			for (auto u = pair_neighborhood_vector.begin(); u < pair_neighborhood_vector.end(); ++u) {
+				//for each vertex get the neighborhood
+				auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
+				//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
+				for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
+					if (lookup[*neigh_itt_u] == 0) {
+						if (mds_context.is_dominated(*u) && mds_context.is_dominated(*neigh_itt_u)) {
+							continue;
+						}
+						if (mds_context.is_dominated(*neigh_itt_u) && mds_context.is_excluded(*neigh_itt_u)) {
+							continue;
+						}
+						if (mds_context.is_selected(*neigh_itt_u)) {
+							continue;
+						}
+						exit_vertices.push_back(*u);
+						break;
+					}
+				}
+			}
+			//divide all non N_exit vertices into N_guard and N_prison. (could be abstracted).
+			for (auto u = pair_neighborhood_vector.begin(); u < pair_neighborhood_vector.end(); ++u) {
+				//check if vertex is not a exit_vertex.
+				if (std::find(exit_vertices.begin(), exit_vertices.end(), *u) != exit_vertices.end()) {
+					continue;
+				}
+				else {
+					bool guard_trigger = false;
+					//check if a neighbor vertex is adjacent to a exit_vertex.
+					auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
+					for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
+						//Check if it is a guard_vertex.
+						if (std::find(exit_vertices.begin(), exit_vertices.end(), *neigh_itt_u) != exit_vertices.end()) {
+							guard_vertices.push_back(*u);
+							guard_trigger = true;
+							break;
+						}
+					}
+					//Not adjacent to exit_vertex then it is a: prison vertex.
+					if (guard_trigger == false) {
+						prison_vertices.push_back(*u);
+					}
+				}
+			}
+
+			//find the subset of undominated N_prison vertices.
+			std::vector<int>undominated_prison_vertices;
+			for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+				if (!mds_context.is_dominated(*i)) {
+					undominated_prison_vertices.push_back(*i);
+				}
+			}
+
+			//Is there guaranteed profit.
+			if (undominated_prison_vertices.size() > 0) {
+				int size = undominated_prison_vertices.size();
+				//create domination table. (how many vertices of undominated_prison_vertices can a vertex dominate).
+				int num_vertices = mds_context.get_total_vertices();
+				std::vector<int>domination = std::vector<int>(num_vertices, 0);
+				for (auto i = undominated_prison_vertices.begin(); i < undominated_prison_vertices.end(); ++i) {
+					domination[*i]++; //dominate himself.
+					auto [edge_itt, edge_itt_end] = mds_context.get_neighborhood_itt(*i);
+					for (;edge_itt, edge_itt < edge_itt_end; ++edge_itt) {
+						domination[*edge_itt]++;
+					}
+				}
+				//Check if undominated N_prison can be dominated by a single N_prison.
+				for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+					if (domination[*i] == size) {
+						return false;
+					}
+				}
+				//Check if undominated N_prison can be dominated by a single N_guard.
+				for (auto i = guard_vertices.begin(); i < guard_vertices.end(); ++i) {
+					if (domination[*i] == size) {
+						return false;
+					}
+				}
+				//Check if only v, dominates all undominated N_prison vertices.
+				bool dominated_by_v = (domination[v] == size);
+				//Check if only w, dominates all undominated N_prison vertices.
+				bool dominated_by_w = (domination[w] == size);
+				//divide the cases.
+				if (dominated_by_v && dominated_by_w) {
+					++Logger::cnt_reduce_neighborhood_pair_vertex_either;
+					//the optimal is either to choose v, w (or both)
+
+					//Create gadget which forces either v, w or both. when created, automatically excluded.
+					vertex z1 = mds_context.add_vertex();
+
+					mds_context.add_edge(v, z1);
+					mds_context.add_edge(w, z1);
+
+					//remove prison vertices.
+					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+						mds_context.exclude_vertex(*i);
+						mds_context.dominate_vertex(*i);
+					}
+					//you can remove vertices which are both in the neighborhood of v & w.
+					for (auto i = guard_vertices.begin(); i < guard_vertices.end(); ++i) {
+						auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+						auto [neigh_itt_w, neigh_itt_w_end] = mds_context.get_neighborhood_itt(w);
+						if (std::find(neigh_itt_v, neigh_itt_v_end, *i) != neigh_itt_v_end && std::find(neigh_itt_w, neigh_itt_w_end, *i) != neigh_itt_w_end) {
+							mds_context.exclude_vertex(*i);
+							mds_context.dominate_vertex(*i);
+						}
+					}
+					return true;
+				}
+				if (dominated_by_v) {
+					// the optimal is to choose v.
+					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					//remove all prison vertices.
+					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+						mds_context.exclude_vertex(*i);
+					}
+
+					auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
+					for (; neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
+						//neighborhood of v gets dominated by select_vertex(v).
+						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_v) != guard_vertices.end()) {
+							//if it is a guard it can be removed.
+							mds_context.exclude_vertex(*neigh_itt_v);
+						}
+					}
+					mds_context.select_vertex(v);
+					return true;
+				}
+				if (dominated_by_w) {
+					// the optimal is to choose w.
+					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					//remove all prison vertices.
+					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+						mds_context.exclude_vertex(*i);
+					}
+
+					auto [neigh_itt_w, neigh_itt_w_end] = mds_context.get_neighborhood_itt(w);
+					for (; neigh_itt_w < neigh_itt_w_end; ++neigh_itt_w) {
+						//neighborhood of w gets dominated by select_vertex(w).
+						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_w) != guard_vertices.end()) {
+							//exclude guard vertices.
+							mds_context.exclude_vertex(*neigh_itt_w);
+						}
+					}
+					mds_context.select_vertex(w);
+					return true;
+				}
+				//the optimal is to choose both v & w.
+				++Logger::cnt_reduce_neighborhood_pair_vertex_both;
+				mds_context.select_vertex(v);
+
+				mds_context.select_vertex(w);
+
+				//dominate pair_neighborhood
+				for (auto u = prison_vertices.begin(); u < prison_vertices.end(); ++u) {
+					mds_context.exclude_vertex(*u);
+				}
+				for (auto u = guard_vertices.begin(); u < guard_vertices.end(); ++u) {
+					mds_context.exclude_vertex(*u);
+				}
+				return true;
+			}
+			//We cannot give guarantees.
+			return false;
+		}
+	}
+
 	//remove edges between dominated vertices. (NOT IGNORED, only actual dominated vertices)
 	bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v) {
 		//given the vertex is dominated.
@@ -440,24 +666,24 @@ namespace reduce {
 
 		// Find the vertex in N[u] - N[S] with the lowest frequency.
 		for (auto itt = neigh_itt_v ; itt < neigh_itt_v_end; ++itt) {
-			if (!mds_context.is_dominated(*itt) && (mds_context.get_frequency(*itt) < minimum_frequency)) {
+			if (!mds_context.is_dominated_ijcai(*itt) && (mds_context.get_frequency(*itt) < minimum_frequency)) {
 				minimum_frequency_vertex = *itt;
 				minimum_frequency = mds_context.get_frequency(*itt);
 			}
 		}
 		//to make it a closed neighborhood.
-		if (!mds_context.is_dominated(v) && (mds_context.get_frequency(v) < minimum_frequency)) {
+		if (!mds_context.is_dominated_ijcai(v) && (mds_context.get_frequency(v) < minimum_frequency)) {
 			minimum_frequency_vertex = v;
 			minimum_frequency = mds_context.get_frequency(v);
 		}
 
 		//find vertices which needs to be dominated.
 		std::vector<vertex> needs_to_dominate;
-		if (!mds_context.is_dominated(v) && v != minimum_frequency_vertex) {
+		if (!mds_context.is_dominated_ijcai(v) && v != minimum_frequency_vertex) {
 			needs_to_dominate.push_back(v);
 		}
 		for (auto itt = neigh_itt_v; itt < neigh_itt_v_end; ++itt) {
-			if (minimum_frequency_vertex != *itt && !mds_context.is_dominated(*itt)) {
+			if (minimum_frequency_vertex != *itt && !mds_context.is_dominated_ijcai(*itt)) {
 				needs_to_dominate.push_back(*itt);
 			}
 		}
@@ -540,7 +766,7 @@ namespace reduce {
 
 		auto [neigh_itt_mc, neigh_itt_mc_end] = mds_context.get_neighborhood_itt(minimum_coverage_vertex);
 		for (auto itt = neigh_itt_mc; itt < neigh_itt_mc_end; ++itt) {
-			if (*itt == v || mds_context.is_dominated(*itt) || mds_context.get_frequency(*itt) < mds_context.get_frequency(v)) {
+			if (*itt == v || mds_context.is_dominated_ijcai(*itt) || mds_context.get_frequency(*itt) < mds_context.get_frequency(v)) {
 				continue;
 			}
 			bool fail = false;
@@ -555,7 +781,7 @@ namespace reduce {
 				reduced = true;
 			}
 		}
-		if (minimum_coverage_vertex == v || mds_context.is_dominated(minimum_coverage_vertex) || mds_context.get_frequency(minimum_coverage_vertex) < mds_context.get_frequency(v)) {
+		if (minimum_coverage_vertex == v || mds_context.is_dominated_ijcai(minimum_coverage_vertex) || mds_context.get_frequency(minimum_coverage_vertex) < mds_context.get_frequency(v)) {
 			return reduced;
 		}
 		else {

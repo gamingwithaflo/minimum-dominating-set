@@ -16,6 +16,10 @@ namespace reduce {
 
     bool reduce_neighborhood_pair_vertices(MDS_CONTEXT& mds_context, vertex v, vertex w);
 
+    bool reduce_neighborhood_pair_vertices_ijcai(MDS_CONTEXT& mds_context, vertex v, vertex w);
+
+    std::unordered_set<vertex> get_distance_three(MDS_CONTEXT& mds_context, vertex v);
+
     bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v);
 
     bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v);
