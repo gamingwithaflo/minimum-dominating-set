@@ -465,7 +465,7 @@ namespace reduce {
 		//get all possible vertices which could be the superset.
 		auto [neigh_itt_mf, neigh_itt_mf_end] = mds_context.get_neighborhood_itt(minimum_frequency_vertex);
 		for (auto itt = neigh_itt_mf; itt < neigh_itt_mf_end; ++itt) {
-			if (*itt == v || mds_context.is_dominated(*itt) || mds_context.get_frequency(*itt) < mds_context.get_frequency(v)) {
+			if (*itt == v || !mds_context.is_undetermined(*itt)) {
 				continue;
 			}
 			// Check whether all vertices which needs to be dominated are adjacent to itt.
@@ -481,7 +481,7 @@ namespace reduce {
 			}
 		}
 		//minimum_frequency_vertex is also a contender for being the superset.
-		if (minimum_frequency_vertex == v || mds_context.is_dominated(minimum_frequency_vertex) || minimum_frequency < mds_context.get_frequency(v)) {
+		if (minimum_frequency_vertex == v || !mds_context.is_undetermined(minimum_frequency_vertex)) {
 			return false;
 		}
 		bool fail = false;
