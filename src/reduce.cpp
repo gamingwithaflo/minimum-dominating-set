@@ -59,6 +59,10 @@ namespace reduce {
 		do {
 			reduced = false;
 
+			if (!first_time) {
+				auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
+			}
+
 			for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
 				if (mds_context.is_undetermined(*itt)) {
 					reduced |= reduce_subset(mds_context,*itt);
@@ -70,7 +74,7 @@ namespace reduce {
 					reduced |= reduce_ignore(mds_context, *itt);
 				}
 			}
-			if (!reduced && first_time) {
+			/*if (!reduced && first_time) {
 				for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
@@ -84,7 +88,7 @@ namespace reduce {
 					}
 				}
 				first_time = false;
-			}
+			}*/
 		} while (reduced);
 	}
 
@@ -178,6 +182,7 @@ namespace reduce {
 			for (auto itt : exit_vertices) {
 				mds_context.dominate_vertex(itt); //should already be done.
 			}
+			mds_context.remove_vertex(u);
 		}
 		else if (guard_vertices.size() > 0) {
 			for (auto itt : guard_vertices) {

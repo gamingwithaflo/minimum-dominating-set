@@ -184,8 +184,12 @@ std::pair<vertex_itt, vertex_itt>  MDS_CONTEXT::get_vertices_itt() {
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
-	dominate_vertex(v);
 	removed[v] = 1;
+	dominate_vertex(v);
+	if (!is_selected(v)) {
+		exclude_vertex(v);
+	}
+	
 	int removed_edges = boost::out_degree(v, graph);
 	//remove all edges going out of v. (So you do not consider unnessecary vertices).
 	boost::clear_vertex(v, graph);
