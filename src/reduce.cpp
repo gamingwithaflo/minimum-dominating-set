@@ -91,8 +91,10 @@ namespace reduce {
 					reduced |= reduce_ignore(mds_context, *itt);
 				}
 			}
-			/*if (!reduced && first_time) {
-				for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
+			if (!reduced && first_time) {
+				//to prevent a pointer error.
+				std::vector<vertex>vertices = mds_context.get_vertices();
+				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
 					}
@@ -105,7 +107,7 @@ namespace reduce {
 					}
 				}
 				first_time = false;
-			}*/
+			}
 		} while (reduced);
 	}
 
@@ -320,6 +322,9 @@ namespace reduce {
 							mds_context.remove_vertex(*i);
 						}
 					}
+
+					mds_context.exclude_vertex(z1);
+
 					return true;
 				}
 				if (dominated_by_v) {
@@ -506,6 +511,8 @@ namespace reduce {
 							mds_context.dominate_vertex(*i);
 						}
 					}
+
+					mds_context.exclude_vertex(z1);
 					return true;
 				}
 				if (dominated_by_v) {

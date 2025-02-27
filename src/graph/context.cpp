@@ -182,6 +182,17 @@ std::pair<vertex_itt, vertex_itt>  MDS_CONTEXT::get_vertices_itt() {
 	return (boost::vertices(graph));
 }
 
+std::vector<vertex> MDS_CONTEXT::get_vertices() {
+	std::vector<vertex> vertices;
+	auto [vert_itt, vert_itt_end] = get_vertices_itt();
+	for (;vert_itt < vert_itt_end; ++vert_itt) {
+		if (is_undetermined(*vert_itt)) {
+			vertices.push_back(*vert_itt);
+		}
+	}
+	return vertices;
+}
+
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
 	removed[v] = 1;
@@ -280,7 +291,10 @@ vertex MDS_CONTEXT::add_vertex(){
 	removed.push_back(0);
 	excluded.push_back(0);
 	ignored.push_back(0);
-	exclude_vertex(new_vertex);
+	c_d.push_back(0);
+	c_nd.push_back(0);
+	c_x.push_back(0);
+
 	num_nodes++;
 	return new_vertex;
 }

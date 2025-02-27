@@ -44,6 +44,8 @@ public:
 
     std::pair<vertex_itt, vertex_itt> get_vertices_itt();
 
+    std::vector<vertex> get_vertices();
+
     int get_total_vertices();
 
     int get_total_edges();
