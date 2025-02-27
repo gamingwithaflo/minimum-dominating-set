@@ -255,7 +255,7 @@ std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_ver
 	std::map<int, int> translation_pace_to_ilp;
 	//std::map<int, int> translation_ilp_to_pace; TODO later
 	for (int i = 0; i < total_vertices; ++i) {
-		if (excluded[i] == 0 && removed[i] == 0) {
+		if (excluded[i] == 0 && removed[i] == 0 && selected[i] == 0) {
 			translation_pace_to_ilp[i] = index;
 			undetermined.push_back(i);
 			index++;

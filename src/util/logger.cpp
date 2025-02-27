@@ -116,26 +116,26 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
     outFile << std::endl;
 
     outFile << "number of included vertices " << included.size() << " index included verticies: ";
-    /*for (int index : included) {
+    for (int index : included) {
         outFile << index << " ";
     }
-    outFile << std::endl;*/
+    outFile << std::endl;
 
     outFile << "number of removed vertices " << removed.size() << " index removed verticies: ";
-    //for (int index : removed) {
-    //    outFile << index << " ";
-    //}
+    for (int index : removed) {
+        outFile << index << " ";
+    }
     outFile << std::endl;
     outFile << "number of excluded vertices " << excluded.size() << " index excluded verticies: ";
-    //for (int index : excluded) {
-    //    outFile << index << " ";
-    //}
+    for (int index : excluded) {
+        outFile << index << " ";
+    }
     outFile << std::endl;
     outFile << "number of ignored vertices " << ignored.size() << " index ignored verticies: ";
-    //for (int index : ignored) {
-    //    outFile << index << " ";
-    //}
-    //outFile << std::endl;
+    for (int index : ignored) {
+        outFile << index << " ";
+    }
+    outFile << std::endl;
     
     
     outFile << "is planer? " << Logger::is_planar << std::endl;

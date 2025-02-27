@@ -74,7 +74,7 @@ namespace operations_research {
         for (int i = 0; i < total_vertices; i++) {
             HighsInt cnt = 0;
             vertex v = mds_context.get_vertex_from_index(i);
-            if (mds_context.is_dominated(v)) { //should be faster right?
+            if (mds_context.is_dominated(v) || mds_context.is_ignored(v)) { //should be faster right?
                 continue; //dominated vertices  do not need a contraint.
             }
             auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);

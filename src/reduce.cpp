@@ -48,6 +48,23 @@ namespace reduce {
 					}
 				}
 			}
+			if (cnt_reductions == 0 && first_time) {
+				for (auto itt = vert_itt; itt < vert_itt_end; ++itt) {
+					if (!mds_context.is_undetermined(*itt)) {
+						continue;
+					}
+
+					auto possible_combinations = get_distance_three(mds_context, *itt);
+					for (vertex poss : possible_combinations) {
+						if (mds_context.is_undetermined(poss)) {
+							if (reduce_neighborhood_pair_vertices(mds_context, *itt, poss)) {
+								++cnt_reductions;
+							}
+						}
+					}
+				}
+				first_time = false;
+			}
 		} while (cnt_reductions > 0);
 	}
 
@@ -215,12 +232,6 @@ namespace reduce {
 				//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
 				for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
 					if (lookup[*neigh_itt_u] == 0) {
-						if (mds_context.is_dominated(*neigh_itt_u) && mds_context.is_excluded(*neigh_itt_u)) {
-							continue;
-						}
-						if (mds_context.is_selected(*neigh_itt_u)) {
-							continue;
-						}
 						exit_vertices.push_back(*u);
 						break;
 					}
@@ -314,6 +325,7 @@ namespace reduce {
 				if (dominated_by_v) {
 					// the optimal is to choose v.
 					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					mds_context.select_vertex(v);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 						mds_context.remove_vertex(*i);
@@ -322,18 +334,18 @@ namespace reduce {
 					auto [neigh_itt_v, neigh_itt_v_end] = mds_context.get_neighborhood_itt(v);
 					for (; neigh_itt_v < neigh_itt_v_end; ++neigh_itt_v) {
 						//dominate neighborhood of w, because it gets included.
-						mds_context.dominate_vertex(*neigh_itt_v);
 						if (std::find(guard_vertices.begin(), guard_vertices.end(), *neigh_itt_v) != guard_vertices.end()) {
 							//if it is a guard it can be removed.
 							mds_context.remove_vertex(*neigh_itt_v);
 						}
 					}
-					mds_context.select_vertex(v);
+					mds_context.remove_vertex(v);
 					return true;
 				}
 				if (dominated_by_w) {
 					// the optimal is to choose w.
 					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					mds_context.select_vertex(w);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 						mds_context.remove_vertex(*i);
@@ -348,13 +360,12 @@ namespace reduce {
 							mds_context.remove_vertex(*neigh_itt_w);
 						}
 					}
-					mds_context.select_vertex(w);
+					mds_context.remove_vertex(w);
 					return true;
 				}
 				//the optimal is to choose both v & w.
 				++Logger::cnt_reduce_neighborhood_pair_vertex_both;
 				mds_context.select_vertex(v);
-
 				mds_context.select_vertex(w);
 
 				//dominate pair_neighborhood
@@ -364,9 +375,9 @@ namespace reduce {
 				for (auto u = guard_vertices.begin(); u < guard_vertices.end(); ++u) {
 					mds_context.remove_vertex(*u);
 				}
-				for (auto u = exit_vertices.begin(); u < exit_vertices.end(); ++u) {
-					mds_context.dominate_vertex(*u);
-				}
+
+				mds_context.remove_vertex(v);
+				mds_context.remove_vertex(w);
 				return true;
 			}
 			//We cannot give guarantees.
@@ -499,6 +510,7 @@ namespace reduce {
 				}
 				if (dominated_by_v) {
 					// the optimal is to choose v.
+					mds_context.select_vertex(v);
 					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
@@ -513,12 +525,12 @@ namespace reduce {
 							mds_context.exclude_vertex(*neigh_itt_v);
 						}
 					}
-					mds_context.select_vertex(v);
 					return true;
 				}
 				if (dominated_by_w) {
 					// the optimal is to choose w.
 					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					mds_context.select_vertex(w);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 						mds_context.exclude_vertex(*i);
@@ -532,7 +544,6 @@ namespace reduce {
 							mds_context.exclude_vertex(*neigh_itt_w);
 						}
 					}
-					mds_context.select_vertex(w);
 					return true;
 				}
 				//the optimal is to choose both v & w.
