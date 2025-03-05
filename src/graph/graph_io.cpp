@@ -5,8 +5,6 @@
 #include <cstdlib>
 
 
-
-
 namespace parse {
     adjacencyListBoost construct_AdjacencyList_Boost(int n, std::vector<std::pair<int, int>> edges) {
         adjacencyListBoost g(n);
@@ -18,7 +16,42 @@ namespace parse {
         return g;
     }
     
-    
+    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is) {
+        std::vector<std::vector<int>> bags;
+        std::vector<std::pair<int, int>> edges; 
+
+        int i = 0;
+        int u, v;
+        std::string temp;
+        char identifier;
+        int bagIndex, item, numBags, treewidth;
+
+        //Assumption : no spaces before the first letter.
+        for (std::string line; std::getline(is, line);) {
+            if (line.empty()) continue;
+
+            if (line[i] == 'c') continue;  // ignore comments
+
+            auto ss = std::stringstream(line);
+            if (line[i] == 's') {
+                ss >> temp >> temp >> numBags >> treewidth;
+                bags.resize(numBags);
+                --treewidth; //treewidth is one lower.
+            }
+            else if (line[i] == 'b') {
+                ss >> identifier >> bagIndex; // Read 'b' and bag index
+                while (ss >> item) {
+                    bags[bagIndex - 1].push_back(item - 1);
+                }
+            }
+            else {
+                ss >> u >> v;
+                edges.push_back({ u - 1, v - 1 });
+            }
+        }
+        adjacencyListBoost g = construct_AdjacencyList_Boost(numBags, edges);
+        return TREE_DECOMPOSITION(bags, g, treewidth);
+    }
 
     adjacencyListBoost read_pace_2024(std::istream& is) {
         std::vector<std::pair<int, int>> edges;
@@ -53,6 +86,14 @@ namespace parse {
         }
         //return read_pace_2024(f);
         return read_pace_2024(f);
+    }
+
+    TREE_DECOMPOSITION load_tree_decomposition(std::string path) {
+        std::ifstream f(path);
+        if (f.fail()) {
+            throw std::invalid_argument("Failed to open file");
+        }
+        return read_tree_decomposition(f);
     }
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path) {

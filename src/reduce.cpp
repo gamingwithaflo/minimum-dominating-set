@@ -91,23 +91,23 @@ namespace reduce {
 					reduced |= reduce_ignore(mds_context, *itt);
 				}
 			}
-			if (!reduced && first_time) {
-				//to prevent a pointer error.
-				std::vector<vertex>vertices = mds_context.get_vertices();
-				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
-					if (!mds_context.is_undetermined(*itt)) {
-						continue;
-					}
+			//if (!reduced && first_time) {
+			//	//to prevent a pointer error.
+			//	std::vector<vertex>vertices = mds_context.get_vertices();
+			//	for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
+			//		if (!mds_context.is_undetermined(*itt)) {
+			//			continue;
+			//		}
 
-					auto possible_combinations = get_distance_three(mds_context, *itt);
-					for (vertex poss : possible_combinations) {
-						if (mds_context.is_undetermined(poss)) {
-							reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
-						}
-					}
-				}
-				first_time = false;
-			}
+			//		auto possible_combinations = get_distance_three(mds_context, *itt);
+			//		for (vertex poss : possible_combinations) {
+			//			if (mds_context.is_undetermined(poss)) {
+			//				reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+			//			}
+			//		}
+			//	}
+			//	first_time = false;
+			//}
 		} while (reduced);
 	}
 

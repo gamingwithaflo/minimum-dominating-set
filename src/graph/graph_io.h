@@ -5,6 +5,8 @@
 
 #include "context.h"
 
+#include "tree_decomposition.h"
+
 namespace parse {
     adjacencyListBoost read_pace_2024(std::istream& is);
 
@@ -12,7 +14,7 @@ namespace parse {
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path);
 
-    
+    TREE_DECOMPOSITION load_tree_decomposition(std::string path);
 
     std::string getNameFile(std::string& path);
 } 

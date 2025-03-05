@@ -5,6 +5,8 @@
 #include "minimum-dominating-set.h"
 #include "graph/graph_io.h"
 #include "graph/context.h"
+
+#include "graph/tree_decomposition.h"
 #include "reduce.h"
 #include "solver.h"
 #include <iostream>
@@ -16,8 +18,8 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_017.gr";
-	bool dir_mode = false;
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_040.gr";
+	bool dir_mode = true;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	if (dir_mode) {
@@ -35,6 +37,10 @@ int main()
 
 void reduction(std::string path) {
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
+
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/test.td";
+	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td);
+
 	adjacencyListBoost& refGraph = adjLBoost;
 
 	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);

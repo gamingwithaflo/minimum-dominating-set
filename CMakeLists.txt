@@ -31,9 +31,11 @@ set(SOURCES
     src/minimum-dominating-set.cpp
     src/graph/graph_io.cpp
     src/graph/context.cpp
+    src/graph/tree_decomposition.cpp
     src/reduce.cpp
     src/solver.cpp
     src/util/timer.cpp
+
 )
 
 # Add source to this project's executable.

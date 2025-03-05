@@ -109,32 +109,32 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
         << " | Successful neighborhood reductions (pair vertex): both " << Logger::cnt_reduce_neighborhood_pair_vertex_both
         << " | Successful neighborhood reductions (pair vertex): either " << Logger::cnt_reduce_neighborhood_pair_vertex_either << std::endl;
    
-    outFile << "number of dominated vertices " << dominated.size() << " index dominated verticies: ";
-    for (int index : dominated) {
+    outFile << "number of dominated vertices " << dominated.size() << std::endl; /*<< " index dominated verticies: ";*/
+    /*for (int index : dominated) {
             outFile << index << " ";
     }
-    outFile << std::endl;
+    outFile << std::endl;*/
 
-    outFile << "number of included vertices " << included.size() << " index included verticies: ";
+    outFile << "number of included vertices " << included.size(); /*<< " index included verticies: ";
     for (int index : included) {
         outFile << index << " ";
-    }
+    }*/
     outFile << std::endl;
 
-    outFile << "number of removed vertices " << removed.size() << " index removed verticies: ";
+    outFile << "number of removed vertices " << removed.size(); /*<< " index removed verticies: ";
     for (int index : removed) {
         outFile << index << " ";
-    }
+    }*/
     outFile << std::endl;
-    outFile << "number of excluded vertices " << excluded.size() << " index excluded verticies: ";
+    outFile << "number of excluded vertices " << excluded.size(); /*<< " index excluded verticies: ";
     for (int index : excluded) {
         outFile << index << " ";
-    }
+    }*/
     outFile << std::endl;
-    outFile << "number of ignored vertices " << ignored.size() << " index ignored verticies: ";
+    outFile << "number of ignored vertices " << ignored.size(); /*<< " index ignored verticies: ";
     for (int index : ignored) {
         outFile << index << " ";
-    }
+    }*/
     outFile << std::endl;
     
     
