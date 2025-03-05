@@ -77,7 +77,11 @@ struct operation_introduce_edge : operation {
 
 class nice_bag {
 public:
-    operation opp;
+    std::unique_ptr<operation> op; // allows for polymorphism.
     std::vector<int> bag;
 
+    //overloading constructor
+    nice_bag(operation_enum operation, std::vector<int>bag_input); //For leaf & join opperation.
+    nice_bag(operation_enum operation, int v, std::vector<int>bag_input); //For Introduce and Forget opperation.
+    nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input); //For Introduce_edge operation.
 };
