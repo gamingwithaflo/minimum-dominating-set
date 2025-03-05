@@ -27,7 +27,32 @@ int TREE_DECOMPOSITION::select_root_bag() {
 }
 
 void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
-	unfold_parent_vertex(0, 3);
+	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
+	int parent_index = root_vertex;
+	//root vertex is only adjacent to 1 vertex.
+	unfold_parent_vertex(root_vertex, *itt);
+
+	//With Breath first traversel go through graph.
+	traverse_tree_decomposition(root_vertex, *itt);
+}
+
+void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v) {
+	auto [itt, itt_end] = boost::adjacent_vertices(v, graph_td);
+	int out_degree = boost::out_degree(v, graph_td);
+	--out_degree; //don't count parent.
+
+	if (out_degree == 0) {
+		unfold_leaf_vertex(v);
+		return;
+	}
+
+	for (;itt < itt_end; ++itt) {
+		if (!(*itt == parent_index)) {
+			unfold_parent_vertex(v, *itt);
+			traverse_tree_decomposition(v, *itt);
+		}
+	}
+
 }
 
 void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
@@ -45,7 +70,7 @@ void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
 	std::vector<int>forget_vertices = find_non_overlapping_vertices(bag_parent, bag_child);
 	std::vector<int>introduce_vertices = find_non_overlapping_vertices(bag_child, bag_parent);
 
-	if (introduce_vertices.size() > 1 || (introduce_vertices.size() >= 1 && forget_vertices.size() > 0)) {
+	if (introduce_vertices.size() > 1 || (introduce_vertices.size() > 0 && forget_vertices.size() > 0)) {
 		//you will insert vertices so break up edge between parent and child.
 		boost::remove_edge(parent, child, graph_nice_td);
 
@@ -55,7 +80,7 @@ void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
 			forget_vertices.pop_back();
 
 			//remove vertex from accumulated bag
-			auto it = std::find(acc_bag.begin(), acc_bag.end(), last_element);
+			auto it = std::lower_bound(acc_bag.begin(), acc_bag.end(), last_element);
 			if (it != acc_bag.end()) {
 				acc_bag.erase(it);
 			}
@@ -110,7 +135,7 @@ void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
 			forget_vertices.pop_back();
 
 			//remove vertex from accumulated bag
-			auto it = std::find(acc_bag.begin(), acc_bag.end(), last_element);
+			auto it = std::lower_bound(acc_bag.begin(), acc_bag.end(), last_element);
 			if (it != acc_bag.end()) {
 				acc_bag.erase(it);
 			}
@@ -128,8 +153,9 @@ void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
 		boost::add_edge(prev_vertex, parent, graph_nice_td);
 		nice_bags[parent] = nice_bag(operation_enum::FORGET, last_element, bag_parent);
 	}
-
-	return;
+	else {
+		throw std::invalid_argument("something unforseen");
+	}
 }
 
 //Get all elements which are in b, but not in a.

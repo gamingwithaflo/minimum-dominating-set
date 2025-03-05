@@ -11,6 +11,8 @@ typedef boost::adjacency_list<
     boost::property<boost::edge_index_t, int>>    // Param: Properties of the indecies
     adjacencyListBoost;
 
+typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
+
 enum operation_enum {
     FORGET,
     JOIN,
@@ -92,6 +94,8 @@ public:
     void unfold_parent_vertex(int parent, int child);
 
     void create_nice_tree_decomposition();
+
+    void traverse_tree_decomposition(int parent_index, vertex v);
 
     void unfold_leaf_vertex(int vertex);
 };
