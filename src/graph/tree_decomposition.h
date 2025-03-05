@@ -11,18 +11,6 @@ typedef boost::adjacency_list<
     boost::property<boost::edge_index_t, int>>    // Param: Properties of the indecies
     adjacencyListBoost;
 
-class TREE_DECOMPOSITION {
-public:
-	std::vector<std::vector<int>> bags;
-	adjacencyListBoost graph;
-	int treewidth;
-
-	// Constructor
-	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost& g, int treewidth);
-
-    void create_nice_tree_decomposition();
-};
-
 enum operation_enum {
     FORGET,
     JOIN,
@@ -81,7 +69,31 @@ public:
     std::vector<int> bag;
 
     //overloading constructor
+    nice_bag();
     nice_bag(operation_enum operation, std::vector<int>bag_input); //For leaf & join opperation.
     nice_bag(operation_enum operation, int v, std::vector<int>bag_input); //For Introduce and Forget opperation.
     nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input); //For Introduce_edge operation.
 };
+
+class TREE_DECOMPOSITION {
+public:
+	std::vector<std::vector<int>> bags;
+    std::vector<nice_bag> nice_bags;
+	adjacencyListBoost graph_td;
+    adjacencyListBoost graph_nice_td;
+	int treewidth;
+    int root_vertex;
+
+	// Constructor
+	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g, int treewidth);
+
+    int select_root_bag();
+
+    void unfold_parent_vertex(int parent, int child);
+
+    void create_nice_tree_decomposition();
+
+    void unfold_leaf_vertex(int vertex);
+};
+
+std::vector<int> find_non_overlapping_vertices(const std::vector<int>& bag_parent, const std::vector<int>& bag_child);
