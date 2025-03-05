@@ -19,4 +19,65 @@ public:
 
 	// Constructor
 	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost& g, int treewidth);
+
+    void create_nice_tree_decomposition();
+};
+
+enum operation_enum {
+    FORGET,
+    JOIN,
+    INTRODUCE,
+    INTRODUCE_EDGE,
+    LEAF
+};
+
+struct operation {
+    operation_enum opp;
+
+    //constructor
+    operation(operation_enum type);
+    //destructor
+    virtual ~operation() = default;
+};
+
+struct operation_join : operation {
+
+    //constructor
+    operation_join();
+};
+
+struct operation_leaf : operation {
+
+    //constructor
+    operation_leaf();
+};
+
+struct operation_forget : operation {
+    int vertex;
+
+    //constructor
+    operation_forget(int v);
+};
+
+
+struct operation_introduce : operation {
+    int vertex;
+
+    //constructor
+    operation_introduce(int v);
+};
+
+struct operation_introduce_edge : operation {
+    int endpoint_a;
+    int endpoint_b;
+
+    //constructor
+    operation_introduce_edge(int v, int w);
+};
+
+class nice_bag {
+public:
+    operation opp;
+    std::vector<int> bag;
+
 };
