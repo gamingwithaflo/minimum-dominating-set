@@ -30,19 +30,19 @@ struct operation {
     virtual ~operation() = default;
 };
 
-struct operation_join : operation {
+struct operation_join : public operation {
 
     //constructor
     operation_join();
 };
 
-struct operation_leaf : operation {
+struct operation_leaf : public operation {
 
     //constructor
     operation_leaf();
 };
 
-struct operation_forget : operation {
+struct operation_forget : public operation {
     int vertex;
 
     //constructor
@@ -50,14 +50,14 @@ struct operation_forget : operation {
 };
 
 
-struct operation_introduce : operation {
+struct operation_introduce : public operation {
     int vertex;
 
     //constructor
     operation_introduce(int v);
 };
 
-struct operation_introduce_edge : operation {
+struct operation_introduce_edge : public operation {
     int endpoint_a;
     int endpoint_b;
 
@@ -67,7 +67,7 @@ struct operation_introduce_edge : operation {
 
 class nice_bag {
 public:
-    std::unique_ptr<operation> op; // allows for polymorphism.
+    std::variant<operation_join, operation_leaf, operation_introduce, operation_forget, operation_introduce_edge> op;
     std::vector<int> bag;
 
     //overloading constructor

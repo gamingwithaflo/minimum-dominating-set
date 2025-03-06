@@ -41,32 +41,51 @@ void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v)
 	int out_degree = boost::out_degree(v, graph_td);
 	--out_degree; //don't count parent.
 
+	//vertex is a leaf.
 	if (out_degree == 0) {
 		unfold_leaf_vertex(v);
 		return;
 	}
 
+	//parent vertex is either a introduce or forget node.
 	if (out_degree == 1) {
 		for (;itt < itt_end; ++itt) {
 			if (!(*itt == parent_index)) {
+				
 				unfold_parent_vertex(v, bags[v], *itt, bags[*itt]);
 				traverse_tree_decomposition(v, *itt);
 			}
 		}
 	}
-	else {
+	else if (out_degree == 2) {
+		//vertex is a join vertex.
 		for (;itt < itt_end; ++itt) {
 			if (!(*itt == parent_index)) {
+				//add vertex between join vertex and child vertex.
 				boost::remove_edge(v, *itt, graph_nice_td);
 				auto par_vertex = boost::add_vertex(graph_nice_td);
-				boost::add_edge(v, par_vertex, graph_nice_td);
-				boost::add_edge(par_vertex, *itt, graph_nice_td);
+				//add in correct order.
+				if (v > *itt) {
+					boost::add_edge(*itt, par_vertex, graph_nice_td);
+					boost::add_edge(v, par_vertex, graph_nice_td);
+				}
+				else {
+					boost::add_edge(v, par_vertex, graph_nice_td);
+					boost::add_edge(*itt, par_vertex, graph_nice_td);
+				}
 				nice_bags[v] = nice_bag(operation_enum::JOIN, bags[v]);
-				nice_bags.push_back(nice_bag()); //put in a placeholder.
+
+				//put in a empty placeholder.
+				nice_bags.push_back(nice_bag());
+
+				//will fill the empty placeholder.
 				unfold_parent_vertex(par_vertex, bags[v], *itt, bags[*itt]);
 				traverse_tree_decomposition(par_vertex, *itt);
 			}
 		}
+	}
+	else {
+		throw std::invalid_argument("should not have more than 2 out degree");
 	}
 }
 
@@ -236,10 +255,10 @@ nice_bag::nice_bag(operation_enum operation, std::vector<int>bag_input) {
 
 	switch (operation) {
 		case operation_enum::LEAF:
-			op = std::make_unique<operation_leaf>();
+			op = operation_leaf();
 			break;
 		case operation_enum::JOIN:
-			op = std::make_unique<operation_join>();
+			op = operation_join();
 			break;
 		default:
 			throw std::invalid_argument("wrong operator (or wrong function constructor)");
@@ -251,14 +270,15 @@ nice_bag::nice_bag(operation_enum operation, int v, std::vector<int>bag_input) {
 
 	switch (operation) {
 		case operation_enum::FORGET:
-			op = std::make_unique<operation_forget>(v);
+			op = operation_forget(v);
 			break;
 		case operation_enum::INTRODUCE:
-			op = std::make_unique<operation_introduce>(v);
+			op = operation_introduce(v);
 			break;
 		default:
 			throw std::invalid_argument("wrong operator (or wrong function constructor)");
 	}
+	return;
 }
 
 nice_bag::nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input) {
@@ -266,7 +286,7 @@ nice_bag::nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_i
 
 	switch (operation) {
 		case operation_enum::INTRODUCE_EDGE:
-			op = std::make_unique<operation_introduce_edge>(v, w);
+			op = operation_introduce_edge(v, w);
 			break;
 		default:
 			throw std::invalid_argument("wrong operator (or wrong function constructor)");
