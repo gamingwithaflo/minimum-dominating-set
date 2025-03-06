@@ -145,8 +145,15 @@ void TREE_DECOMPOSITION::introduce_all_edges() {
 			root_vertex = vertex;
 		}
 		else {
-			boost::add_edge(index_smallest_bag, vertex, graph_nice_td);
-			boost::add_edge(vertex, parent_smallest_bag, graph_nice_td);
+			//should never be the same index.
+			if (index_smallest_bag < parent_smallest_bag) {
+				boost::add_edge(index_smallest_bag, vertex, graph_nice_td);
+				boost::add_edge(parent_smallest_bag, vertex, graph_nice_td);
+			}
+			else {
+				boost::add_edge(parent_smallest_bag, vertex, graph_nice_td);
+				boost::add_edge(index_smallest_bag, vertex, graph_nice_td);
+			}
 			boost::remove_edge(index_smallest_bag, parent_smallest_bag, graph_nice_td);
 			nice_bags.push_back(nice_bag(operation_enum::INTRODUCE_EDGE, endpoint_a, endpoint_b, nice_bags[index_smallest_bag].bag));
 		}
