@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+
+#include <queue>
 #include <boost/graph/adjacency_list.hpp>
 
 typedef boost::adjacency_list<
@@ -90,6 +92,8 @@ public:
 	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g, int treewidth);
 
     int select_root_bag();
+
+    void introduce_all_edges();
 
     void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
 

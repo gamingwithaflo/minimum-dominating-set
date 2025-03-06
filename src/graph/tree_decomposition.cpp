@@ -27,6 +27,7 @@ int TREE_DECOMPOSITION::select_root_bag() {
 }
 
 void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
+	introduce_all_edges();
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
@@ -34,6 +35,122 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
 
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
+}
+
+//boost::source(edge_descriptor, graph) & target(edge_descriptor, graph).
+void TREE_DECOMPOSITION::introduce_all_edges() {
+	auto [edge_itt, edge_itt_end] = boost::edges(graph_td);
+	bool a_present;
+	bool b_present;
+
+	//do this for all edges.
+	for (;edge_itt != edge_itt_end; ++edge_itt) {
+		//what we want to find.
+		int size_smallest_bag;
+		int index_smallest_bag;
+		int parent_smallest_bag;
+
+		//get both endpoints
+		auto endpoint_a = boost::source(*edge_itt, graph_td);
+		auto endpoint_b = boost::target(*edge_itt, graph_td);
+
+		std::vector<int>& root_vertex_bag = bags[root_vertex];
+
+		a_present = std::binary_search(root_vertex_bag.begin(), root_vertex_bag.end(), endpoint_a);
+		b_present = std::binary_search(root_vertex_bag.begin(), root_vertex_bag.end(), endpoint_b);
+
+		//introduce above root node. (and set new root vertex).
+		if (a_present && b_present) {
+			size_smallest_bag = nice_bags[root_vertex].bag.size();
+			index_smallest_bag = root_vertex;
+			int parent_smallest_bag = -1; // has no parent.
+		}
+		else {
+			//root vertex should only have 1 adjacent vertex.
+			auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_nice_td);
+			std::queue<std::pair<int, int>> q; // {current_vertex, parent_vertex}
+
+			int parent;
+			int current_vertex;
+
+			q.push({ *itt, root_vertex });
+
+			//(breath first traversal) find highest point where both endpoint_a and endpoint_b are present.
+			while (!q.empty() && !(a_present && b_present)) {
+				std::tie(current_vertex, parent) = q.front();
+				q.pop();
+
+				nice_bag& curr_nice_bags = nice_bags[current_vertex];
+
+				if (std::holds_alternative<operation_forget>(curr_nice_bags.op)) {
+					operation_forget& op = std::get<operation_forget>(curr_nice_bags.op);
+					if (op.vertex == endpoint_a) a_present = true;
+					if (op.vertex == endpoint_b) b_present = true;
+				}
+
+				auto [itt, itt_end] = boost::adjacent_vertices(current_vertex, graph_nice_td);
+				for (; itt != itt_end; ++itt) {
+					if (*itt != parent) {  // Avoid revisiting the parent
+						q.push({ *itt, current_vertex });
+					}
+				}
+			}
+			//initialize smallest bag
+			auto [itt_curr, itt_curr_end] = boost::adjacent_vertices(current_vertex, graph_nice_td);
+			for (;itt_curr < itt_curr_end; ++itt_curr) {
+				//should be only one other bag besides its parent.
+				if (*itt_curr != parent) {
+					size_smallest_bag = nice_bags[*itt].bag.size();
+					index_smallest_bag = *itt;
+					int parent_smallest_bag = current_vertex;
+				}
+			}
+		}
+		//keep track of the size and index of smallest bag you encountered & its parents index.
+
+		//If a bag introduces one of our endpoints stop the traversal down that branch.
+		std::queue<std::pair<int, int>> q; // {current_vertex, parent_vertex}
+
+		while (!q.empty()) {
+			auto [current_vertex, parent] = q.front();
+			q.pop();
+
+			nice_bag& curr_nice_bags = nice_bags[current_vertex];
+
+			if (size_smallest_bag > curr_nice_bags.bag.size()) {
+				size_smallest_bag = curr_nice_bags.bag.size();
+				index_smallest_bag = current_vertex;
+				int parent_smallest_bag = parent;
+			}
+
+			//if one of the vertices is introduced, then you do not have to explore this branch any further.
+			if (std::holds_alternative<operation_introduce>(curr_nice_bags.op)) {
+				operation_introduce& op = std::get<operation_introduce>(curr_nice_bags.op);
+				if (op.vertex == endpoint_a) continue;
+				if (op.vertex == endpoint_b) continue;
+			}
+
+			auto [itt, itt_end] = boost::adjacent_vertices(current_vertex, graph_nice_td);
+			for (; itt != itt_end; ++itt) {
+				if (*itt != parent) {
+					q.push({ *itt, current_vertex });
+				}
+			}
+		}
+		//add vertex in between index smallest bag & parent.
+		auto vertex = boost::add_vertex(graph_nice_td);
+		if (parent_smallest_bag == -1) {
+			boost::add_edge(index_smallest_bag, vertex, graph_nice_td);
+			nice_bags.push_back(nice_bag(operation_enum::INTRODUCE_EDGE, endpoint_a, endpoint_b, nice_bags[index_smallest_bag].bag));
+			root_vertex = vertex;
+		}
+		else {
+			boost::add_edge(index_smallest_bag, vertex, graph_nice_td);
+			boost::add_edge(vertex, parent_smallest_bag, graph_nice_td);
+			boost::remove_edge(index_smallest_bag, parent_smallest_bag, graph_nice_td);
+			nice_bags.push_back(nice_bag(operation_enum::INTRODUCE_EDGE, endpoint_a, endpoint_b, nice_bags[index_smallest_bag].bag));
+		}
+	}
 }
 
 void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v) {
@@ -278,7 +395,6 @@ nice_bag::nice_bag(operation_enum operation, int v, std::vector<int>bag_input) {
 		default:
 			throw std::invalid_argument("wrong operator (or wrong function constructor)");
 	}
-	return;
 }
 
 nice_bag::nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input) {
