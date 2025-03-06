@@ -91,7 +91,7 @@ public:
 
     int select_root_bag();
 
-    void unfold_parent_vertex(int parent, int child);
+    void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
 
     void create_nice_tree_decomposition();
 

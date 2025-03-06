@@ -30,7 +30,7 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
-	unfold_parent_vertex(root_vertex, *itt);
+	unfold_parent_vertex(root_vertex,bags[root_vertex], *itt, bags[*itt]);
 
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
@@ -46,23 +46,34 @@ void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v)
 		return;
 	}
 
-	for (;itt < itt_end; ++itt) {
-		if (!(*itt == parent_index)) {
-			unfold_parent_vertex(v, *itt);
-			traverse_tree_decomposition(v, *itt);
+	if (out_degree == 1) {
+		for (;itt < itt_end; ++itt) {
+			if (!(*itt == parent_index)) {
+				unfold_parent_vertex(v, bags[v], *itt, bags[*itt]);
+				traverse_tree_decomposition(v, *itt);
+			}
 		}
 	}
-
+	else {
+		for (;itt < itt_end; ++itt) {
+			if (!(*itt == parent_index)) {
+				boost::remove_edge(v, *itt, graph_nice_td);
+				auto par_vertex = boost::add_vertex(graph_nice_td);
+				boost::add_edge(v, par_vertex, graph_nice_td);
+				boost::add_edge(par_vertex, *itt, graph_nice_td);
+				nice_bags[v] = nice_bag(operation_enum::JOIN, bags[v]);
+				nice_bags.push_back(nice_bag()); //put in a placeholder.
+				unfold_parent_vertex(par_vertex, bags[v], *itt, bags[*itt]);
+				traverse_tree_decomposition(par_vertex, *itt);
+			}
+		}
+	}
 }
 
-void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, int child) {
+void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child) {
 	int prev_vertex = child;
 
 	std::vector<int> acc_bag = bags[child];
-
-	//assumption: the bags are sorted.
-	std::vector<int>& bag_parent = bags[parent];
-	std::vector<int>& bag_child = bags[child];
 
 	// if bag_parent has child bag_child.
 	// Elements which are in bag_child but not in bag_parent -> serie of forget vertices.
@@ -218,6 +229,8 @@ operation_introduce_edge::operation_introduce_edge(int v, int w) : operation(ope
 //placeholder.
 nice_bag::nice_bag() {};
 
+
+
 nice_bag::nice_bag(operation_enum operation, std::vector<int>bag_input) {
 	bag = bag_input; 
 
@@ -227,6 +240,7 @@ nice_bag::nice_bag(operation_enum operation, std::vector<int>bag_input) {
 			break;
 		case operation_enum::JOIN:
 			op = std::make_unique<operation_join>();
+			break;
 		default:
 			throw std::invalid_argument("wrong operator (or wrong function constructor)");
 	}
