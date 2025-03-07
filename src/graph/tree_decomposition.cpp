@@ -103,9 +103,9 @@ void TREE_DECOMPOSITION::introduce_all_edges(std::pair< edge_itt, edge_itt> edge
 			for (;itt_curr < itt_curr_end; ++itt_curr) {
 				//should be only one other bag besides its parent.
 				if (*itt_curr != parent) {
-					size_smallest_bag = nice_bags[*itt].bag.size();
-					index_smallest_bag = *itt;
-					int parent_smallest_bag = current_vertex;
+					size_smallest_bag = nice_bags[*itt_curr].bag.size();
+					index_smallest_bag = *itt_curr;
+					parent_smallest_bag = current_vertex;
 				}
 			}
 		}
