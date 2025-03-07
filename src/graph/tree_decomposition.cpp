@@ -27,7 +27,6 @@ int TREE_DECOMPOSITION::select_root_bag() {
 }
 
 void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
-	introduce_all_edges();
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
@@ -35,6 +34,8 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
 
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
+
+	introduce_all_edges();
 }
 
 //boost::source(edge_descriptor, graph) & target(edge_descriptor, graph).
@@ -63,7 +64,7 @@ void TREE_DECOMPOSITION::introduce_all_edges() {
 		if (a_present && b_present) {
 			size_smallest_bag = nice_bags[root_vertex].bag.size();
 			index_smallest_bag = root_vertex;
-			int parent_smallest_bag = -1; // has no parent.
+			parent_smallest_bag = -1; // has no parent.
 		}
 		else {
 			//root vertex should only have 1 adjacent vertex.
@@ -110,6 +111,8 @@ void TREE_DECOMPOSITION::introduce_all_edges() {
 
 		//If a bag introduces one of our endpoints stop the traversal down that branch.
 		std::queue<std::pair<int, int>> q; // {current_vertex, parent_vertex}
+
+		q.push({ index_smallest_bag, parent_smallest_bag });
 
 		while (!q.empty()) {
 			auto [current_vertex, parent] = q.front();
@@ -242,7 +245,7 @@ void TREE_DECOMPOSITION::unfold_parent_vertex(int parent, std::vector<int>& bag_
 			//create vertex and add edge.
 			auto forget_vertex = boost::add_vertex(graph_nice_td);
 			boost::add_edge(prev_vertex, forget_vertex, graph_nice_td);
-			nice_bags.push_back(nice_bag(operation_enum::FORGET, forget_vertex, acc_bag));
+			nice_bags.push_back(nice_bag(operation_enum::FORGET, last_element, acc_bag));
 			prev_vertex = forget_vertex;
 		}
 
