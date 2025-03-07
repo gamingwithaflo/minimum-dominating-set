@@ -16,5 +16,7 @@ namespace parse {
 
     TREE_DECOMPOSITION load_tree_decomposition(std::string path);
 
+    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is);
+
     std::string getNameFile(std::string& path);
 } 

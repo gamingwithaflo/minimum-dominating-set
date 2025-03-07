@@ -15,6 +15,8 @@ typedef boost::adjacency_list<
 
 typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
 
+typedef boost::graph_traits<adjacencyListBoost>::edge_iterator edge_itt;
+
 enum operation_enum {
     FORGET,
     JOIN,
@@ -93,11 +95,11 @@ public:
 
     int select_root_bag();
 
-    void introduce_all_edges();
+    void introduce_all_edges(std::pair< edge_itt, edge_itt> edges_itterator);
 
     void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
 
-    void create_nice_tree_decomposition();
+    void create_nice_tree_decomposition(std::pair< edge_itt, edge_itt> edges_itterator);
 
     void traverse_tree_decomposition(int parent_index, vertex v);
 

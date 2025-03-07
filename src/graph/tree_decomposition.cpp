@@ -8,6 +8,7 @@ TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input,
 	nice_bags.resize(bags.size());
 	treewidth = treewidth_input;
 	root_vertex = select_root_bag(); 
+
 }
 
 //currently random root node. (preprocessing the root node could boost performance).
@@ -26,7 +27,7 @@ int TREE_DECOMPOSITION::select_root_bag() {
 	throw std::invalid_argument("There has to be at least one leaf vertex.");
 }
 
-void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
+void TREE_DECOMPOSITION::create_nice_tree_decomposition(std::pair< edge_itt, edge_itt> edges_itterator) {
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
@@ -35,25 +36,26 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition() {
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
 
-	introduce_all_edges();
+	introduce_all_edges(edges_itterator);
 }
 
 //boost::source(edge_descriptor, graph) & target(edge_descriptor, graph).
-void TREE_DECOMPOSITION::introduce_all_edges() {
-	auto [edge_itt, edge_itt_end] = boost::edges(graph_td);
+void TREE_DECOMPOSITION::introduce_all_edges(std::pair< edge_itt, edge_itt> edges_itterator) {
+	edge_itt edge_it = edges_itterator.first;
+	edge_itt edge_it_end = edges_itterator.second;
 	bool a_present;
 	bool b_present;
 
 	//do this for all edges.
-	for (;edge_itt != edge_itt_end; ++edge_itt) {
+	for (;edge_it != edge_it_end; ++edge_it) {
 		//what we want to find.
 		int size_smallest_bag;
 		int index_smallest_bag;
 		int parent_smallest_bag;
 
 		//get both endpoints
-		auto endpoint_a = boost::source(*edge_itt, graph_td);
-		auto endpoint_b = boost::target(*edge_itt, graph_td);
+		auto endpoint_a = boost::source(*edge_it, graph_td);
+		auto endpoint_b = boost::target(*edge_it, graph_td);
 
 		std::vector<int>& root_vertex_bag = nice_bags[root_vertex].bag;
 
