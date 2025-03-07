@@ -55,7 +55,7 @@ void TREE_DECOMPOSITION::introduce_all_edges() {
 		auto endpoint_a = boost::source(*edge_itt, graph_td);
 		auto endpoint_b = boost::target(*edge_itt, graph_td);
 
-		std::vector<int>& root_vertex_bag = bags[root_vertex];
+		std::vector<int>& root_vertex_bag = nice_bags[root_vertex].bag;
 
 		a_present = std::binary_search(root_vertex_bag.begin(), root_vertex_bag.end(), endpoint_a);
 		b_present = std::binary_search(root_vertex_bag.begin(), root_vertex_bag.end(), endpoint_b);
@@ -123,7 +123,7 @@ void TREE_DECOMPOSITION::introduce_all_edges() {
 			if (size_smallest_bag > curr_nice_bags.bag.size()) {
 				size_smallest_bag = curr_nice_bags.bag.size();
 				index_smallest_bag = current_vertex;
-				int parent_smallest_bag = parent;
+				parent_smallest_bag = parent;
 			}
 
 			//if one of the vertices is introduced, then you do not have to explore this branch any further.
@@ -355,6 +355,7 @@ void TREE_DECOMPOSITION::unfold_leaf_vertex(int vertex) {
 		auto v = boost::add_vertex(graph_nice_td);
 		nice_bags.push_back(nice_bag(operation_enum::INTRODUCE, lastElement, bag));
 		auto e = boost::add_edge(prev_vertex, v, graph_nice_td);
+		prev_vertex = v;
 		bag.pop_back();
 	}
 	
