@@ -3,7 +3,13 @@
 #include <vector>
 
 #include <queue>
+
+#include<stack>
+
+#include <variant>
 #include <boost/graph/adjacency_list.hpp>
+#include <cinttypes>
+#include<unordered_map>
 
 typedef boost::adjacency_list<
     boost::vecS,                                  // Param:OutEdgeList (cointainer used for edge-list (vector))
@@ -87,6 +93,9 @@ public:
     std::vector<nice_bag> nice_bags;
 	adjacencyListBoost graph_td;
     adjacencyListBoost graph_nice_td;
+    std::stack<nice_bag*> instruction_stack;
+    std::stack<std::unordered_map<std::uint64_t, int>>partial_solution_stack;
+
 	int treewidth;
     int root_vertex;
 
@@ -104,6 +113,22 @@ public:
     void traverse_tree_decomposition(int parent_index, vertex v);
 
     void unfold_leaf_vertex(int vertex);
+
+    void fill_instruction_stack();
+
+    void depth_first_search(int start, int parent);
+
+    void run_instruction_stack();
+
+    void run_operation_leaf();
+
+    void run_operation_introduce();
+
+    void run_operation_forget();
+
+    void run_operation_introduce_edge();
+
+    void run_operation_join();
 };
 
 std::vector<int> find_non_overlapping_vertices(const std::vector<int>& bag_parent, const std::vector<int>& bag_child);

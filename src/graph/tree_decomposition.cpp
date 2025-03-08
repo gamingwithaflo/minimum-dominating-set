@@ -8,7 +8,8 @@ TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input,
 	nice_bags.resize(bags.size());
 	treewidth = treewidth_input;
 	root_vertex = select_root_bag(); 
-
+	instruction_stack;
+	partial_solution_stack;
 }
 
 //currently random root node. (preprocessing the root node could boost performance).
@@ -360,7 +361,69 @@ void TREE_DECOMPOSITION::unfold_leaf_vertex(int vertex) {
 		prev_vertex = v;
 		bag.pop_back();
 	}
+	//create an empty leaf node.
+	auto leaf_v = boost::add_vertex(graph_nice_td);
+	//bag should be empty.
+	nice_bags.push_back(nice_bag(operation_enum::LEAF, bag));
+	auto leaf_e = boost::add_edge(prev_vertex, leaf_v, graph_nice_td);
+}
+
+void TREE_DECOMPOSITION::fill_instruction_stack() {
+	depth_first_search(root_vertex, -1);
+}
+
+void TREE_DECOMPOSITION::depth_first_search(int start, int parent) {
+	//depth first traversel. (the only splits should be join vertices).
+	instruction_stack.push(&nice_bags[start]);
+	auto [itt, itt_end] = boost::adjacent_vertices(start, graph_nice_td);
+	for (; itt != itt_end; ++itt) {
+		if (*itt != parent) {  // Avoid revisiting the parent
+			depth_first_search(*itt, start);
+		}
+	}
+}
+
+void TREE_DECOMPOSITION::run_instruction_stack() {
 	
+	while (!instruction_stack.empty()) {
+		//get top instruction from the stack. (is a pointer).
+		nice_bag* instruction_ptr = instruction_stack.top();
+		instruction_stack.pop();
+		nice_bag& instruction = *instruction_ptr;
+
+		//find which operation the instruction entails.
+
+		//run if it is a leaf operation.
+		if (std::holds_alternative<operation_leaf>(instruction.op)) {
+			run_operation_leaf();
+		}
+	}
+}
+
+void TREE_DECOMPOSITION::run_operation_leaf() {
+	//Push an empty partial solution onto the partial solution stack.
+	std::unordered_map<std::uint64_t, int> empty_partial_solution;
+	partial_solution_stack.push(empty_partial_solution);
+}
+
+void TREE_DECOMPOSITION::run_operation_forget() {
+
+}
+
+void TREE_DECOMPOSITION::run_operation_introduce() {
+
+}
+
+void TREE_DECOMPOSITION::run_operation_join() {
+
+}
+
+void TREE_DECOMPOSITION::run_operation_leaf() {
+
+}
+
+void TREE_DECOMPOSITION::run_operation_introduce_edge() {
+
 }
 
 operation::operation(operation_enum type) : opp(type) {};
