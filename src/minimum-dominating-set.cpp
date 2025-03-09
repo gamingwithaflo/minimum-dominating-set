@@ -46,6 +46,7 @@ void reduction(std::string path) {
 	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td);
 	td_comp.create_nice_tree_decomposition(mds_context.get_edge_itt());
 	td_comp.fill_instruction_stack();
+	td_comp.run_instruction_stack();
 
 	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
 	Logger::is_planar = is_planar;

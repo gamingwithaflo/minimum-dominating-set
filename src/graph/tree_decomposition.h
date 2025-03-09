@@ -87,9 +87,13 @@ public:
     nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input); //For Introduce_edge operation.
 };
 
+std::vector<std::uint64_t> generate_all_encoding(int n);
+
+void generate_encoding(int n, int coloring, int position, std::vector<std::uint64_t>& results);
+
 std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_introduce(int n, int index_introduced);
 
-std::vector<std::pair<std::uint64_t, std::uint64_t>>generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results);
+void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results);
 
 class TREE_DECOMPOSITION {
 public:

@@ -1,5 +1,6 @@
 
 #include "tree_decomposition.h"
+#include <limits.h>
 
 TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input, adjacencyListBoost g, int treewidth_input) {
 	graph_td = g;
@@ -406,6 +407,16 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 	}
 }
 
+int find_index_in_bag(std::vector<int>& bag, int element) {
+	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element not less than the element.
+	return it - bag.begin(); //returns the index.
+
+}
+
+int extract_bits(std::uint64_t encoding, int size_bag, int pos) {
+	return (encoding >> (2 * (size_bag - 1 - pos))) & 0b11;
+}
+
 void TREE_DECOMPOSITION::run_operation_leaf() {
 	//Push an empty partial solution onto the partial solution stack.
 	std::unordered_map<std::uint64_t, int> empty_partial_solution;
@@ -426,7 +437,7 @@ std::vector<std::uint64_t> generate_all_encoding(int n) {
 	return results;
 }
 
-std::vector<std::uint64_t> generate_encoding(int n, int coloring, int position, std::vector<std::uint64_t>& results) {
+void generate_encoding(int n, int coloring, int position, std::vector<std::uint64_t>& results) {
 	if (position == n) {
 		results.push_back(coloring);
 		return;
@@ -442,7 +453,7 @@ std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_intro
 	return results;
 }
 
-std::vector<std::pair<std::uint64_t, std::uint64_t>>generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results) {
+void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results) {
 	if (position == n) {
 		results.push_back(std::make_pair(coloring, child_coloring));
 		return;
@@ -470,11 +481,52 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 	partial_solution_stack.pop();
 
 	// create all possible coloring pairs for introduced operation.
-	if (bag.empty() && child_partial_solution.empty()) {
-
+	if (child_partial_solution.empty()) {
+		std::vector<std::uint64_t> encoding_vector = generate_all_encoding(bag.size());
+		for (uint64_t encoding : encoding_vector) {
+			//gray.
+			if (encoding == 3) {
+				partial_solution.insert({ encoding, 0 });
+				continue;
+			}
+			// white.
+			if (encoding == 2) {
+				partial_solution.insert({ encoding, 1 });
+				continue;
+			}
+			// black.
+			if (encoding == 1) {
+				partial_solution.insert({ encoding, INT_MAX });
+				continue;
+			}
+		}
+		partial_solution_stack.push(partial_solution);
 	}
 	else {
-		std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding = generate_all_encoding_introduce(bag.size(), introduced_vertex);
+		std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding_vector = generate_all_encoding_introduce(bag.size(), introduced_vertex);
+
+		for (const auto& [encoding, child_encoding] : encoding_vector) {
+			int color = extract_bits(encoding, bag.size(), index_introduced_vertex);
+			//gray.
+			if (color == 3) {
+				int solution = 0 + child_partial_solution[child_encoding];
+				partial_solution.insert({ encoding, solution });
+				continue;
+			}
+			//white.
+			if (color == 2) {
+				int solution = 1 + child_partial_solution[child_encoding];
+				partial_solution.insert({ encoding, solution });
+				continue;
+			}
+			//black.
+			if (color == 1) {
+				int solution = INT_MAX;
+				partial_solution.insert({ encoding, solution });
+				continue;
+			}
+		}
+		partial_solution_stack.push(partial_solution);
 	}
 }
 
@@ -483,12 +535,6 @@ void TREE_DECOMPOSITION::run_operation_join() {
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge() {
-
-}
-
-int find_index_in_bag(std::vector<int>& bag, int element) {
-	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element not less than the element.
-	return it - bag.begin(); //returns the index.
 
 }
 
