@@ -397,6 +397,12 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 		if (std::holds_alternative<operation_leaf>(instruction.op)) {
 			run_operation_leaf();
 		}
+
+		if (std::holds_alternative<operation_introduce>(instruction.op)) {
+			//get object.
+			operation_introduce correct_instruction = get<operation_introduce>(instruction.op);
+			run_operation_introduce(instruction.bag, correct_instruction.vertex);
+		}
 	}
 }
 
@@ -410,21 +416,82 @@ void TREE_DECOMPOSITION::run_operation_forget() {
 
 }
 
-void TREE_DECOMPOSITION::run_operation_introduce() {
+//(2-bit representation of colors of vertices). 0b01 -> black, 0b11 -> gray, 0b10 -> white.
+const int COLORS[] = { 0b01, 0b11, 0b10 };
+const int NUM_COLORS = 3;
 
+std::vector<std::uint64_t> generate_all_encoding(int n) {
+	std::vector<std::uint64_t> results;
+	generate_encoding(n, 0, 0, results);
+	return results;
+}
+
+std::vector<std::uint64_t> generate_encoding(int n, int coloring, int position, std::vector<std::uint64_t>& results) {
+	if (position == n) {
+		results.push_back(coloring);
+		return;
+	}
+	for (int i = 0; i < NUM_COLORS; ++i) {
+		generate_encoding(n, (coloring << 2) | COLORS[i], position + 1, results);
+	}
+}
+
+std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_introduce(int n, int index_introduced) {
+	std::vector<std::pair<std::uint64_t, std::uint64_t>> results;
+	generate_encoding_introduce(n, 0, 0, 0, index_introduced, results);
+	return results;
+}
+
+std::vector<std::pair<std::uint64_t, std::uint64_t>>generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results) {
+	if (position == n) {
+		results.push_back(std::make_pair(coloring, child_coloring));
+		return;
+	}
+
+	for (int i = 0; i < NUM_COLORS; ++i) {
+		if (position == index_introduced) {
+			generate_encoding_introduce(n, (coloring << 2) | COLORS[i], child_coloring, position + 1, index_introduced, results);
+		}
+		else {
+			generate_encoding_introduce(n, (coloring << 2) | COLORS[i], (child_coloring << 2) | COLORS[i], position + 1, index_introduced, results);
+		}
+	}
+}
+
+void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int introduced_vertex) {
+	//find index of introduced vertex in the bag.
+	int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
+
+	//create an empty partial solution.
+	std::unordered_map<std::uint64_t, int> partial_solution;
+
+	//get previous childs partial solution.
+	std::unordered_map<std::uint64_t,int> child_partial_solution = partial_solution_stack.top();
+	partial_solution_stack.pop();
+
+	// create all possible coloring pairs for introduced operation.
+	if (bag.empty() && child_partial_solution.empty()) {
+
+	}
+	else {
+		std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding = generate_all_encoding_introduce(bag.size(), introduced_vertex);
+	}
 }
 
 void TREE_DECOMPOSITION::run_operation_join() {
 
 }
 
-void TREE_DECOMPOSITION::run_operation_leaf() {
-
-}
-
 void TREE_DECOMPOSITION::run_operation_introduce_edge() {
 
 }
+
+int find_index_in_bag(std::vector<int>& bag, int element) {
+	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element not less than the element.
+	return it - bag.begin(); //returns the index.
+
+}
+
 
 operation::operation(operation_enum type) : opp(type) {};
 
