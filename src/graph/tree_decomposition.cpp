@@ -503,9 +503,15 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 		partial_solution_stack.push(partial_solution);
 	}
 	else {
-		std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding_vector = generate_all_encoding_introduce(bag.size(), introduced_vertex);
+		std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding_vector = generate_all_encoding_introduce(bag.size(), index_introduced_vertex);
 
 		for (const auto& [encoding, child_encoding] : encoding_vector) {
+			//if childs partial solution is infinite. Whatever you do, when introducing a vertex its partial solution is also infinite.
+			if (child_partial_solution[child_encoding] == INT_MAX) {
+				partial_solution.insert({ encoding, INT_MAX });
+				continue;
+			}
+
 			int color = extract_bits(encoding, bag.size(), index_introduced_vertex);
 			//gray.
 			if (color == 3) {
@@ -515,9 +521,9 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 			}
 			//white.
 			if (color == 2) {
-				int solution = 1 + child_partial_solution[child_encoding];
-				partial_solution.insert({ encoding, solution });
-				continue;
+					int solution = 1 + child_partial_solution[child_encoding];
+					partial_solution.insert({ encoding, solution });
+					continue;
 			}
 			//black.
 			if (color == 1) {
