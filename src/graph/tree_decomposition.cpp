@@ -397,18 +397,34 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 		//run if it is a leaf operation.
 		if (std::holds_alternative<operation_leaf>(instruction.op)) {
 			run_operation_leaf();
+			continue;
 		}
 
 		if (std::holds_alternative<operation_introduce>(instruction.op)) {
 			//get object.
 			operation_introduce correct_instruction = get<operation_introduce>(instruction.op);
 			run_operation_introduce(instruction.bag, correct_instruction.vertex);
+			continue;
+		}
+
+		if (std::holds_alternative<operation_forget>(instruction.op)) {
+			//get object.
+			operation_forget correct_instruction = get<operation_forget>(instruction.op);
+			run_operation_forget(instruction.bag, correct_instruction.vertex);
+			continue;
+		}
+
+		if (std::holds_alternative<operation_introduce_edge>(instruction.op)) {
+			//get object.
+			operation_introduce_edge correct_instruction = get<operation_introduce_edge>(instruction.op);
+			run_operation_introduce_edge(instruction.bag, correct_instruction.endpoint_a, correct_instruction.endpoint_b);
+			continue;
 		}
 	}
 }
 
 int find_index_in_bag(std::vector<int>& bag, int element) {
-	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element not less than the element.
+	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element equal or bigger than the element.
 	return it - bag.begin(); //returns the index.
 
 }
@@ -417,19 +433,71 @@ int extract_bits(std::uint64_t encoding, int size_bag, int pos) {
 	return (encoding >> (2 * (size_bag - 1 - pos))) & 0b11;
 }
 
+//(2-bit representation of colors of vertices). 0b01 -> black, 0b11 -> gray, 0b10 -> white.
+const int COLORS[] = { 0b01, 0b11, 0b10 };
+const int NUM_COLORS = 3;
+
+
 void TREE_DECOMPOSITION::run_operation_leaf() {
 	//Push an empty partial solution onto the partial solution stack.
 	std::unordered_map<std::uint64_t, int> empty_partial_solution;
 	partial_solution_stack.push(empty_partial_solution);
 }
 
-void TREE_DECOMPOSITION::run_operation_forget() {
+void generate_encoding_forget(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_forget, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results) {
+	//as the child_coloring is one size bigger than the original bag.
+	if (position == (n + 1)) {
+		results.push_back(std::make_pair(coloring, child_coloring));
+		return;
+	}
 
+	if (position == index_forget) {
+		generate_encoding_forget(n, coloring, (child_coloring << 2) | COLORS[2], position + 1, index_forget, results);
+	}
+	else {
+		for (int i = 0; i < NUM_COLORS; ++i) {
+			generate_encoding_forget(n, (coloring << 2) | COLORS[i], (child_coloring << 2) | COLORS[i], position + 1, index_forget, results);
+		}
+	}
 }
 
-//(2-bit representation of colors of vertices). 0b01 -> black, 0b11 -> gray, 0b10 -> white.
-const int COLORS[] = { 0b01, 0b11, 0b10 };
-const int NUM_COLORS = 3;
+std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_forget(int n, int index_forget) {
+	std::vector<std::pair<std::uint64_t, std::uint64_t>> results;
+	generate_encoding_forget(n, 0, 0, 0, index_forget, results);
+	return results;
+}
+
+void TREE_DECOMPOSITION::run_operation_forget(std::vector<int>& bag, int forget_vertex) {
+	//find index of introduced vertex in the bag.
+	int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
+
+	//create an empty partial solution.
+	std::unordered_map<std::uint64_t, int> partial_solution;
+
+	//get previous childs partial solution.
+	std::unordered_map<std::uint64_t,int> child_partial_solution = partial_solution_stack.top();
+	partial_solution_stack.pop();
+
+	//generate all forget encodings.
+	std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding_vector = generate_all_encoding_forget(bag.size(), index_forget_vertex);
+
+	for (const auto& [encoding, child_encoding] : encoding_vector) {
+		//Does this actually work?
+		int power = bag.size() - index_forget_vertex;
+		int decrease_color = 1 << (2 * power); // equivalent to 4^power
+		std::uint64_t child_encoding_white = child_encoding;
+		std::uint64_t child_encoding_black = child_encoding - decrease_color;
+		//if childs partial solution is infinite. Whatever you do, when introducing a vertex its partial solution is also infinite.
+		if (child_partial_solution[child_encoding_white] > child_partial_solution[child_encoding_black]) {
+			partial_solution.insert({ encoding, child_partial_solution[child_encoding_black]});
+		}
+		else {
+			partial_solution.insert({ encoding, child_partial_solution[child_encoding_white]});
+		}
+
+	}
+	partial_solution_stack.push(partial_solution);
+}
 
 std::vector<std::uint64_t> generate_all_encoding(int n) {
 	std::vector<std::uint64_t> results;
@@ -540,8 +608,47 @@ void TREE_DECOMPOSITION::run_operation_join() {
 
 }
 
-void TREE_DECOMPOSITION::run_operation_introduce_edge() {
+void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b) {
+	//find index of introduced vertex in the bag.
+	int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
+	int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
 
+	//create an empty partial solution.
+	std::unordered_map<std::uint64_t, int> partial_solution;
+
+	//get previous childs partial solution.
+	std::unordered_map<std::uint64_t, int> child_partial_solution = partial_solution_stack.top();
+	partial_solution_stack.pop();
+
+	std::vector<std::uint64_t> encoding_vector = generate_all_encoding(bag.size());
+
+	for (const auto& encoding : encoding_vector){
+		int color_endpoint_a = extract_bits(encoding, bag.size(), index_endpoint_a);
+		int color_endpoint_b = extract_bits(encoding, bag.size(), index_endpoint_b);
+
+		//endpoint a = white, endpoint b = black.
+		if (color_endpoint_a == 2 && color_endpoint_b == 1) {
+			int power = (bag.size() - 1) - index_endpoint_b;
+			int increase_color = 1 << (2 * power); // equivalent to 4^power
+			std::uint64_t child_encoding = encoding + (2 * increase_color); // go from black to gray.
+			int solution = child_partial_solution[child_encoding];
+			partial_solution.insert({ encoding, solution });
+		}
+		//endpoint a = black, endpoint b = white.
+		else if (color_endpoint_a == 1 && color_endpoint_b == 2){
+			int power = (bag.size() - 1) - index_endpoint_a;
+			int increase_color = 1 << (2 * power); // equivalent to 4^power
+			std::uint64_t child_encoding = encoding + (2 * increase_color); // go from black to gray.
+			int solution = child_partial_solution[child_encoding];
+			partial_solution.insert({ encoding, solution });
+		}
+		// any other combination.
+		else {
+			int solution = child_partial_solution[encoding];
+			partial_solution.insert({ encoding, solution });
+		}
+	}
+	partial_solution_stack.push(partial_solution);
 }
 
 

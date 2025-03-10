@@ -132,9 +132,9 @@ public:
 
     void run_operation_introduce(std::vector<int>& bag, int introduced_vertex);
 
-    void run_operation_forget();
+    void run_operation_forget(std::vector<int>& bag, int forget_vertex);
 
-    void run_operation_introduce_edge();
+    void run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b);
 
     void run_operation_join();
 };
