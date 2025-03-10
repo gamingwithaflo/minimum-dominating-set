@@ -641,7 +641,7 @@ void generate_encoding_join(int n, std::uint64_t coloring, int count_white, int 
 				pair.first = (pair.first << 2) | COLORS[i];
 				pair.second = (pair.second << 2) | COLORS[i];
 			}
-			generate_encoding_join(n, new_coloring, count_white, (position + 1), coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
+			generate_encoding_join(n, new_coloring, count_white, (position + 1), new_coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
 		}
 		//if color is black. 
 		else {
@@ -706,8 +706,20 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 		auto& vector_pair_childern = coloring_child_vector[i];
 
 		for (auto& pair : vector_pair_childern) {
-			int result_a = child_partial_solution_a[pair.first] + child_partial_solution_b[pair.second] - number_of_ones[i];
-			int result_b = child_partial_solution_a[pair.second] + child_partial_solution_b[pair.first] - number_of_ones[i];
+			int result_a;
+			int result_b;
+			if (child_partial_solution_a[pair.first] == INT_MAX || child_partial_solution_b[pair.second] == INT_MAX) {
+				result_a = INT_MAX;
+			}
+			else {
+				result_a = child_partial_solution_a[pair.first] + child_partial_solution_b[pair.second] - number_of_ones[i];
+			}
+			if (child_partial_solution_a[pair.second] == INT_MAX || child_partial_solution_b[pair.first] == INT_MAX) {
+				result_b = INT_MAX;
+			}
+			else {
+				result_b = child_partial_solution_a[pair.second] + child_partial_solution_b[pair.first] - number_of_ones[i];
+			}
 
 			// Get the minimum of the two results.
 			int lowest = (result_a < result_b) ? result_a : result_b;
