@@ -136,7 +136,7 @@ public:
 
     void run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b);
 
-    void run_operation_join();
+    void run_operation_join(std::vector<int>& bag);
 };
 
 std::vector<int> find_non_overlapping_vertices(const std::vector<int>& bag_parent, const std::vector<int>& bag_child);

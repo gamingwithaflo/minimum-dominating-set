@@ -604,8 +604,88 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 	}
 }
 
-void TREE_DECOMPOSITION::run_operation_join() {
+void generate_encoding_join(int n, std::uint64_t coloring, int count_white, int position, 
+							std::vector<std::pair<std::uint64_t, uint64_t>>& coloring_child,
+							std::vector< std::vector<std::pair<std::uint64_t, uint64_t>>>& coloring_child_vector,
+							std::vector<std::uint64_t>& coloring_vector, 
+							std::vector<int>& number_of_ones) {
+	//base case: If we reached the max size of the bag. (and the encoding.
+	if (position == n) {
+		coloring_vector.push_back(coloring);
+		number_of_ones.push_back(count_white);
+		coloring_child_vector.push_back(coloring_child);
+		return;
+	}
 
+	for (int i = 0; i < NUM_COLORS; ++i) {
+		std::uint64_t new_coloring = (coloring << 2) | COLORS[i];
+
+		//if color is white.
+		if (i == 2) {
+
+			for (auto& pair : coloring_child) {
+				pair.first = (pair.first << 2) | COLORS[i];
+				pair.second = (pair.second << 2) | COLORS[i];
+			}
+			generate_encoding_join(n, new_coloring, count_white + 1, position + 1, coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
+		}
+		//if color is gray.
+		else if (i == 1) {
+			std::vector<std::pair<std::uint64_t, uint64_t>> new_coloring_child = coloring_child;  // Create a new copy
+			for (auto& pair : new_coloring_child) {
+				pair.first = (pair.first << 2) | COLORS[i];
+				pair.second = (pair.second << 2) | COLORS[i];
+			}
+			generate_encoding_join(n, new_coloring, count_white, (position + 1), coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
+		}
+		//if color is black. 
+		else {
+			std::vector<std::pair<std::uint64_t, uint64_t>> new_coloring_child = coloring_child;
+			std::vector<std::pair<std::uint64_t, uint64_t>> temp_coloring_child;
+			for (auto& pair : new_coloring_child) {
+				//Question: does this only happen at the first divide?
+				if (pair.first == pair.second) {
+					pair.first = (pair.first << 2) | COLORS[0]; // Add black
+					pair.second = (pair.second << 2) | COLORS[1]; // Add white
+				}
+				else {
+					std::pair<std::uint64_t, std::uint64_t> new_pair = pair;
+
+					pair.first = (pair.first << 2) | COLORS[0]; // Add black
+					pair.second = (pair.second << 2) | COLORS[1]; // Add white
+
+					new_pair.first = (new_pair.first << 2) | COLORS[1]; // Add white
+					new_pair.second = (new_pair.second << 2) | COLORS[0]; // Add white
+
+					temp_coloring_child.push_back(new_pair);
+				}
+			}
+			if (!temp_coloring_child.empty()) {
+				new_coloring_child.insert(new_coloring_child.end(), temp_coloring_child.begin(), temp_coloring_child.end());
+			}
+			generate_encoding_join(n, new_coloring, count_white, (position + 1), new_coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
+		}
+	}
+}
+
+//result is given through the parameters.
+void generate_all_encoding_join(int n, 
+								std::vector< std::vector<std::pair<std::uint64_t, uint64_t>>>& coloring_child_vector,
+								std::vector<std::uint64_t>& coloring_vector,
+								std::vector<int>& number_of_ones) {
+	std::vector<std::pair<std::uint64_t, uint64_t>> empty_coloring_child = { {0, 0} };
+	generate_encoding_join(n, 0, 0, 0, empty_coloring_child, coloring_child_vector, coloring_vector, number_of_ones);
+}
+
+
+void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
+
+	//Create all encodings & child encodings.
+	std::vector< std::vector<std::pair<std::uint64_t, uint64_t>>> coloring_child_vector;
+	std::vector<std::uint64_t> coloring_vector;
+	std::vector<int> number_of_ones;
+
+	generate_all_encoding_join(bag.size(), coloring_child_vector, coloring_vector, number_of_ones);
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b) {
