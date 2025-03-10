@@ -420,6 +420,11 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 			run_operation_introduce_edge(instruction.bag, correct_instruction.endpoint_a, correct_instruction.endpoint_b);
 			continue;
 		}
+
+		if (std::holds_alternative<operation_join>(instruction.op)) {
+			run_operation_join(instruction.bag);
+			continue;
+		}
 	}
 }
 
@@ -679,13 +684,50 @@ void generate_all_encoding_join(int n,
 
 
 void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
+	//create an empty partial solution.
+	std::unordered_map<std::uint64_t, int> partial_solution;
+
+	//get previous childs partial solution.
+	std::unordered_map<std::uint64_t, int> child_partial_solution_a = partial_solution_stack.top();
+	partial_solution_stack.pop();
+	std::unordered_map<std::uint64_t, int> child_partial_solution_b = partial_solution_stack.top();
+	partial_solution_stack.pop();
 
 	//Create all encodings & child encodings.
 	std::vector< std::vector<std::pair<std::uint64_t, uint64_t>>> coloring_child_vector;
-	std::vector<std::uint64_t> coloring_vector;
+	std::vector<std::uint64_t> encoding_vector;
 	std::vector<int> number_of_ones;
 
-	generate_all_encoding_join(bag.size(), coloring_child_vector, coloring_vector, number_of_ones);
+	generate_all_encoding_join(bag.size(), coloring_child_vector, encoding_vector, number_of_ones);
+
+	for (int i = 0; i < encoding_vector.size(); ++i) {
+		int lowest_pair_cost = INT_MAX;
+
+		auto& vector_pair_childern = coloring_child_vector[i];
+
+		for (auto& pair : vector_pair_childern) {
+			int result_a = child_partial_solution_a[pair.first] + child_partial_solution_b[pair.second] - number_of_ones[i];
+			int result_b = child_partial_solution_a[pair.second] + child_partial_solution_b[pair.first] - number_of_ones[i];
+
+			// Get the minimum of the two results.
+			int lowest = (result_a < result_b) ? result_a : result_b;
+
+			// if we find a lower cost, update lowest_pair_cost.
+			if (lowest_pair_cost > lowest) {
+				lowest_pair_cost = lowest;
+			}
+
+			// Early exit optimization if lowest_pair_cost is 0.
+			if (lowest_pair_cost == 0) {
+				break;
+			}
+		}
+
+		//Insert the result into the partial solution.
+		partial_solution.insert({ encoding_vector[i], lowest_pair_cost });
+	}
+
+	partial_solution_stack.push(partial_solution);
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b) {
