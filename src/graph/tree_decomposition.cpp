@@ -539,7 +539,8 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<int>& bag, int forget_
 		}
 		else {
 			std::vector<int> solution = child_partial_solution[child_encoding_white].second->solution;
-			solution.push_back(forget_vertex);
+			auto pos = std::lower_bound(solution.begin(), solution.end(), forget_vertex);
+			solution.insert(pos, forget_vertex);
 			insert_entry_partial_solution(partial_solution, encoding, solution, child_partial_solution[child_encoding_white].first);
 		}
 
@@ -785,20 +786,22 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 			}
 		}
 
-		//Insert the result into the partial solution. TODO NEED TO FIND A WAY TO CHOOSE THE CORRECT DOMINATION vertices.
+		//Insert the result into the partial solution.
 		std::vector<int> solution;
 		if (is_result_a_lowest) {
 			solution = child_partial_solution_a[lowest_pair.first].second->solution;
 			for (int a : child_partial_solution_a[lowest_pair.second].second->solution) {
-				//should never overlap.
-				solution.push_back(a);
+				//should never overlap. (this way it will always remain sorted).
+				auto pos = lower_bound(solution.begin(), solution.end(), a);
+				solution.insert(pos, a);
 			}
 		}
 		else {
 			solution = child_partial_solution_a[lowest_pair.second].second->solution;
 			for (int a : child_partial_solution_a[lowest_pair.first].second->solution) {
-				//should never overlap.
-				solution.push_back(a);
+				//should never overlap. (this way it will always remain sorted).
+				auto pos = lower_bound(solution.begin(), solution.end(), a);
+				solution.insert(pos, a);
 			}
 		}
 		insert_entry_partial_solution(partial_solution, encoding_vector[i], solution, lowest_pair_cost);
@@ -852,6 +855,7 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int
 		}
 	}
 	partial_solution_stack.push(partial_solution);
+	remove_all_entry_partial_solution(child_partial_solution);
 }
 
 
