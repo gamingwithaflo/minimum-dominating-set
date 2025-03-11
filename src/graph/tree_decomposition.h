@@ -95,6 +95,13 @@ std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_intro
 
 void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_introduced, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results);
 
+struct solution_struct {
+    int ref_count;
+    std::vector<int> solution;
+
+    solution_struct(std::vector<int> sol);
+};
+
 class TREE_DECOMPOSITION {
 public:
 	std::vector<std::vector<int>> bags;
@@ -102,7 +109,8 @@ public:
 	adjacencyListBoost graph_td;
     adjacencyListBoost graph_nice_td;
     std::stack<nice_bag*> instruction_stack;
-    std::stack<std::unordered_map<std::uint64_t, int>>partial_solution_stack;
+    std::stack<std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>>partial_solution_stack;
+    std::unordered_map<std::vector<int>, solution_struct>global_solution;
 
 	int treewidth;
     int root_vertex;
@@ -111,6 +119,10 @@ public:
 	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g, int treewidth);
 
     int select_root_bag();
+
+    void insert_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& partial_solution, std::uint64_t encoding, std::vector<int> key, int size);
+
+    void remove_all_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& child_partial_solution_vector);
 
     void introduce_all_edges(std::pair< edge_itt, edge_itt> edges_itterator);
 

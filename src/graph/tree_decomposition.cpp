@@ -2,6 +2,8 @@
 #include "tree_decomposition.h"
 #include <limits.h>
 
+solution_struct::solution_struct(std::vector<int> sol) : ref_count(1), solution(sol) {}
+
 TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input, adjacencyListBoost g, int treewidth_input) {
 	graph_td = g;
 	graph_nice_td = g;
@@ -11,6 +13,7 @@ TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input,
 	root_vertex = select_root_bag(); 
 	instruction_stack;
 	partial_solution_stack;
+	global_solution;
 }
 
 //currently random root node. (preprocessing the root node could boost performance).
@@ -428,6 +431,44 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 	}
 }
 
+void TREE_DECOMPOSITION::insert_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int,solution_struct*>>& partial_solution,
+													   std::uint64_t encoding, 
+													   std::vector<int> key, int size) {
+	
+	auto it = global_solution.find(key);
+
+	//if key is not in global_solution, create & insert it.
+	if (it == global_solution.end()) {
+		//emplace will create it within & will not copy it.
+		auto [new_it, succes] = global_solution.emplace(key, solution_struct(key));
+		
+		// Store a pointer to the newly created solution_struct in partial_solution.
+		partial_solution.insert({ encoding ,std::make_pair(size, &new_it->second) });
+	}
+	else {
+		//it is a key, value pair. 
+		it->second.ref_count++;
+		partial_solution.insert({ encoding ,std::make_pair(size, &it->second) });
+	}
+}
+
+void TREE_DECOMPOSITION::remove_all_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& child_partial_solution_vector) {
+
+	for (auto& [size, sol_struct] : child_partial_solution_vector) {
+		//check for null_pointer.
+		if (sol_struct.second) {
+			//decrease ref counter. (as child partial solutions will be removed.
+			sol_struct.second->ref_count--;
+			if (sol_struct.second->ref_count == 0) {
+				//remove from global_solution if the ref_count reaches 0.
+				global_solution.erase(sol_struct.second->solution); // use key key to remove the element.
+			}
+		}
+	}
+}
+
+
+
 int find_index_in_bag(std::vector<int>& bag, int element) {
 	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element equal or bigger than the element.
 	return it - bag.begin(); //returns the index.
@@ -445,7 +486,7 @@ const int NUM_COLORS = 3;
 
 void TREE_DECOMPOSITION::run_operation_leaf() {
 	//Push an empty partial solution onto the partial solution stack.
-	std::unordered_map<std::uint64_t, int> empty_partial_solution;
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> empty_partial_solution;
 	partial_solution_stack.push(empty_partial_solution);
 }
 
@@ -547,10 +588,10 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 	int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
 	//create an empty partial solution.
-	std::unordered_map<std::uint64_t, int> partial_solution;
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> partial_solution;
 
 	//get previous childs partial solution.
-	std::unordered_map<std::uint64_t,int> child_partial_solution = partial_solution_stack.top();
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> child_partial_solution = partial_solution_stack.top();
 	partial_solution_stack.pop();
 
 	// create all possible coloring pairs for introduced operation.
@@ -559,17 +600,17 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 		for (uint64_t encoding : encoding_vector) {
 			//gray.
 			if (encoding == 3) {
-				partial_solution.insert({ encoding, 0 });
+				insert_entry_partial_solution(partial_solution, encoding, {}, 0);
 				continue;
 			}
 			// white.
 			if (encoding == 2) {
-				partial_solution.insert({ encoding, 1 });
+				insert_entry_partial_solution(partial_solution, encoding, {}, 1);
 				continue;
 			}
 			// black.
 			if (encoding == 1) {
-				partial_solution.insert({ encoding, INT_MAX });
+				insert_entry_partial_solution(partial_solution, encoding, {}, INT_MAX);
 				continue;
 			}
 		}
@@ -580,32 +621,34 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 
 		for (const auto& [encoding, child_encoding] : encoding_vector) {
 			//if childs partial solution is infinite. Whatever you do, when introducing a vertex its partial solution is also infinite.
-			if (child_partial_solution[child_encoding] == INT_MAX) {
-				partial_solution.insert({ encoding, INT_MAX });
+			if (child_partial_solution[child_encoding].first == INT_MAX) {
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, INT_MAX);
 				continue;
 			}
 
 			int color = extract_bits(encoding, bag.size(), index_introduced_vertex);
 			//gray.
 			if (color == 3) {
-				int solution = 0 + child_partial_solution[child_encoding];
-				partial_solution.insert({ encoding, solution });
+				int domination_number = 0 + child_partial_solution[child_encoding].first;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 				continue;
 			}
 			//white.
 			if (color == 2) {
-					int solution = 1 + child_partial_solution[child_encoding];
-					partial_solution.insert({ encoding, solution });
+					int domination_number = 1 + child_partial_solution[child_encoding].first;
+					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 					continue;
 			}
 			//black.
 			if (color == 1) {
-				int solution = INT_MAX;
-				partial_solution.insert({ encoding, solution });
+				int domination_number = INT_MAX;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 				continue;
 			}
 		}
+		//remove all references of child_partial_solution as it will be removed after this.
 		partial_solution_stack.push(partial_solution);
+		remove_all_entry_partial_solution(child_partial_solution);
 	}
 }
 
@@ -685,12 +728,12 @@ void generate_all_encoding_join(int n,
 
 void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 	//create an empty partial solution.
-	std::unordered_map<std::uint64_t, int> partial_solution;
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> partial_solution;
 
 	//get previous childs partial solution.
-	std::unordered_map<std::uint64_t, int> child_partial_solution_a = partial_solution_stack.top();
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> child_partial_solution_a = partial_solution_stack.top();
 	partial_solution_stack.pop();
-	std::unordered_map<std::uint64_t, int> child_partial_solution_b = partial_solution_stack.top();
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> child_partial_solution_b = partial_solution_stack.top();
 	partial_solution_stack.pop();
 
 	//Create all encodings & child encodings.
@@ -702,31 +745,35 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 
 	for (int i = 0; i < encoding_vector.size(); ++i) {
 		int lowest_pair_cost = INT_MAX;
+		std::pair<uint64_t, uint64_t> lowest_pair;
+		bool is_result_a_lowest; //Store the orientation.
 
 		auto& vector_pair_childern = coloring_child_vector[i];
 
 		for (auto& pair : vector_pair_childern) {
 			int result_a;
 			int result_b;
-			if (child_partial_solution_a[pair.first] == INT_MAX || child_partial_solution_b[pair.second] == INT_MAX) {
+			if (child_partial_solution_a[pair.first].first == INT_MAX || child_partial_solution_b[pair.second].first == INT_MAX) {
 				result_a = INT_MAX;
 			}
 			else {
-				result_a = child_partial_solution_a[pair.first] + child_partial_solution_b[pair.second] - number_of_ones[i];
+				result_a = child_partial_solution_a[pair.first].first + child_partial_solution_b[pair.second].first - number_of_ones[i];
 			}
-			if (child_partial_solution_a[pair.second] == INT_MAX || child_partial_solution_b[pair.first] == INT_MAX) {
+			if (child_partial_solution_a[pair.second].first == INT_MAX || child_partial_solution_b[pair.first].first == INT_MAX) {
 				result_b = INT_MAX;
 			}
 			else {
-				result_b = child_partial_solution_a[pair.second] + child_partial_solution_b[pair.first] - number_of_ones[i];
+				result_b = child_partial_solution_a[pair.second].first + child_partial_solution_b[pair.first].first - number_of_ones[i];
 			}
 
-			// Get the minimum of the two results.
+			// Get the minimum of the two results
 			int lowest = (result_a < result_b) ? result_a : result_b;
 
 			// if we find a lower cost, update lowest_pair_cost.
 			if (lowest_pair_cost > lowest) {
 				lowest_pair_cost = lowest;
+				lowest_pair = pair;
+				is_result_a_lowest = (result_a < result_b);
 			}
 
 			// Early exit optimization if lowest_pair_cost is 0.
@@ -735,11 +782,25 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 			}
 		}
 
-		//Insert the result into the partial solution.
-		partial_solution.insert({ encoding_vector[i], lowest_pair_cost });
+		//Insert the result into the partial solution. TODO NEED TO FIND A WAY TO CHOOSE THE CORRECT DOMINATION vertices.
+		std::vector<int> solution;
+		if (is_result_a_lowest) {
+			solution = child_partial_solution_a[lowest_pair.first].second->solution;
+			for (int a : child_partial_solution_a[lowest_pair.second].second->solution) {
+				solution.push_back(a);
+			}
+		}
+		else {
+			solution = child_partial_solution_a[lowest_pair.second].second->solution;
+			for (int a : child_partial_solution_a[lowest_pair.first].second->solution) {
+				solution.push_back(a);
+			}
+		}
+		insert_entry_partial_solution(partial_solution, encoding_vector[i], solution, lowest_pair_cost);
 	}
-
 	partial_solution_stack.push(partial_solution);
+	remove_all_entry_partial_solution(child_partial_solution_a);
+	remove_all_entry_partial_solution(child_partial_solution_b);
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b) {
