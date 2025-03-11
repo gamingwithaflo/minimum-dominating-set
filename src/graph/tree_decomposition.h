@@ -11,6 +11,8 @@
 #include <cinttypes>
 #include<unordered_map>
 
+#include <boost/functional/hash.hpp>
+
 typedef boost::adjacency_list<
     boost::vecS,                                  // Param:OutEdgeList (cointainer used for edge-list (vector))
     boost::vecS,                                  // Param:VertexList (cointainer used for vectexList (vector))
@@ -110,7 +112,7 @@ public:
     adjacencyListBoost graph_nice_td;
     std::stack<nice_bag*> instruction_stack;
     std::stack<std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>>partial_solution_stack;
-    std::unordered_map<std::vector<int>, solution_struct>global_solution;
+    std::unordered_map<std::vector<int>, solution_struct, boost::hash<std::vector<int>>>global_solution;
 
 	int treewidth;
     int root_vertex;
