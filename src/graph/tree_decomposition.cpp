@@ -172,6 +172,7 @@ void TREE_DECOMPOSITION::introduce_all_edges(std::pair< edge_itt, edge_itt> edge
 }
 
 void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v) {
+	//we walk through the original graph, so changes to nice_graph_td will not effect your path.
 	auto [itt, itt_end] = boost::adjacent_vertices(v, graph_td);
 	int out_degree = boost::out_degree(v, graph_td);
 	--out_degree; //don't count parent.
@@ -192,35 +193,54 @@ void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v)
 			}
 		}
 	}
-	else if (out_degree == 2) {
-		//vertex is a join vertex.
+	else {
+		nice_bags[v] = nice_bag(operation_enum::JOIN, bags[v]);
+
+		std::queue<int>children;
 		for (;itt < itt_end; ++itt) {
+			//push all children vertices on the queue.
 			if (!(*itt == parent_index)) {
-				//add vertex between join vertex and child vertex.
 				boost::remove_edge(v, *itt, graph_nice_td);
-				auto par_vertex = boost::add_vertex(graph_nice_td);
-				//add in correct order.
-				if (v > *itt) {
-					boost::add_edge(*itt, par_vertex, graph_nice_td);
-					boost::add_edge(v, par_vertex, graph_nice_td);
-				}
-				else {
-					boost::add_edge(v, par_vertex, graph_nice_td);
-					boost::add_edge(*itt, par_vertex, graph_nice_td);
-				}
-				nice_bags[v] = nice_bag(operation_enum::JOIN, bags[v]);
+
+				vertex child = boost::add_vertex(graph_nice_td);
+
+				//add all edges to parent (v) and if it is not adjacent to v remove it.
+				boost::add_edge(v, child, graph_nice_td);
+
+				boost::add_edge(*itt, child, graph_nice_td);
+				children.push(child);
 
 				//put in a empty placeholder.
 				nice_bags.push_back(nice_bag());
 
 				//will fill the empty placeholder.
-				unfold_parent_vertex(par_vertex, bags[v], *itt, bags[*itt]);
-				traverse_tree_decomposition(par_vertex, *itt);
+				unfold_parent_vertex(child, bags[v], *itt, bags[*itt]);
+				traverse_tree_decomposition(v, *itt); // we need v, as that is in the original graph the parent.
 			}
 		}
-	}
-	else {
-		throw std::invalid_argument("should not have more than 2 out degree");
+		int child_a = children.front();
+		children.pop();
+		int child_b = children.front();
+		children.pop();
+		// if queue is not empty. (child_a & child_b are not adjacent to v.
+		if (!children.empty()) {
+			boost::remove_edge(v, child_a, graph_nice_td);
+			boost::remove_edge(v, child_b, graph_nice_td);
+
+			vertex new_child = boost::add_vertex(graph_nice_td);
+			boost::add_edge(v, new_child, graph_nice_td);
+			//add edges, ensuring that the order is maintained.
+			if (child_a > child_b) {
+				boost::add_edge(child_b, new_child, graph_nice_td);
+				boost::add_edge(child_a, new_child, graph_nice_td);
+			}
+			else {
+				boost::add_edge(child_a, new_child, graph_nice_td);
+				boost::add_edge(child_b, new_child, graph_nice_td);
+			}
+			children.push(new_child);
+			nice_bags.push_back(nice_bag(operation_enum::JOIN, bags[v]));
+		}
 	}
 }
 
