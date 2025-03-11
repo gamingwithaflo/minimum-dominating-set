@@ -810,7 +810,12 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 
 		//Insert the result into the partial solution.
 		std::vector<int> solution;
-		if (is_result_a_lowest) {
+		if (lowest_pair_cost == INT_MAX) {
+			{
+				//solution is already empty & lowest_pair_cost is INT_MAX
+			}
+		}
+		else if (is_result_a_lowest) {
 			solution = child_partial_solution_a[lowest_pair.first].second->solution;
 			for (int a : child_partial_solution_b[lowest_pair.second].second->solution) {
 				//should never overlap. (this way it will always remain sorted).
