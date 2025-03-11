@@ -112,7 +112,8 @@ public:
     adjacencyListBoost graph_nice_td;
     std::stack<nice_bag*> instruction_stack;
     std::stack<std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>>partial_solution_stack;
-    std::unordered_map<std::vector<int>, solution_struct, boost::hash<std::vector<int>>>global_solution;
+    std::unordered_map<std::vector<int>, solution_struct, boost::hash<std::vector<int>>>local_solution;
+    std::vector<int> global_solution;
 
 	int treewidth;
     int root_vertex;
@@ -151,6 +152,8 @@ public:
     void run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b);
 
     void run_operation_join(std::vector<int>& bag);
+
+    void solve_root_vertex();
 };
 
 std::vector<int> find_non_overlapping_vertices(const std::vector<int>& bag_parent, const std::vector<int>& bag_child);

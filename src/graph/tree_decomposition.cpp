@@ -13,6 +13,7 @@ TREE_DECOMPOSITION::TREE_DECOMPOSITION(std::vector<std::vector<int>> bags_input,
 	root_vertex = select_root_bag(); 
 	instruction_stack;
 	partial_solution_stack;
+	local_solution;
 	global_solution;
 }
 
@@ -429,18 +430,19 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 			continue;
 		}
 	}
+	solve_root_vertex();
 }
 
 void TREE_DECOMPOSITION::insert_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int,solution_struct*>>& partial_solution,
 													   std::uint64_t encoding, 
 													   std::vector<int> key, int size) {
 	
-	auto it = global_solution.find(key);
+	auto it = local_solution.find(key);
 
-	//if key is not in global_solution, create & insert it.
-	if (it == global_solution.end()) {
+	//if key is not in local_solution, create & insert it.
+	if (it == local_solution.end()) {
 		//emplace will create it within & will not copy it.
-		auto [new_it, succes] = global_solution.emplace(key, solution_struct(key));
+		auto [new_it, succes] = local_solution.emplace(key, solution_struct(key));
 		
 		// Store a pointer to the newly created solution_struct in partial_solution.
 		partial_solution.insert({ encoding ,std::make_pair(size, &new_it->second) });
@@ -460,8 +462,8 @@ void TREE_DECOMPOSITION::remove_all_entry_partial_solution(std::unordered_map<st
 			//decrease ref counter. (as child partial solutions will be removed.
 			sol_struct.second->ref_count--;
 			if (sol_struct.second->ref_count == 0) {
-				//remove from global_solution if the ref_count reaches 0.
-				global_solution.erase(sol_struct.second->solution); // use key key to remove the element.
+				//remove from local_solution if the ref_count reaches 0.
+				local_solution.erase(sol_struct.second->solution); // use key key to remove the element.
 			}
 		}
 	}
@@ -858,6 +860,60 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int
 	remove_all_entry_partial_solution(child_partial_solution);
 }
 
+bool contains_no_gray(std::uint64_t encoding) {
+	// Create a mask that isolates all even-positioned bit-pairs
+	std::uint64_t mask = 0x5555555555555555; // 0b01 repeated (ensures checking pairs)
+
+	// Check if value has any '11' pairs
+	return (encoding & (encoding >> 1) & mask) == 0;
+}
+
+int count_white_vertices(std::uint64_t encoding) {
+	uint64_t mask = 0x5555555555555555; // 0b01 repeated (ensures checking pairs)
+	return __builtin_popcountll((~encoding) & (encoding >> 1) & mask); // ~ = bitflip, & = AND. & popcountll counts the number of 1 bits.
+}
+
+std::vector<int> get_white_indices(uint64_t encoding, int num_of_pairs) {
+	std::vector<int> whiteIndices;
+
+	// Start from the most significant 2-bit pair
+	for (int i = num_of_pairs - 1; i >= 0; --i) {
+		uint64_t pair = (encoding >> (i * 2)) & 0b11; // Extract 2-bit pair
+		if (pair == 0b10) { // Check if it is '10' (white)
+			whiteIndices.push_back((num_of_pairs - 1) - i); // Adjust index to match left-to-right order
+		}
+	}
+
+	return whiteIndices;
+}
+
+void TREE_DECOMPOSITION::solve_root_vertex() {
+	std::vector<int>& bag_root_vertex = nice_bags[root_vertex].bag;
+
+	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> solution = partial_solution_stack.top();
+	partial_solution_stack.pop();
+
+	int lowest_domination_number = INT_MAX;
+	uint64_t lowest_encoding;
+
+	for (auto& [encoding, sol] : solution) {
+		if (contains_no_gray(encoding)) {
+			if (lowest_domination_number > sol.first) {
+				lowest_domination_number = sol.first;
+				lowest_encoding = encoding;
+			}
+		}
+	}
+	//combine solution_struct_solution with the corresponding ones of the current bag.
+	auto& [domination_number, ptr_local_solution] = solution[lowest_encoding];
+	//should be sorted.
+	global_solution = ptr_local_solution->solution;
+	std::vector<int> white_indices = get_white_indices(lowest_encoding, bag_root_vertex.size());
+	for (int index : white_indices) {
+		auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
+		global_solution.insert(pos, bag_root_vertex[index]);
+	}
+}
 
 operation::operation(operation_enum type) : opp(type) {};
 
