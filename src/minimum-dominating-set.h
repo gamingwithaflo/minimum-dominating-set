@@ -6,7 +6,7 @@
 #include "graph/context.h"
 #include "reduce.h"
 
-int main();
+int main(int argc, char* argv[]);
 
 void reduction_info(std::string path);
 

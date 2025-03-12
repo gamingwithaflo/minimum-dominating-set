@@ -14,14 +14,32 @@
 #include <filesystem>
 #include "util/timer.h"
 
-int main()
+bool stringToBool(const std::string& str) {
+	std::string s = str;
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower); // Convert to lowercase
+
+	return (s == "1" || s == "true" || s == "yes" || s == "on");
+}
+
+
+int main(int argc, char* argv[])
 {
+	//templates.
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_150.gr";
-	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
+
+	//default values
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_20.gr"; 
+	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/bremen_subgraph_20.td";
+
+	//be able to take in parameters.
+	if (argc > 1) path = std::string(argv[1]);
+	if (argc > 2) dir_path = stringToBool(argv[2]);
+	if (argc > 3) path_td = std::string(argv[3]);
+
 	if (dir_mode) {
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			initialize_logger();
@@ -29,16 +47,14 @@ int main()
 		}
 	}
 	else {
-		reduction(path);
+		reduction(path, path_td);
 	}
 
 	return 0;
 }
 
-void reduction(std::string path) {
+void reduction(std::string path, std::string path_td) {
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
-
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/bremen_subgraph_150.td";
 
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
