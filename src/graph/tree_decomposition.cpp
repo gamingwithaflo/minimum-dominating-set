@@ -33,7 +33,7 @@ int TREE_DECOMPOSITION::select_root_bag() {
 	throw std::invalid_argument("There has to be at least one leaf vertex.");
 }
 
-void TREE_DECOMPOSITION::create_nice_tree_decomposition(std::pair< edge_itt, edge_itt> edges_itterator) {
+void TREE_DECOMPOSITION::create_nice_tree_decomposition(adjacencyListBoost&  original_graph) {
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
@@ -42,7 +42,96 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition(std::pair< edge_itt, edg
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
 
-	introduce_all_edges(edges_itterator);
+	introduce_all_edges_default(original_graph);
+}
+
+std::vector<std::pair<int, int>> findAllPairs(const std::vector<int>& bag) {
+	std::vector<std::pair<int, int>> res;
+	for (size_t i = 0; i < bag.size(); ++i) {
+		for (size_t j = i + 1; j < bag.size(); ++j) { // Avoid duplicate pairs
+			res.push_back(std::make_pair(bag[i], bag[j]));
+		}
+	}
+	return res;
+}
+
+//find which vertices in the bag of the child are adjacent to the about to be forgotten vertex.
+std::vector<int> which_edges_must_be_introduced(adjacencyListBoost& original_graph, std::vector<int>bag_child, int forget_vertex) {
+	std::vector<int>must_introduce;
+	for (int end_point : bag_child) {
+		if (end_point != forget_vertex) {
+			auto [edge, exists] = boost::edge(forget_vertex, end_point, original_graph);
+			if (exists) {
+				must_introduce.push_back(end_point);
+			}
+		}
+	}
+	return must_introduce;
+}
+
+void TREE_DECOMPOSITION::introduce_all_edges_default(adjacencyListBoost& original_graph) {
+
+	 auto pairs = findAllPairs(nice_bags[root_vertex].bag);
+	 //introduce all vertices for the root vertex and update root_vertex.
+	 for (auto& [endpoint_a, endpoint_b] : pairs) {
+		 auto [edge, exists] = boost::edge(endpoint_a, endpoint_b, original_graph);
+		 if (exists) {
+			 vertex new_root = boost::add_vertex(graph_nice_td);
+			 boost::add_edge(root_vertex, new_root, graph_nice_td);
+			 nice_bags.push_back(nice_bag(operation_enum::INTRODUCE_EDGE, endpoint_a, endpoint_b, nice_bags[root_vertex].bag));
+			 root_vertex = new_root;
+		 }
+	 }
+	
+	 //root vertex is adjacent to only one vertex.
+	 auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_nice_td);
+
+	std::queue<std::pair<int, int>> q;
+
+	q.push({ *itt, root_vertex }); // {child, parent}
+
+	int current_vertex;
+	int parent;
+
+	//(breath first traversal) find highest point where both endpoint_a and endpoint_b are present.
+	while (!q.empty()) {
+		std::tie(current_vertex, parent) = q.front();
+		q.pop();
+
+		std::vector<int>& bag_child = nice_bags[current_vertex].bag;
+		nice_bag& bag_parent = nice_bags[parent];
+
+		if (std::holds_alternative<operation_forget>(bag_parent.op)) {
+			operation_forget& op = std::get<operation_forget>(bag_parent.op);
+			int forget_vertex = op.vertex;
+
+			std::vector<int> must_introduce = which_edges_must_be_introduced(original_graph, bag_child, forget_vertex);
+
+			for (int end_point : must_introduce) {
+				boost::remove_edge(parent, current_vertex, graph_nice_td);
+				vertex introduce_edge = boost::add_vertex(graph_nice_td);
+				nice_bags.push_back(nice_bag(operation_enum::INTRODUCE_EDGE, end_point, forget_vertex, nice_bags[current_vertex].bag));
+				//keep sorted.
+				if (parent > current_vertex) {
+					boost::add_edge(current_vertex, introduce_edge, graph_nice_td);
+					boost::add_edge(parent, introduce_edge, graph_nice_td);
+				}
+				else {
+					boost::add_edge(parent, introduce_edge, graph_nice_td);
+					boost::add_edge(current_vertex, introduce_edge, graph_nice_td);
+				}
+				parent = introduce_edge;
+
+			}
+		}
+
+		auto [itt, itt_end] = boost::adjacent_vertices(current_vertex, graph_nice_td);
+		for (; itt != itt_end; ++itt) {
+			if (*itt != parent) {  // Avoid revisiting the parent
+				q.push({ *itt, current_vertex });
+			}
+		}
+	}
 }
 
 //boost::source(edge_descriptor, graph) & target(edge_descriptor, graph).

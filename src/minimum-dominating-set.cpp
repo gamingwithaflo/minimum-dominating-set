@@ -30,10 +30,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_20.gr"; 
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_042.gr"; 
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/bremen_subgraph_20.td";
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/exact_042.txt";
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -43,7 +43,8 @@ int main(int argc, char* argv[])
 	if (dir_mode) {
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			initialize_logger();
-			reduction(entry.path());
+			//temporarily disabled.
+			//reduction(entry.path());
 		}
 	}
 	else {
@@ -61,7 +62,7 @@ void reduction(std::string path, std::string path_td) {
 
 	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td);
 	timer t_treewidth;
-	td_comp.create_nice_tree_decomposition(mds_context.get_edge_itt());
+	td_comp.create_nice_tree_decomposition(refGraph);
 	td_comp.fill_instruction_stack();
 	td_comp.run_instruction_stack();
 	Logger::execution_reduction = t_treewidth.count();

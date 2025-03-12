@@ -10,6 +10,6 @@ int main(int argc, char* argv[]);
 
 void reduction_info(std::string path);
 
-void reduction(std::string path);
+void reduction(std::string path, std::string path_td);
 
 // TODO: Reference additional headers your program requires here.

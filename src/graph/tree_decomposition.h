@@ -121,6 +121,8 @@ public:
 	// Constructor
 	TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g, int treewidth);
 
+    void introduce_all_edges_default(adjacencyListBoost& original_graph);
+
     int select_root_bag();
 
     void insert_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& partial_solution, std::uint64_t encoding, std::vector<int> key, int size);
@@ -131,7 +133,7 @@ public:
 
     void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
 
-    void create_nice_tree_decomposition(std::pair< edge_itt, edge_itt> edges_itterator);
+    void create_nice_tree_decomposition(adjacencyListBoost& original_graph);
 
     void traverse_tree_decomposition(int parent_index, vertex v);
 
