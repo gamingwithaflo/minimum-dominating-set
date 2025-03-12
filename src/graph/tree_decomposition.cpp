@@ -76,6 +76,9 @@ void TREE_DECOMPOSITION::introduce_all_edges(std::pair< edge_itt, edge_itt> edge
 		}
 		else {
 			//root vertex should only have 1 adjacent vertex.
+			if (boost::out_degree(root_vertex, graph_nice_td) > 1) {
+				//
+			}
 			auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_nice_td);
 			std::queue<std::pair<int, int>> q; // {current_vertex, parent_vertex}
 
@@ -195,7 +198,6 @@ void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v)
 	}
 	else {
 		nice_bags[v] = nice_bag(operation_enum::JOIN, bags[v]);
-
 		std::queue<int>children;
 		for (;itt < itt_end; ++itt) {
 			//push all children vertices on the queue.
@@ -218,12 +220,13 @@ void TREE_DECOMPOSITION::traverse_tree_decomposition(int parent_index, vertex v)
 				traverse_tree_decomposition(v, *itt); // we need v, as that is in the original graph the parent.
 			}
 		}
-		int child_a = children.front();
-		children.pop();
-		int child_b = children.front();
-		children.pop();
 		// if queue is not empty. (child_a & child_b are not adjacent to v.
-		if (!children.empty()) {
+		while (children.size() != 2) { // if it equals two, it already has been connected correctly.
+			int child_a = children.front();
+			children.pop();
+			int child_b = children.front();
+			children.pop();
+
 			boost::remove_edge(v, child_a, graph_nice_td);
 			boost::remove_edge(v, child_b, graph_nice_td);
 
@@ -402,6 +405,9 @@ void TREE_DECOMPOSITION::depth_first_search(int start, int parent) {
 	instruction_stack.push(&nice_bags[start]);
 	auto [itt, itt_end] = boost::adjacent_vertices(start, graph_nice_td);
 	for (; itt != itt_end; ++itt) {
+		if (boost::out_degree(start, graph_nice_td) - 1  >= 3) {
+			printf("fck");
+		}
 		if (*itt != parent) {  // Avoid revisiting the parent
 			depth_first_search(*itt, start);
 		}

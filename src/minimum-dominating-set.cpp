@@ -18,7 +18,7 @@ int main()
 {
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_20.gr";
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_150.gr";
 	bool dir_mode = false;
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
@@ -38,15 +38,17 @@ int main()
 void reduction(std::string path) {
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/bremen_subgraph_20.td";
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/bremen_subgraph_150.td";
 
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
 	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td);
+	timer t_treewidth;
 	td_comp.create_nice_tree_decomposition(mds_context.get_edge_itt());
 	td_comp.fill_instruction_stack();
 	td_comp.run_instruction_stack();
+	Logger::execution_reduction = t_treewidth.count();
 
 	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
 	Logger::is_planar = is_planar;
