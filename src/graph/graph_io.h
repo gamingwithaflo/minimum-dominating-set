@@ -14,9 +14,11 @@ namespace parse {
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path);
 
-    TREE_DECOMPOSITION load_tree_decomposition(std::string path);
+    void output_reduced_graph_instance(MDS_CONTEXT& mds_context, std::string& path);
 
-    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is);
+    TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context);
+
+    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context);
 
     std::string getNameFile(std::string& path);
 } 

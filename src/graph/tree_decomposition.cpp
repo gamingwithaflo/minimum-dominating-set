@@ -33,7 +33,7 @@ int TREE_DECOMPOSITION::select_root_bag() {
 	throw std::invalid_argument("There has to be at least one leaf vertex.");
 }
 
-void TREE_DECOMPOSITION::create_nice_tree_decomposition(adjacencyListBoost&  original_graph) {
+void TREE_DECOMPOSITION::create_nice_tree_decomposition(adjacencyListBoost&  reduced_graph) {
 	auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_td);
 	int parent_index = root_vertex;
 	//root vertex is only adjacent to 1 vertex.
@@ -42,7 +42,9 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition(adjacencyListBoost&  ori
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
 
-	introduce_all_edges_default(original_graph);
+	//introduce_all_edges_default(original_graph);
+
+	introduce_all_edges(boost::edges(reduced_graph));
 }
 
 std::vector<std::pair<int, int>> findAllPairs(const std::vector<int>& bag) {

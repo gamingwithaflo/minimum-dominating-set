@@ -34,8 +34,9 @@ public:
 
     int cnt_sel;   // Size of the current solution.
     int cnt_dom;   // Number of dominated vertices.
-    int cnt_excl; // Number of removed vertices.
+    int cnt_excl; // Number of excluded vertices.
     int cnt_ign;
+    int cnt_rem;
 
     // Constructor
     MDS_CONTEXT(adjacencyListBoost& g);
@@ -63,6 +64,8 @@ public:
     std::pair<std::vector<int>, std::map<int, int>> get_undetermined_vertices();
 
     void remove_vertex(vertex v);
+
+    void fill_removed_vertex();
 
     void select_vertex(vertex v);
 

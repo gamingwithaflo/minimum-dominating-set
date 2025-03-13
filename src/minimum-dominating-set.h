@@ -12,4 +12,6 @@ void reduction_info(std::string path);
 
 void reduction(std::string path, std::string path_td);
 
+void output_reduced_graph(std::string path);
+
 // TODO: Reference additional headers your program requires here.

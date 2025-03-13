@@ -20,6 +20,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	cnt_dom = 0;   
 	cnt_excl = 0;
 	cnt_ign = 0;
+	cnt_rem = 0;
 }
 
 void MDS_CONTEXT::select_vertex(vertex v) {
@@ -191,6 +192,15 @@ std::vector<vertex> MDS_CONTEXT::get_vertices() {
 		}
 	}
 	return vertices;
+}
+
+void MDS_CONTEXT::fill_removed_vertex() {
+	for (int counter = 0; counter < removed.size(); ++counter) {
+		if (is_dominated(counter) && is_excluded(counter)) {
+			removed[counter] = 1;
+			cnt_rem++;
+		}
+	}
 }
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
