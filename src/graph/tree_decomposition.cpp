@@ -502,7 +502,7 @@ void TREE_DECOMPOSITION::depth_first_search(int start, int parent) {
 	}
 }
 
-void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated) {
+void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated, std::unordered_map<int,int>& newToOldIndex) {
 	
 	while (!instruction_stack.empty()) {
 		//get top instruction from the stack. (is a pointer).
@@ -521,7 +521,7 @@ void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated) {
 		if (std::holds_alternative<operation_introduce>(instruction.op)) {
 			//get object.
 			operation_introduce correct_instruction = get<operation_introduce>(instruction.op);
-			run_operation_introduce(instruction.bag, correct_instruction.vertex, dominated);
+			run_operation_introduce(instruction.bag, correct_instruction.vertex, dominated, newToOldIndex);
 			continue;
 		}
 
@@ -703,7 +703,7 @@ void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t ch
 	}
 }
 
-void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated) {
+void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated, std::unordered_map<int,int> newToOldIndex) {
 	//find index of introduced vertex in the bag.
 	int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
@@ -731,7 +731,7 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 			// black.
 			if (encoding == 1) {
 				//if vertex is dominated, not taking it does not cost anything.
-				if (dominated[introduced_vertex] == 1) {
+				if (dominated[newToOldIndex[introduced_vertex]] == 1) {
 					insert_entry_partial_solution(partial_solution, encoding, {}, 0);
 					continue;
 				}
@@ -769,7 +769,7 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 			//black.
 			if (color == 1) {
 				// if vertex is dominated doesnt cost anything to introduce it.
-				if (dominated[introduced_vertex] == 1) {
+				if (dominated[newToOldIndex[introduced_vertex]] == 1) {
 					int domination_number = 0 + child_partial_solution[child_encoding].first;
 					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 					continue;

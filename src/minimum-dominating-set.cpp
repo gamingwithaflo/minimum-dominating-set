@@ -48,8 +48,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		//reduction(path, path_td);
-		output_reduced_graph(path);
+		reduction(path, path_td);
+		//output_reduced_graph(path);
 	}
 
 	return 0;
@@ -94,7 +94,7 @@ void reduction(std::string path, std::string path_td) {
 	td_comp.create_nice_tree_decomposition(reduced_graph);
 	td_comp.fill_instruction_stack();
 	timer t_run_instruction;
-	td_comp.run_instruction_stack(mds_context.dominated);
+	td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
 	long long timer_2 = t_run_instruction.count();
 	Logger::execution_reduction = t_treewidth.count();
 
@@ -207,7 +207,7 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 	int newIndex = 0;
 
 	for (int oldIndex = 0; oldIndex < boost::num_vertices(mds_context.graph); ++oldIndex) {
-		if (!mds_context.is_selected(*vert_itt) && !mds_context.is_removed(*vert_itt)) {
+		if (!mds_context.is_selected(oldIndex) && !mds_context.is_removed(oldIndex)) {
 			newToOldIndex[newIndex] = oldIndex;
 			OldToNewIndex[oldIndex] = newIndex;
 			++newIndex;
