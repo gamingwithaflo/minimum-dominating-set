@@ -133,7 +133,7 @@ public:
 
     void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
 
-    void create_nice_tree_decomposition(adjacencyListBoost& original_graph);
+    void create_nice_tree_decomposition(adjacencyListBoost& reduced_graph);
 
     void traverse_tree_decomposition(int parent_index, vertex v);
 
@@ -143,11 +143,11 @@ public:
 
     void depth_first_search(int start, int parent);
 
-    void run_instruction_stack();
+    void run_instruction_stack(std::vector<int>& dominated);
 
     void run_operation_leaf();
 
-    void run_operation_introduce(std::vector<int>& bag, int introduced_vertex);
+    void run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated);
 
     void run_operation_forget(std::vector<int>& bag, int forget_vertex);
 

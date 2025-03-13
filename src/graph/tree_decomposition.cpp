@@ -42,9 +42,9 @@ void TREE_DECOMPOSITION::create_nice_tree_decomposition(adjacencyListBoost&  red
 	//With Breath first traversel go through graph.
 	traverse_tree_decomposition(root_vertex, *itt);
 
-	//introduce_all_edges_default(original_graph);
+	introduce_all_edges_default(reduced_graph);
 
-	introduce_all_edges(boost::edges(reduced_graph));
+	//introduce_all_edges(boost::edges(reduced_graph));
 }
 
 std::vector<std::pair<int, int>> findAllPairs(const std::vector<int>& bag) {
@@ -496,16 +496,13 @@ void TREE_DECOMPOSITION::depth_first_search(int start, int parent) {
 	instruction_stack.push(&nice_bags[start]);
 	auto [itt, itt_end] = boost::adjacent_vertices(start, graph_nice_td);
 	for (; itt != itt_end; ++itt) {
-		if (boost::out_degree(start, graph_nice_td) - 1  >= 3) {
-			printf("fck");
-		}
 		if (*itt != parent) {  // Avoid revisiting the parent
 			depth_first_search(*itt, start);
 		}
 	}
 }
 
-void TREE_DECOMPOSITION::run_instruction_stack() {
+void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated) {
 	
 	while (!instruction_stack.empty()) {
 		//get top instruction from the stack. (is a pointer).
@@ -524,7 +521,7 @@ void TREE_DECOMPOSITION::run_instruction_stack() {
 		if (std::holds_alternative<operation_introduce>(instruction.op)) {
 			//get object.
 			operation_introduce correct_instruction = get<operation_introduce>(instruction.op);
-			run_operation_introduce(instruction.bag, correct_instruction.vertex);
+			run_operation_introduce(instruction.bag, correct_instruction.vertex, dominated);
 			continue;
 		}
 
@@ -706,7 +703,7 @@ void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t ch
 	}
 }
 
-void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int introduced_vertex) {
+void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated) {
 	//find index of introduced vertex in the bag.
 	int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
@@ -733,8 +730,15 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 			}
 			// black.
 			if (encoding == 1) {
-				insert_entry_partial_solution(partial_solution, encoding, {}, INT_MAX);
-				continue;
+				//if vertex is dominated, not taking it does not cost anything.
+				if (dominated[introduced_vertex] == 1) {
+					insert_entry_partial_solution(partial_solution, encoding, {}, 0);
+					continue;
+				}
+				else {
+					insert_entry_partial_solution(partial_solution, encoding, {}, INT_MAX);
+					continue;
+				}
 			}
 		}
 		partial_solution_stack.push(partial_solution);
@@ -764,9 +768,17 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 			}
 			//black.
 			if (color == 1) {
-				int domination_number = INT_MAX;
-				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
-				continue;
+				// if vertex is dominated doesnt cost anything to introduce it.
+				if (dominated[introduced_vertex] == 1) {
+					int domination_number = 0 + child_partial_solution[child_encoding].first;
+					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+					continue;
+				}
+				else {
+					int domination_number = INT_MAX;
+					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+					continue;
+				}
 			}
 		}
 		//remove all references of child_partial_solution as it will be removed after this.

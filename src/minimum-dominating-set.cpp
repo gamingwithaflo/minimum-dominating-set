@@ -30,10 +30,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/bremen_subgraph_20.gr"; 
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_022.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_bremen_subgraph_20.td";
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_exact_022.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -48,8 +48,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		reduction(path, path_td);
-		//output_reduced_graph(path);
+		//reduction(path, path_td);
+		output_reduced_graph(path);
 	}
 
 	return 0;
@@ -65,7 +65,11 @@ void output_reduced_graph(std::string path) {
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
-	parse::output_reduced_graph_instance(mds_context, path);
+	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
+	std::unordered_map<int, int> newToOldIndex;
+	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+
+	parse::output_reduced_graph_instance(reduced_graph, path);
 }
 
 void reduction(std::string path, std::string path_td) {
@@ -81,22 +85,16 @@ void reduction(std::string path, std::string path_td) {
 	//reduce::refractored_reduce_graph(mds_context);
 	Logger::execution_reduction = t_reduction.count();
 
-	adjacencyListBoost reduced_graph = adjLBoost;
-	auto [vert_itt, vert_itt_end] = boost::vertices(reduced_graph);
-	//itterate all vertices.
-	for (;vert_itt != vert_itt_end; ++vert_itt) {
-		//if the vertex is either selected or excluded & dominated then remove all edges.
-		if (mds_context.is_selected(*vert_itt) || (mds_context.is_dominated(*vert_itt) && mds_context.is_excluded(*vert_itt))) {
-			boost::clear_vertex(*vert_itt, reduced_graph);
-		}
-	}
+	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
+	std::unordered_map<int, int> newToOldIndex;
+	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
 
 	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td, mds_context);
 	timer t_treewidth;
 	td_comp.create_nice_tree_decomposition(reduced_graph);
 	td_comp.fill_instruction_stack();
 	timer t_run_instruction;
-	td_comp.run_instruction_stack();
+	td_comp.run_instruction_stack(mds_context.dominated);
 	long long timer_2 = t_run_instruction.count();
 	Logger::execution_reduction = t_treewidth.count();
 
@@ -190,4 +188,46 @@ void reduction_info(std::string path) {
 	std::string name = parse::getNameFile(path);
 	//output_loginfo(name); TODO::DONT FORGET TO RETURN
 }
+
+adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex) {
+
+	// Collect vertices to remove
+	std::vector<boost::graph_traits<adjacencyListBoost>::vertex_descriptor> vertices_to_remove;
+	std::unordered_map<int, int> OldToNewIndex;
+
+	auto [vert_itt, vert_itt_end] = boost::vertices(mds_context.graph);
+
+	for (; vert_itt != vert_itt_end; ++vert_itt) {
+		if (mds_context.is_selected(*vert_itt) || mds_context.is_removed(*vert_itt)) {
+			vertices_to_remove.push_back(*vert_itt);
+		}
+	}
+
+	//fill newToOldIndex, this way we can find the original indexes after.
+	int newIndex = 0;
+
+	for (int oldIndex = 0; oldIndex < boost::num_vertices(mds_context.graph); ++oldIndex) {
+		if (!mds_context.is_selected(*vert_itt) && !mds_context.is_removed(*vert_itt)) {
+			newToOldIndex[newIndex] = oldIndex;
+			OldToNewIndex[oldIndex] = newIndex;
+			++newIndex;
+		}
+	}
+
+	//create the new graph with the updated number of vertices
+	adjacencyListBoost reduced_graph(OldToNewIndex.size());
+
+	for (auto edge : make_iterator_range(mds_context.get_edge_itt())) {
+		int source = boost::source(edge, mds_context.graph);
+		int target = boost::target(edge, mds_context.graph);
+
+		//only add edges which both exists in the new graph.
+		if (OldToNewIndex.count(source) && OldToNewIndex.count(target)) {
+			boost::add_edge(OldToNewIndex[source], OldToNewIndex[target], reduced_graph);
+		}
+	}
+	return reduced_graph;
+}
+
+	
 

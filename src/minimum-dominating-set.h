@@ -14,4 +14,6 @@ void reduction(std::string path, std::string path_td);
 
 void output_reduced_graph(std::string path);
 
+adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex);
+
 // TODO: Reference additional headers your program requires here.

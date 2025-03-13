@@ -14,7 +14,7 @@ namespace parse {
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path);
 
-    void output_reduced_graph_instance(MDS_CONTEXT& mds_context, std::string& path);
+    void output_reduced_graph_instance(adjacencyListBoost& reduced_graph, std::string& path);
 
     TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context);
 

@@ -50,13 +50,15 @@ namespace parse {
             }
         }
         adjacencyListBoost g = construct_AdjacencyList_Boost(numBags, edges);
-        //we do not want the vertices which bags which are selected or removed to be taken in the Treedecomposition.
-        auto [vert_itt, vert_itt_end] = boost::vertices(g);
-        for (; vert_itt != vert_itt_end; ++vert_itt) {
-            if (mds_context.is_selected(bags[*vert_itt][0]) || mds_context.is_removed(bags[*vert_itt][0])) {
-                boost::clear_vertex(*vert_itt, g);
-            }
-        }
+        //we do not want the vertices which bags which are selected or removed to be taken in the Treedecomposition. (NOT NEEDED ANYMORE)
+        //auto [vert_itt, vert_itt_end] = boost::vertices(g);
+        //for (; vert_itt != vert_itt_end; ++vert_itt) {
+        //    if (bags[*vert_itt].size() == 1) {
+        //        if (mds_context.is_selected(bags[*vert_itt][0]) || mds_context.is_removed(bags[*vert_itt][0])) {
+        //            boost::clear_vertex(*vert_itt, g);
+        //        }
+        //    }
+        //}
 
         return TREE_DECOMPOSITION(bags, g, treewidth);
     }
@@ -104,7 +106,7 @@ namespace parse {
         return read_tree_decomposition(f, mds_context);
     }
 
-    void output_reduced_graph_instance(MDS_CONTEXT& mds_context, std::string& path) {
+    void output_reduced_graph_instance(adjacencyListBoost& reduced_graph, std::string& path) {
         std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/reduced_instances/reduced_instance_";
         std::string name = getNameFile(path);
         std::string output_path = prefix + name;
@@ -116,23 +118,14 @@ namespace parse {
             return;
         }
 
-        adjacencyListBoost copy_graph = mds_context.graph;
-        auto [vert_itt, vert_itt_end] = boost::vertices(copy_graph);
-        //itterate all vertices.
-        for (;vert_itt != vert_itt_end; ++vert_itt) {
-            //if the vertex is either selected or excluded & dominated then remove all edges.
-            if (mds_context.is_selected(*vert_itt) || (mds_context.is_dominated(*vert_itt) && mds_context.is_excluded(*vert_itt))) {
-                boost::clear_vertex(*vert_itt, copy_graph);
-            }
-        }
-        int num_vertices = boost::num_vertices(copy_graph);
-        int num_edges = boost::num_edges(copy_graph);
-        auto [all_edge_itt, all_edge_itt_end] = boost::edges(copy_graph);
+        int num_vertices = boost::num_vertices(reduced_graph);
+        int num_edges = boost::num_edges(reduced_graph);
+        auto [all_edge_itt, all_edge_itt_end] = boost::edges(reduced_graph);
 
         outFile << "p tw " << num_vertices << " " << num_edges << std::endl;
         for (;all_edge_itt != all_edge_itt_end; ++all_edge_itt) {
-            int source = boost::source(*all_edge_itt, copy_graph);
-            int target = boost::target(*all_edge_itt, copy_graph);
+            int source = boost::source(*all_edge_itt, reduced_graph);
+            int target = boost::target(*all_edge_itt, reduced_graph);
 
             outFile << (source + 1) << " " << (target + 1) << std::endl;
         }
