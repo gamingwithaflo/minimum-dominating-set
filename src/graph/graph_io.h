@@ -21,4 +21,6 @@ namespace parse {
     TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context);
 
     std::string getNameFile(std::string& path);
+
+    void output_solution(std::vector<int>& solution, std::string& path);
 } 

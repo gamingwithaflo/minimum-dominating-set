@@ -132,6 +132,32 @@ namespace parse {
         outFile.close();
     }
 
+    void output_solution(std::vector<int>& solution, std::string& path) {
+        std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/solution/solution_";
+        std::string name = getNameFile(path);
+        //assumption the graph always has the .gr extention.
+        std::string new_name = name.substr(0, name.size() - 3) + ".sol";
+        std::string output_path = prefix + new_name;
+
+        std::ofstream outFile(output_path);
+
+        if (!outFile) {
+            printf("error with writing to file");
+            return;
+        }
+        // print the solution size on the first line.
+        int size_solution = solution.size();
+        outFile << size_solution << std::endl;
+
+        //print solution line for line.
+        for (int i : solution) {
+            outFile << i << std::endl;
+        }
+
+
+        outFile.close();
+    }
+
     void output_context(MDS_CONTEXT& mds_context, std::string& path) {
         std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/reduced_"; //TODO:: TEMPORARY
         std::string name = getNameFile(path);

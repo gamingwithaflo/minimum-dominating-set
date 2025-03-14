@@ -83,6 +83,7 @@ void reduction(std::string path, std::string path_td) {
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 	//reduce::refractored_reduce_graph(mds_context);
+
 	Logger::execution_reduction = t_reduction.count();
 
 	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
@@ -95,6 +96,23 @@ void reduction(std::string path, std::string path_td) {
 	td_comp.fill_instruction_stack();
 	timer t_run_instruction;
 	td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
+	
+	//create a solution.
+	std::vector<int>solution;
+	int domination_number = mds_context.cnt_sel + td_comp.global_solution.size();
+	solution.reserve(domination_number);
+	//get vertices old index from global solution (which uses the new index)
+	for (int newIndex : td_comp.global_solution) {
+		//we need a +1 te correct the previous -1.
+		solution.push_back(newToOldIndex[newIndex] + 1);
+	}
+	for (int i = 0; i < mds_context.selected.size(); ++i) {
+		if (mds_context.is_selected(i)) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back(i + 1);
+		}
+	}
+
 	long long timer_2 = t_run_instruction.count();
 	Logger::execution_reduction = t_treewidth.count();
 
@@ -110,6 +128,8 @@ void reduction(std::string path, std::string path_td) {
 	//else {
 	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
 	//}
+
+	parse::output_solution(solution , path);
 
 	parse::output_context(mds_context, path);
 
