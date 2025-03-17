@@ -1,6 +1,8 @@
 # Visual Studio 2019 cache/options directory
 .vs/
 
+cmake-build-debug/
+
 # Add this line
 out/
 

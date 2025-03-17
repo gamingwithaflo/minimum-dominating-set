@@ -11,9 +11,9 @@ endif()
 
 project ("minimum-dominating-set")
 
-set(HIGHS_INCLUDE_DIR "/mnt/c/HiGHS/src")
-set(HIGHS_LIBRARY_DIR "/mnt/c/HiGHS/build/lib")
-set(HIGHS_CONFIG_DIR "/mnt/c/HiGHS/build/")
+set(HIGHS_INCLUDE_DIR "/usr/local/HiGHS/src")
+set(HIGHS_LIBRARY_DIR "/usr/local/HiGHS/build/lib")
+set(HIGHS_CONFIG_DIR "/usr/local/HiGHS/build/")
 
 
 # Include the directory
@@ -21,7 +21,7 @@ include_directories(${HIGHS_INCLUDE_DIR})
 include_directories(${HIGHS_CONFIG_DIR})
 link_directories(${HIGHS_LIBRARY_DIR})
 
-include_directories("C:/boost_1_82_0")
+find_package(Boost REQUIRED)
 
 include_directories("/mnt/c/HiGHS/src")
 
