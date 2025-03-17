@@ -650,8 +650,31 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<int>& bag, int forget_
 		std::uint64_t child_encoding_white = child_encoding;
 		std::uint64_t child_encoding_black = child_encoding - decrease_color;
 		//if childs partial solution is infinite. Whatever you do, when introducing a vertex its partial solution is also infinite.
+		auto ptr_white = child_partial_solution.find(child_encoding_white);
+		auto ptr_black = child_partial_solution.find(child_encoding_black);
+
+
+		if (ptr_white == child_partial_solution.end() && ptr_black == child_partial_solution.end()) {
+			//both encodings lead to infinite values. (dont introduce it).
+			continue;
+		}
+		//if white is only infinte.
+		if (ptr_white == child_partial_solution.end()) {
+			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding_black].second->solution, child_partial_solution[child_encoding_black].first);
+			continue;
+		}
+		//if black is only infinite.
+		if (ptr_black == child_partial_solution.end()) {
+			std::vector<int>solution = child_partial_solution[child_encoding_white].second->solution;
+			auto pos = std::lower_bound(solution.begin(), solution.end(), forget_vertex);
+			solution.insert(pos, forget_vertex);
+			insert_entry_partial_solution(partial_solution, encoding, solution, child_partial_solution[child_encoding_white].first);
+			continue;
+		}
+		//both not infinite original.
 		if (child_partial_solution[child_encoding_white].first > child_partial_solution[child_encoding_black].first) {
 			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding_black].second->solution, child_partial_solution[child_encoding_black].first);
+
 		}
 		else {
 			std::vector<int> solution = child_partial_solution[child_encoding_white].second->solution;
@@ -661,8 +684,9 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<int>& bag, int forget_
 		}
 
 	}
-	partial_solution_stack.push(partial_solution);
 	remove_all_entry_partial_solution(child_partial_solution);
+	partial_solution_stack.push(partial_solution);
+	
 }
 
 std::vector<std::uint64_t> generate_all_encoding(int n) {
@@ -736,7 +760,8 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 					continue;
 				}
 				else {
-					insert_entry_partial_solution(partial_solution, encoding, {}, INT_MAX);
+					//we dont want to introduce infinite values.
+					//insert_entry_partial_solution(partial_solution, encoding, {}, INT_MAX);
 					continue;
 				}
 			}
@@ -748,8 +773,8 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 
 		for (const auto& [encoding, child_encoding] : encoding_vector) {
 			//if childs partial solution is infinite. Whatever you do, when introducing a vertex its partial solution is also infinite.
-			if (child_partial_solution[child_encoding].first == INT_MAX) {
-				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, INT_MAX);
+			if (child_partial_solution.find(child_encoding) == child_partial_solution.end()) {
+				//insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, INT_MAX);
 				continue;
 			}
 
@@ -775,15 +800,15 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<int>& bag, int intr
 					continue;
 				}
 				else {
-					int domination_number = INT_MAX;
-					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+					//int domination_number = INT_MAX;
+					//insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 					continue;
 				}
 			}
 		}
 		//remove all references of child_partial_solution as it will be removed after this.
-		partial_solution_stack.push(partial_solution);
 		remove_all_entry_partial_solution(child_partial_solution);
+		partial_solution_stack.push(partial_solution);
 	}
 }
 
@@ -888,13 +913,13 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 		for (auto& pair : vector_pair_childern) {
 			int result_a;
 			int result_b;
-			if (child_partial_solution_a[pair.first].first == INT_MAX || child_partial_solution_b[pair.second].first == INT_MAX) {
+			if (child_partial_solution_a.find(pair.first) == child_partial_solution_a.end() || child_partial_solution_b.find(pair.second) == child_partial_solution_b.end()){
 				result_a = INT_MAX;
 			}
 			else {
 				result_a = child_partial_solution_a[pair.first].first + child_partial_solution_b[pair.second].first - number_of_ones[i];
 			}
-			if (child_partial_solution_a[pair.second].first == INT_MAX || child_partial_solution_b[pair.first].first == INT_MAX) {
+			if (child_partial_solution_a.find(pair.second) == child_partial_solution_a.end() || child_partial_solution_b.find(pair.first) == child_partial_solution_b.end()) {
 				result_b = INT_MAX;
 			}
 			else {
@@ -922,6 +947,9 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<int>& bag) {
 		if (lowest_pair_cost == INT_MAX) {
 			{
 				//solution is already empty & lowest_pair_cost is INT_MAX
+				continue;
+
+				//we dont want infinite encodings in the partial solution.
 			}
 		}
 		else if (is_result_a_lowest) {
@@ -970,28 +998,35 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<int>& bag, int
 			int power = (bag.size() - 1) - index_endpoint_b;
 			int increase_color = 1 << (2 * power); // equivalent to 4^power
 			std::uint64_t child_encoding = encoding + (2 * increase_color); // go from black to gray.
-			int domination_number = child_partial_solution[child_encoding].first;
-
-			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+			
+			if (child_partial_solution.find(child_encoding) != child_partial_solution.end()) {
+				int domination_number = child_partial_solution[child_encoding].first;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+			}
 		}
 		//endpoint a = black, endpoint b = white.
 		else if (color_endpoint_a == 1 && color_endpoint_b == 2){
 			int power = (bag.size() - 1) - index_endpoint_a;
 			int increase_color = 1 << (2 * power); // equivalent to 4^power
 			std::uint64_t child_encoding = encoding + (2 * increase_color); // go from black to gray.
-			int domination_number = child_partial_solution[child_encoding].first;
 
-			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+			if (child_partial_solution.find(child_encoding) != child_partial_solution.end()) {
+				int domination_number = child_partial_solution[child_encoding].first;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+			}
 		}
 		// any other combination.
 		else {
-			int domination_number = child_partial_solution[encoding].first;
-
-			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[encoding].second->solution, domination_number);
+			if (child_partial_solution.find(encoding) != child_partial_solution.end()) {
+				int domination_number = child_partial_solution[encoding].first;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[encoding].second->solution, domination_number);
+			} 
+			// no else because we dont want infinite solutions in our partial_solution.
 		}
 	}
-	partial_solution_stack.push(partial_solution);
 	remove_all_entry_partial_solution(child_partial_solution);
+	partial_solution_stack.push(partial_solution);
+	
 }
 
 bool contains_no_gray(std::uint64_t encoding) {

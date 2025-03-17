@@ -27,13 +27,13 @@ int main(int argc, char* argv[])
 	//templates.
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
-	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
+	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/25";
 
 	//default values
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_022.gr"; //original graph.
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_018.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_exact_022.txt"; //
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_exact_018.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			initialize_logger();
 			//temporarily disabled.
+			output_reduced_graph(entry.path());
 			//reduction(entry.path());
 		}
 	}
