@@ -30,10 +30,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_018.gr"; //original graph.
+	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_022.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_018.txt"; //
+	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_exact_022.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -115,8 +115,6 @@ void reduction(std::string path, std::string path_td) {
 
 	long long timer_2 = t_run_instruction.count();
 	Logger::execution_reduction = t_treewidth.count();
-	std::cout << t_treewidth.count() << std::endl;
-	std::cout << solution.size() << std::endl;
 
 	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
 	Logger::is_planar = is_planar;
@@ -131,9 +129,9 @@ void reduction(std::string path, std::string path_td) {
 	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
 	//}
 
-	//parse::output_solution(solution , path);
+	parse::output_solution(solution , path);
 
-	//parse::output_context(mds_context, path);
+	parse::output_context(mds_context, path);
 
 	//get reduction results
 	std::vector<int>dominated;
@@ -168,9 +166,9 @@ void reduction(std::string path, std::string path_td) {
 	}
 
 	//Log info
-	//std::string name = parse::getNameFile(path);
-	//output_loginfo(name, selected, dominated, removed, ignored, excluded);
-	//parse::output_context(mds_context, path);
+	std::string name = parse::getNameFile(path);
+	output_loginfo(name, selected, dominated, removed, ignored, excluded);
+	parse::output_context(mds_context, path);
 }
 
 void reduction_info(std::string path) {
