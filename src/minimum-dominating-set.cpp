@@ -1,5 +1,5 @@
 ﻿// exact-dominating-set.cpp : Defines the entry point for the application.
-//
+// Made by Floris van der Hout.
 #pragma once
 
 #include "minimum-dominating-set.h"
