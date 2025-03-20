@@ -6,6 +6,7 @@
 #include "graph/graph_io.h"
 #include "graph/context.h"
 
+#include "graph/nice_tree_decomposition.h"
 #include "graph/tree_decomposition.h"
 #include "reduce.h"
 #include "solver.h"
@@ -13,6 +14,7 @@
 #include "util/logger.h"
 #include <filesystem>
 #include "util/timer.h"
+#include "graph/generate_tree_decomposition.h"
 
 bool stringToBool(const std::string& str) {
 	std::string s = str;
@@ -20,7 +22,6 @@ bool stringToBool(const std::string& str) {
 
 	return (s == "1" || s == "true" || s == "yes" || s == "on");
 }
-
 
 int main(int argc, char* argv[])
 {
@@ -30,10 +31,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_022.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/tree_decomposition/reduced_instance_exact_022.txt"; //
+	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_018.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -61,7 +62,7 @@ void output_reduced_graph(std::string path) {
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
-	reduce::reduce_ijcai(mds_context);
+	//reduce::reduce_ijcai(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
@@ -82,27 +83,32 @@ void reduction(std::string path, std::string path_td) {
 	reduce::reduce_ijcai(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
-	//reduce::refractored_reduce_graph(mds_context);
 
 	Logger::execution_reduction = t_reduction.count();
 
 	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
 	std::unordered_map<int, int> newToOldIndex;
 	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+	//NICE_TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td, mds_context);
 
-	TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td, mds_context);
-	timer t_treewidth;
-	td_comp.create_nice_tree_decomposition(reduced_graph);
-	td_comp.fill_instruction_stack();
-	timer t_run_instruction;
-	td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
-	
-	//create a solution.
+	std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(reduced_graph);
+	std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+
+	td_comp->fill_instruction_stack();
+	td_comp->run_instruction_stack(mds_context.dominated, newToOldIndex);
+
+	// timer t_treewidth;
+	// td_comp.create_nice_tree_decomposition(reduced_graph);
+	// td_comp.fill_instruction_stack();
+	// timer t_run_instruction;
+	// td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
+	//
+	// //create a solution.
 	std::vector<int>solution;
-	int domination_number = mds_context.cnt_sel + td_comp.global_solution.size();
+	int domination_number = mds_context.cnt_sel + td_comp->global_solution.size();
 	solution.reserve(domination_number);
 	//get vertices old index from global solution (which uses the new index)
-	for (int newIndex : td_comp.global_solution) {
+	for (int newIndex : td_comp->global_solution) {
 		//we need a +1 te correct the previous -1.
 		solution.push_back(newToOldIndex[newIndex] + 1);
 	}
@@ -112,10 +118,13 @@ void reduction(std::string path, std::string path_td) {
 			solution.push_back(i + 1);
 		}
 	}
+	//
+	// long long timer_2 = t_run_instruction.count();
+	// Logger::execution_reduction = t_treewidth.count();
+	// std::cout << solution.size() << std::endl;
+	// std::cout << t_treewidth.count() << std::endl;
 
-	long long timer_2 = t_run_instruction.count();
-	Logger::execution_reduction = t_treewidth.count();
-
+	std::cout << solution.size() << std::endl;
 	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
 	Logger::is_planar = is_planar;
 
@@ -129,9 +138,9 @@ void reduction(std::string path, std::string path_td) {
 	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
 	//}
 
-	parse::output_solution(solution , path);
+	//parse::output_solution(solution , path);
 
-	parse::output_context(mds_context, path);
+	//parse::output_context(mds_context, path);
 
 	//get reduction results
 	std::vector<int>dominated;
@@ -166,9 +175,9 @@ void reduction(std::string path, std::string path_td) {
 	}
 
 	//Log info
-	std::string name = parse::getNameFile(path);
-	output_loginfo(name, selected, dominated, removed, ignored, excluded);
-	parse::output_context(mds_context, path);
+	//std::string name = parse::getNameFile(path);
+	//output_loginfo(name, selected, dominated, removed, ignored, excluded);
+	//parse::output_context(mds_context, path);
 }
 
 void reduction_info(std::string path) {

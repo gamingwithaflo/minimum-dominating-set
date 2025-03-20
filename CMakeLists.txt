@@ -15,6 +15,9 @@ set(HIGHS_INCLUDE_DIR "/usr/local/HiGHS/src")
 set(HIGHS_LIBRARY_DIR "/usr/local/HiGHS/build/lib")
 set(HIGHS_CONFIG_DIR "/usr/local/HiGHS/build/")
 
+# Include the header files
+include_directories(/usr/local/htd-1.2/include)
+link_directories(/usr/local/htd-1.2/lib)
 
 # Include the directory
 include_directories(${HIGHS_INCLUDE_DIR})
@@ -31,10 +34,12 @@ set(SOURCES
     src/minimum-dominating-set.cpp
     src/graph/graph_io.cpp
     src/graph/context.cpp
-    src/graph/tree_decomposition.cpp
     src/reduce.cpp
     src/solver.cpp
     src/util/timer.cpp
+        src/graph/generate_tree_decomposition.cpp
+        src/graph/nice_tree_decomposition.cpp
+        src/graph/tree_decomposition.cpp
 
 )
 
@@ -42,3 +47,4 @@ set(SOURCES
 add_executable (minimum-dominating-set ${SOURCES})
 
 target_link_libraries(minimum-dominating-set highs)
+target_link_libraries(minimum-dominating-set htd)

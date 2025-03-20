@@ -5,7 +5,7 @@
 
 #include "context.h"
 
-#include "tree_decomposition.h"
+#include "nice_tree_decomposition.h"
 
 namespace parse {
     adjacencyListBoost read_pace_2024(std::istream& is);
@@ -16,9 +16,9 @@ namespace parse {
 
     void output_reduced_graph_instance(adjacencyListBoost& reduced_graph, std::string& path);
 
-    TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context);
+    NICE_TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context);
 
-    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context);
+    NICE_TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context);
 
     std::string getNameFile(std::string& path);
 

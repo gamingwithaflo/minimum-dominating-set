@@ -16,7 +16,7 @@ namespace parse {
         return g;
     }
     
-    TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context) {
+    NICE_TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context) {
         std::vector<std::vector<int>> bags;
         std::vector<std::pair<int, int>> edges; 
 
@@ -60,7 +60,7 @@ namespace parse {
         //    }
         //}
 
-        return TREE_DECOMPOSITION(bags, g, treewidth);
+        return NICE_TREE_DECOMPOSITION(bags, g);
     }
 
     adjacencyListBoost read_pace_2024(std::istream& is) {
@@ -98,7 +98,7 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context) {
+    NICE_TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context) {
         std::ifstream f(path);
         if (f.fail()) {
             throw std::invalid_argument("Failed to open file");
