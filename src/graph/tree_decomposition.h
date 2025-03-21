@@ -137,13 +137,13 @@ public:
 
     void depth_first_search(int start, int parent);
 
-    void run_instruction_stack(std::vector<int>& dominated, std::unordered_map<int,int>& newToOldIndex);
+    void run_instruction_stack(std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
     void run_operation_leaf();
 
-    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::unordered_map<int, int> newToOldIndex);
+    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_forget(std::vector<uint>& bag, int forget_vertex);
+    void run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
     void run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b);
 

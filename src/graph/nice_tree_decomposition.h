@@ -105,7 +105,7 @@ public:
 
     void introduce_all_edges_smart(adjacencyListBoost& original_graph);
 
-    void introduce_all_edges(const adjacencyListBoost& original_graph);
+    void introduce_all_edges(adjacencyListBoost& original_graph);
 
     void traverse_tree_decomposition(int parent_index, vertex v);
 

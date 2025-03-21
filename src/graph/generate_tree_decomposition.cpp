@@ -7,6 +7,7 @@
 #include <chrono>
 #include "generate_tree_decomposition.h"
 #include <queue>
+#include <boost/graph/connected_components.hpp>
 
 //Fitness function for the decomposition process.
 class FitnessFunction : public htd::ITreeDecompositionFitnessFunction
@@ -34,15 +35,16 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     //Create a management instance of the 'htd' library in order to allow centralized configuration.
     const std::unique_ptr<htd::LibraryInstance> manager(htd::createManagementInstance(htd::Id::FIRST));
     std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition;
-    std::srand(0);
+    std::srand(3);
 
     // Create a new graph instance which can handle (multi-)hyperedges.
-    htd::IMutableMultiHypergraph * graph =
-        manager->multiHypergraphFactory().createInstance();
+    htd::IMutableMultiGraph * graph =
+        manager->multiGraphFactory().createInstance();
 
     //load in reduced_graph.
     const uint num_graph = boost::num_vertices(reduced_graph);
     graph->addVertices(num_graph);
+    int edge_counter = 0;
 
     // Add two edges to the graph.
     for (auto [itt_edge, itt_edge_end] = boost::edges(reduced_graph); itt_edge != itt_edge_end; ++itt_edge)
@@ -50,6 +52,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         const uint target = boost::target(*itt_edge, reduced_graph) + 1;
         const uint source = boost::source(*itt_edge, reduced_graph) + 1;
         graph->addEdge(target, source);
+        edge_counter++;
     }
 
     // Create an instance of the fitness function. (defined above)
@@ -73,7 +76,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *
      *  In this case, we want to select (at most) 10 vertices of the input decomposition randomly.
      */
-    operation->setVertexSelectionStrategy(new htd::RandomVertexSelectionStrategy(20));
+    operation->setVertexSelectionStrategy(new htd::RandomVertexSelectionStrategy(10));
 
     /**
      *  Set desired manipulations. In this case we want a nice (= normalized) tree decomposition.
@@ -120,7 +123,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *  the algorithm after the first non-improving solution has been found, i.e. the algorithm
      *  will perform a simple hill-climbing approach.
      */
-    algorithm.setNonImprovementLimit(500);
+    algorithm.setNonImprovementLimit(50);
 
     // Record the optimal maximal bag size of the tree decomposition to allow printing the progress.
     std::size_t optimalBagSize = (std::size_t)-1;
@@ -139,20 +142,20 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     // If a decomposition was found we want to print it to stdout.
     if (decomposition != nullptr) {
         //Check whether the algorithm indeed computed a valid decomposition.
-        if (!manager->isTerminated() || algorithm.isSafelyInterruptible()) {
-            //check it worth optimizing further. (if treewidth is smaller than 32).
-            if (decomposition->maximumBagSize() < 50){
-                // Print the size of the largest bag of the decomposition to stdout.
-                std::cout << decomposition->maximumBagSize() << std::endl;
-                algorithm.setIterationCount(-1); // set iterations to infinite.
+        if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
+            // check it worth optimizing further. (if treewidth is smaller than 32).
+             if (decomposition->maximumBagSize() < 50){
+                 // Print the size of the largest bag of the decomposition to stdout.
+                 algorithm.setIterationCount(-1); // set iterations to infinite.
 
-                //run where you left off.
-                htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
-                                                   const htd::ITreeDecomposition & decomposition,
-                                                   const htd::FitnessEvaluation & fitness){});
+                 //run where you left off.
+                 htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
+                                                    const htd::ITreeDecomposition & decomposition,
+                                                    const htd::FitnessEvaluation & fitness){});
                 //If further optimizations is done as well.
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
+                        std::cout << decomposition->maximumBagSize() << std::endl;
                         nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         std::cout << "i want to read" << std::endl;
                     }

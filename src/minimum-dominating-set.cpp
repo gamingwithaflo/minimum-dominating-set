@@ -13,6 +13,8 @@
 #include <iostream>
 #include "util/logger.h"
 #include <filesystem>
+#include <boost/graph/connected_components.hpp>
+
 #include "util/timer.h"
 #include "graph/generate_tree_decomposition.h"
 
@@ -31,10 +33,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_036.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_018.txt"; //
+	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -49,7 +51,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		reduction(path, path_td);
+		component_reduction(path);
+		//reduction(path, path_td);
 		//output_reduced_graph(path);
 	}
 
@@ -62,7 +65,7 @@ void output_reduced_graph(std::string path) {
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
-	//reduce::reduce_ijcai(mds_context);
+	reduce::reduce_ijcai(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
@@ -73,6 +76,68 @@ void output_reduced_graph(std::string path) {
 	parse::output_reduced_graph_instance(reduced_graph, path);
 }
 
+void component_reduction(std::string path)
+{
+	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
+	MDS_CONTEXT mds_context = MDS_CONTEXT(adjLBoost);
+
+	//reduce::reduce_ijcai(mds_context);
+	mds_context.fill_removed_vertex();
+
+	std::unordered_map<int, int> newToOldIndex;
+	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+
+	std::vector<int> component_map_reduced(boost::num_vertices(reduced_graph));
+	std::vector<int> component_map_default(boost::num_vertices(adjLBoost));
+	int num_components_reduced = boost::connected_components(reduced_graph, &component_map_reduced[0]);
+	int num_components_default = boost::connected_components(adjLBoost, &component_map_default[0]);
+
+	std::vector<std::vector<int>> components(num_components_default);
+
+	//distribute components.
+	for (size_t i = 0; i < component_map_default.size(); ++i) {
+		components[component_map_default[i]].push_back(i);
+	}
+
+	std::cout << num_components_reduced << std::endl;
+	std::cout << num_components_default << std::endl;
+
+	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components(num_components_default);
+	for (size_t i = 0; i < components.size(); ++i) {
+		std::unique_ptr<adjacencyListBoost> sub_component = std::make_unique<adjacencyListBoost>(components[i].size());
+		sub_components[i] = std::move(sub_component);
+	}
+	//add all edges.
+	for (auto edge_iter = edges(reduced_graph); edge_iter.first != edge_iter.second; ++edge_iter.first) {
+		auto u = source(*edge_iter.first, reduced_graph);
+		auto v = target(*edge_iter.first, reduced_graph);
+		int component_u = component_map_default[u];
+		int component_v = component_map_default[v];
+
+		if (component_u == component_v) {
+			auto it_u = std::find(components[component_u].begin(), components[component_u].end(), u);
+			auto it_v = std::find(components[component_v].begin(), components[component_v].end(), v);
+			auto index_u = std::distance(components[component_u].begin(), it_u);
+			auto index_v = std::distance(components[component_v].begin(), it_v);
+			boost::add_edge(index_u, index_v, *sub_components[component_u]);
+		}
+	}
+	int domination_number = 0;
+	for (auto& sub_component : sub_components){
+		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_component);
+		std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+
+		td_comp->fill_instruction_stack();
+		td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, newToOldIndex);
+		domination_number = td_comp->global_solution.size() + domination_number;
+	}
+	std::cout << domination_number << std::endl;
+}
+
+
+
+
+
 void reduction(std::string path, std::string path_td) {
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 
@@ -81,6 +146,7 @@ void reduction(std::string path, std::string path_td) {
 
 	timer t_reduction;
 	reduce::reduce_ijcai(mds_context);
+	//reduce::refractored_reduce_graph(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
@@ -89,13 +155,15 @@ void reduction(std::string path, std::string path_td) {
 	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
 	std::unordered_map<int, int> newToOldIndex;
 	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-	//NICE_TREE_DECOMPOSITION td_comp = parse::load_tree_decomposition(path_td, mds_context);
+
+	std::vector<int> component_map(boost::num_vertices(reduced_graph));
+	int num_components = boost::connected_components(reduced_graph, &component_map[0]);
 
 	std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(reduced_graph);
 	std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
 
 	td_comp->fill_instruction_stack();
-	td_comp->run_instruction_stack(mds_context.dominated, newToOldIndex);
+	td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, newToOldIndex);
 
 	// timer t_treewidth;
 	// td_comp.create_nice_tree_decomposition(reduced_graph);
@@ -110,6 +178,10 @@ void reduction(std::string path, std::string path_td) {
 	//get vertices old index from global solution (which uses the new index)
 	for (int newIndex : td_comp->global_solution) {
 		//we need a +1 te correct the previous -1.
+		if (mds_context.is_excluded(newToOldIndex[newIndex]))
+		{
+			throw std::runtime_error("should not be allowed");
+		}
 		solution.push_back(newToOldIndex[newIndex] + 1);
 	}
 	for (int i = 0; i < mds_context.selected.size(); ++i) {
@@ -221,20 +293,13 @@ void reduction_info(std::string path) {
 adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex) {
 
 	// Collect vertices to remove
-	std::vector<boost::graph_traits<adjacencyListBoost>::vertex_descriptor> vertices_to_remove;
 	std::unordered_map<int, int> OldToNewIndex;
 
 	auto [vert_itt, vert_itt_end] = boost::vertices(mds_context.graph);
 
-	for (; vert_itt != vert_itt_end; ++vert_itt) {
-		if (mds_context.is_selected(*vert_itt) || mds_context.is_removed(*vert_itt)) {
-			vertices_to_remove.push_back(*vert_itt);
-		}
-	}
 
 	//fill newToOldIndex, this way we can find the original indexes after.
 	int newIndex = 0;
-
 	for (int oldIndex = 0; oldIndex < boost::num_vertices(mds_context.graph); ++oldIndex) {
 		if (!mds_context.is_selected(oldIndex) && !mds_context.is_removed(oldIndex)) {
 			newToOldIndex[newIndex] = oldIndex;

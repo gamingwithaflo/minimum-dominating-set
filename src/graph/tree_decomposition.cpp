@@ -1,5 +1,7 @@
 
 #include "tree_decomposition.h"
+
+#include <iostream>
 #include <limits.h>
 
 solution_struct::solution_struct(std::vector<int> sol) : ref_count(1), solution(sol) {}
@@ -491,7 +493,7 @@ void TREE_DECOMPOSITION::depth_first_search(int start, int parent) {
 	}
 }
 
-void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated, std::unordered_map<int,int>& newToOldIndex) {
+void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
 	
 	while (!instruction_stack.empty()) {
 		//get top instruction from the stack. (is a pointer).
@@ -510,21 +512,21 @@ void TREE_DECOMPOSITION::run_instruction_stack(std::vector<int>& dominated, std:
 		if (std::holds_alternative<operation_introduce>(instruction.op)) {
 			//get object.
 			operation_introduce correct_instruction = get<operation_introduce>(instruction.op);
-			run_operation_introduce(instruction.bag, correct_instruction.vertex, dominated, newToOldIndex);
+			run_operation_introduce(instruction.bag, correct_instruction.vertex, dominated, excluded, newToOldIndex);
 			continue;
 		}
 
 		if (std::holds_alternative<operation_forget>(instruction.op)) {
 			//get object.
 			operation_forget correct_instruction = get<operation_forget>(instruction.op);
-			run_operation_forget(instruction.bag, correct_instruction.vertex);
+			run_operation_forget(instruction.bag, correct_instruction.vertex, excluded, newToOldIndex);
 			continue;
 		}
 
 		if (std::holds_alternative<operation_introduce_edge>(instruction.op)) {
 			//get object.
 			operation_introduce_edge correct_instruction = get<operation_introduce_edge>(instruction.op);
-			run_operation_introduce_edge(instruction.bag, correct_instruction.target, correct_instruction.source);
+			run_operation_introduce_edge(instruction.bag, correct_instruction.source, correct_instruction.target);
 			continue;
 		}
 
@@ -576,8 +578,19 @@ void TREE_DECOMPOSITION::remove_all_entry_partial_solution(std::unordered_map<st
 
 int find_index_in_bag(std::vector<uint>& bag, int element) {
 	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element equal or bigger than the element.
-	return it - bag.begin(); //returns the index.
 
+	return it - bag.begin(); //returns the index.
+}
+
+int find_index_in_bag_edge(std::vector<uint>& bag, int element) {
+	auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element equal or bigger than the element.
+	//temporary check
+	if (*it != element)
+	{
+		throw std::runtime_error("Element not found");
+	}
+
+	return it - bag.begin(); //returns the index.
 }
 
 int extract_bits(std::uint64_t encoding, int size_bag, int pos) {
@@ -618,7 +631,7 @@ std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_forge
 	return results;
 }
 
-void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget_vertex) {
+void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex) {
 	//find index of introduced vertex in the bag.
 	int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 
@@ -629,9 +642,13 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget
 	std::unordered_map<std::uint64_t,std::pair<int, solution_struct*>> child_partial_solution = partial_solution_stack.top();
 	partial_solution_stack.pop();
 
+	if (bag.size() == 0)
+	{
+		//throw std::runtime_error("The graph is empty");
+	}
+
 	//generate all forget encodings.
 	std::vector<std::pair<std::uint64_t, std::uint64_t>> encoding_vector = generate_all_encoding_forget(bag.size(), index_forget_vertex);
-
 	for (const auto& [encoding, child_encoding] : encoding_vector) {
 		//Does this actually work?
 		int power = bag.size() - index_forget_vertex;
@@ -642,6 +659,16 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget
 		auto ptr_white = child_partial_solution.find(child_encoding_white);
 		auto ptr_black = child_partial_solution.find(child_encoding_black);
 
+		if (excluded[newToOldIndex[forget_vertex]] == 1) {
+			//if it is black but rest of encoding is not valid, no deal.
+			if (ptr_black == child_partial_solution.end()) {
+				continue;
+			}
+			std::vector<int>solution = child_partial_solution[child_encoding_black].second->solution;
+			insert_entry_partial_solution(partial_solution, encoding, solution, child_partial_solution[child_encoding_black].first);
+			continue;
+		}
+
 
 		if (ptr_white == child_partial_solution.end() && ptr_black == child_partial_solution.end()) {
 			//both encodings lead to infinite values. (dont introduce it).
@@ -649,8 +676,8 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget
 		}
 		//if white is only infinte.
 		if (ptr_white == child_partial_solution.end()) {
-			insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding_black].second->solution, child_partial_solution[child_encoding_black].first);
-			continue;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding_black].second->solution, child_partial_solution[child_encoding_black].first);
+				continue;
 		}
 		//if black is only infinite.
 		if (ptr_black == child_partial_solution.end()) {
@@ -716,9 +743,9 @@ void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t ch
 	}
 }
 
-void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::unordered_map<int,int> newToOldIndex) {
+void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
 	//find index of introduced vertex in the bag.
-	int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
+	int index_introduced_vertex = find_index_in_bag_edge(bag, introduced_vertex);
 
 	//create an empty partial solution.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> partial_solution;
@@ -733,11 +760,20 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int int
 		for (uint64_t encoding : encoding_vector) {
 			//gray.
 			if (encoding == 3) {
+				//cant do this.
+				// if (dominated[newToOldIndex[introduced_vertex]] == 1) {
+				// 	continue;
+				// }
 				insert_entry_partial_solution(partial_solution, encoding, {}, 0);
 				continue;
 			}
 			// white.
 			if (encoding == 2) {
+				//if vertex is excluded, not allow white.
+				// if (excluded[newToOldIndex[introduced_vertex]] == 1)
+				// {
+				// 	continue;
+				// }
 				insert_entry_partial_solution(partial_solution, encoding, {}, 1);
 				continue;
 			}
@@ -770,6 +806,9 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int int
 			int color = extract_bits(encoding, bag.size(), index_introduced_vertex);
 			//gray.
 			if (color == 3) {
+				// if (dominated[newToOldIndex[introduced_vertex]] == 1) {
+				// 	continue;
+				// }
 				int domination_number = 0 + child_partial_solution[child_encoding].first;
 				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
 				continue;
@@ -786,7 +825,6 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int int
 				if (dominated[newToOldIndex[introduced_vertex]] == 1) {
 					int domination_number = 0 + child_partial_solution[child_encoding].first;
 					insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
-					continue;
 				}
 				else {
 					//int domination_number = INT_MAX;
@@ -878,7 +916,10 @@ void generate_all_encoding_join(int n,
 void TREE_DECOMPOSITION::run_operation_join(std::vector<uint>& bag) {
 	//create an empty partial solution.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> partial_solution;
-
+	if (bag.size() == 0)
+	{
+		std::cout << "not really fun" << std::endl;
+	}
 	//get previous childs partial solution.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> child_partial_solution_a = partial_solution_stack.top();
 	partial_solution_stack.pop();
@@ -941,7 +982,7 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<uint>& bag) {
 				//we dont want infinite encodings in the partial solution.
 			}
 		}
-		else if (is_result_a_lowest) {
+		if (is_result_a_lowest) {
 			solution = child_partial_solution_a[lowest_pair.first].second->solution;
 			for (int a : child_partial_solution_b[lowest_pair.second].second->solution) {
 				//should never overlap. (this way it will always remain sorted).
@@ -966,8 +1007,8 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<uint>& bag) {
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b) {
 	//find index of introduced vertex in the bag.
-	int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
-	int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
+	int index_endpoint_a = find_index_in_bag_edge(bag, endpoint_a);
+	int index_endpoint_b = find_index_in_bag_edge(bag, endpoint_b);
 
 	//create an empty partial solution.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>> partial_solution;
@@ -989,8 +1030,16 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, in
 			std::uint64_t child_encoding = encoding + (2 * increase_color); // go from black to gray.
 			
 			if (child_partial_solution.find(child_encoding) != child_partial_solution.end()) {
-				int domination_number = child_partial_solution[child_encoding].first;
-				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+				int domination_number_child = child_partial_solution[child_encoding].first;
+				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number_child);
+			} else
+			{
+				//never run.
+				// if (child_partial_solution.find(encoding) != child_partial_solution.end()) {
+				// 	int domination_number = child_partial_solution[encoding].first;
+				// 	insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[encoding].second->solution, domination_number);
+				// }
+				continue;
 			}
 		}
 		//endpoint a = black, endpoint b = white.
@@ -1002,6 +1051,14 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, in
 			if (child_partial_solution.find(child_encoding) != child_partial_solution.end()) {
 				int domination_number = child_partial_solution[child_encoding].first;
 				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[child_encoding].second->solution, domination_number);
+			} else
+			{
+				//never run.
+				// if (child_partial_solution.find(encoding) != child_partial_solution.end()) {
+				// 	int domination_number = child_partial_solution[encoding].first;
+				// 	insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[encoding].second->solution, domination_number);
+				// }
+				continue;
 			}
 		}
 		// any other combination.
@@ -1009,8 +1066,10 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, in
 			if (child_partial_solution.find(encoding) != child_partial_solution.end()) {
 				int domination_number = child_partial_solution[encoding].first;
 				insert_entry_partial_solution(partial_solution, encoding, child_partial_solution[encoding].second->solution, domination_number);
-			} 
-			// no else because we dont want infinite solutions in our partial_solution.
+			} else
+			{
+				continue;
+			}
 		}
 	}
 	remove_all_entry_partial_solution(child_partial_solution);
@@ -1068,8 +1127,18 @@ void TREE_DECOMPOSITION::solve_root_vertex() {
 	global_solution = ptr_local_solution->solution;
 	std::vector<int> white_indices = get_white_indices(lowest_encoding, bag_root_vertex.size());
 	for (int index : white_indices) {
-		auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
-		global_solution.insert(pos, bag_root_vertex[index]);
+		if (global_solution.size() == 0)
+		{
+			global_solution.push_back(index);
+		} else
+		{
+			auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
+			if (*pos == bag_root_vertex[index])
+			{
+				throw std::runtime_error(":(");
+			}
+			global_solution.insert(pos, bag_root_vertex[index]);
+		}
 	}
 }
 

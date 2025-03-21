@@ -108,6 +108,12 @@ NICE_TREE_DECOMPOSITION::NICE_TREE_DECOMPOSITION(adjacencyListBoost& reduced_gra
     introduce_all_edges_smart(reduced_graph);
 }
 
+//TODO: remove where it is used. or define it.
+NICE_TREE_DECOMPOSITION::NICE_TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g)
+{
+    //;
+}
+
 //helper function.
 std::vector<std::pair<int, int>> find_all_pairs(const std::vector<uint>& bag) {
     std::vector<std::pair<int, int>> res;
@@ -127,14 +133,8 @@ std::vector<std::pair<int, int>> find_all_pairs(const std::vector<uint>& bag) {
     return res;
 }
 
-NICE_TREE_DECOMPOSITION::NICE_TREE_DECOMPOSITION(std::vector<std::vector<int>> bags, adjacencyListBoost g)
-{
-    //;
-}
-
 std::vector<int> which_edges_must_be_introduced(const adjacencyListBoost& original_graph, std::vector<uint>& bag_child, int forget_vertex) {
 	std::vector<int>must_introduce;
-    must_introduce.reserve(bag_child.size());
 	for (int end_point : bag_child) {
 		if (end_point != forget_vertex) {
 			auto [edge, exists] = boost::edge(forget_vertex, end_point, original_graph);
@@ -159,6 +159,7 @@ void NICE_TREE_DECOMPOSITION::introduce_all_edges_smart(adjacencyListBoost& orig
     }
     //Introduce all other vertices.
     std::queue<std::pair<int,int>> q;
+
     auto [itt, itt_end] = boost::out_edges(root_vertex, graph_nice_tree_decomposition); // should be 1.
     for (; itt != itt_end; ++itt) {
         //put all childs in the breath first traversal.
@@ -185,13 +186,16 @@ void NICE_TREE_DECOMPOSITION::introduce_all_edges_smart(adjacencyListBoost& orig
             q.emplace(new_child, curr_child);
         }
     }
+    if (boost::num_edges(original_graph) != 0) {
+        throw std::runtime_error("Not every edge has been introduced.");
+    }
 }
 
 //helper function.
 int NICE_TREE_DECOMPOSITION::introduce_edge_smart(int source, int target, int parent, int child, adjacencyListBoost& original_graph){
-    int smallest_bag_index = INT_MAX;
-    int smallest_bag_size = INT_MAX;
-    int smallest_bag_parent = INT_MAX;
+    int smallest_bag_index = child;
+    int smallest_bag_size = nice_bags[child].bag.size();
+    int smallest_bag_parent = parent;
 
     std::queue<std::pair<int,int>> queue; //child, parent.
 
@@ -201,10 +205,13 @@ int NICE_TREE_DECOMPOSITION::introduce_edge_smart(int source, int target, int pa
         auto [curr_child, curr_parent] = queue.front();
         queue.pop();
 
-        //If one of the two end_points get introduced we know it can't be further in the operation.
-        if (std::holds_alternative<operation_introduce>(nice_bags[curr_parent].op)) {
-            auto & op = std::get<operation_introduce>(nice_bags[curr_parent].op);
-            if (op.vertex == source || op.vertex == target) continue;
+        if (curr_parent != -1)
+        {
+            //If one of the two end_points get introduced we know it can't be further in the operation.
+            if (std::holds_alternative<operation_introduce>(nice_bags[curr_parent].op)) {
+                auto & op = std::get<operation_introduce>(nice_bags[curr_parent].op);
+                if (op.vertex == source || op.vertex == target) continue;
+            }
         }
         //Update if you find a better solution.
         if (const auto& child_bag_size = nice_bags[curr_child].bag.size(); child_bag_size < smallest_bag_size) {
@@ -231,15 +238,6 @@ int NICE_TREE_DECOMPOSITION::introduce_edge_smart(int source, int target, int pa
         return (nice_bags.size() - 1);
         //vertex gets forgotten & introduced after each other.
     }
-    //vertex gets forgotten & introduced after each other.
-    if (smallest_bag_parent == INT_MAX){
-        //put vertex between parent & child.
-        boost::remove_edge(parent, child, graph_nice_tree_decomposition);
-        boost::add_edge(parent, nice_bags.size(), graph_nice_tree_decomposition);
-        boost::add_edge(nice_bags.size(), child, graph_nice_tree_decomposition);
-        nice_bags.emplace_back(operation_enum::INTRODUCE_EDGE, source, target, nice_bags[child].bag);
-        return (nice_bags.size() -1);
-    }
     //General case.
     boost::remove_edge(smallest_bag_parent, smallest_bag_index, graph_nice_tree_decomposition);
     boost::add_edge(smallest_bag_parent, nice_bags.size(), graph_nice_tree_decomposition);
@@ -249,64 +247,62 @@ int NICE_TREE_DECOMPOSITION::introduce_edge_smart(int source, int target, int pa
 }
 
 //Needs to be refactored.
-void NICE_TREE_DECOMPOSITION::introduce_all_edges(const adjacencyListBoost& original_graph) {
+void NICE_TREE_DECOMPOSITION::introduce_all_edges(adjacencyListBoost& original_graph) {
 
     //find all possible edge combinations possible from root_node bag.
     std::vector<std::pair<int,int>> pairs = find_all_pairs(nice_bags[root_vertex].bag);
 
-    for (auto& [source, target] : pairs) {
+    for (auto& [source, target] : pairs)
+    {
         //If the edge exists in the original graph. Introduce it above and make it the new source.
         if (auto [edge, exists] = boost::edge(source, target, original_graph); exists) {
+            boost::remove_edge(source, target, original_graph);
             boost::add_edge(nice_bags.size(), root_vertex, graph_nice_tree_decomposition);
             uint original_root_vertex = root_vertex;
             root_vertex = nice_bags.size();
             nice_bags.emplace_back(operation_enum::INTRODUCE_EDGE, source, target, nice_bags[original_root_vertex].bag);
         }
+    }
 
-        //root vertex is adjacent to only one vertex.
-        auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_nice_tree_decomposition);
+    std::queue<std::pair<int, int>> q;
 
-        std::queue<std::pair<int, int>> q;
-
+    //root vertex is adjacent to only one vertex.
+    auto [itt, itt_end] = boost::adjacent_vertices(root_vertex, graph_nice_tree_decomposition);
+    for (; itt != itt_end; ++itt) {
         q.emplace(*itt, root_vertex); // {child, parent}
+    }
 
-        //find the highest bag (from root) where both source and target are present.
-        while (!q.empty()) {
-            auto [current_vertex, parent] = q.front();
-            q.pop();
+    //find the highest bag (from root) where both source and target are present.
+    while (!q.empty()) {
+        auto [current_vertex, parent] = q.front();
+        q.pop();
 
-            std::vector<uint>& bag_child = nice_bags[current_vertex].bag;
+        std::vector<uint>& bag_child = nice_bags[current_vertex].bag;
 
-            if (nice_bag& bag_parent = nice_bags[parent]; std::holds_alternative<operation_forget>(bag_parent.op)) {
-                const auto& op = std::get<operation_forget>(bag_parent.op);
-                int forget_vertex = op.vertex;
+        if (nice_bag& bag_parent = nice_bags[parent]; std::holds_alternative<operation_forget>(bag_parent.op)) {
+            const auto& op = std::get<operation_forget>(bag_parent.op);
+            int forget_vertex = op.vertex;
+            //A vertex is about to be forgotten, so all possible edges need to be introduced beforehand.
+            std::vector<int> must_introduce = which_edges_must_be_introduced(original_graph, bag_child, forget_vertex);
 
-                //A vertex is about to be forgotten, so all possible edges need to be introduced beforehand.
-                std::vector<int> must_introduce = which_edges_must_be_introduced(original_graph, bag_child, forget_vertex);
+            for (int end_point : must_introduce) {
+                boost::remove_edge(end_point, forget_vertex, original_graph);
+                boost::remove_edge(parent, current_vertex, graph_nice_tree_decomposition);
 
-                for (int end_point : must_introduce) {
-                    boost::remove_edge(parent, current_vertex, graph_nice_tree_decomposition);
-                    //vertex introduce_edge = boost::add_vertex(graph_nice_tree_decomposition);
-                    //keep sorted.
-                    if (parent > current_vertex) {
-                        boost::add_edge(nice_bags.size(),current_vertex, graph_nice_tree_decomposition);
-                        boost::add_edge(parent, nice_bags.size(), graph_nice_tree_decomposition);
-                    }
-                    else {
-                        boost::add_edge(parent, nice_bags.size(), graph_nice_tree_decomposition);
-                        boost::add_edge(nice_bags.size(),current_vertex, graph_nice_tree_decomposition);
-                    }
-                    parent = nice_bags.size();
-                    nice_bags.emplace_back(operation_enum::INTRODUCE_EDGE, end_point, forget_vertex, nice_bags[current_vertex].bag);
+                boost::add_edge(nice_bags.size(),current_vertex, graph_nice_tree_decomposition);
+                boost::add_edge(parent, nice_bags.size(), graph_nice_tree_decomposition);
+                parent = nice_bags.size();
+                nice_bags.emplace_back(operation_enum::INTRODUCE_EDGE, end_point, forget_vertex, bag_child);
                 }
             }
             //Traverse the whole nice tree decomposition.
-            for (auto [itt, itt_end] = boost::adjacent_vertices(current_vertex, graph_nice_tree_decomposition); itt != itt_end; ++itt) {
-                if (*itt != parent) {  // Avoid revisiting the parent
-                    q.emplace(*itt, current_vertex);
-                }
+            for (auto [itt, itt_end] = boost::out_edges(current_vertex, graph_nice_tree_decomposition); itt != itt_end; ++itt) {
+                int target = boost::target(*itt, graph_nice_tree_decomposition);
+                q.emplace(target, current_vertex);
             }
         }
+    if (boost::num_edges(original_graph) != 0) {
+        throw std::runtime_error("Not every edge has been introduced.");
     }
 }
 
