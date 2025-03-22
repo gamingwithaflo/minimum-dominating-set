@@ -5,13 +5,19 @@
 #include "nice_tree_decomposition.h"
 
 
+struct solution_struct {
+    std::vector<int> solution;
+    int ref_cnt;
 
+    explicit solution_struct(const std::vector<int>& solution);
+};
 
 struct partial_solution {
     std::uint64_t encoding;
-    std::shared_ptr<std::vector<int>> solution;
+    int domination_number;
+    solution_struct* solution;
 
-    explicit partial_solution(std::uint64_t encoding, std::vector<int>& solution);
+    explicit partial_solution(std::uint64_t encoding, solution_struct* solution, int domination_number);
 };
 
 class TREEWIDTH_SOLVER {
@@ -19,13 +25,13 @@ public:
     std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition_ptr;
     std::stack<nice_bag*> instruction_stack;
     std::stack<std::vector<partial_solution>> partial_solution_stack;
-    boost::unordered_map<std::vector<int>, std::shared_ptr<std::vector<int>>> local_solution;
+    boost::unordered_map<std::vector<int>, solution_struct> local_solution;
 
     explicit TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
-    void insert_entry_partial_solution();
+    void insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, std::vector<int>& solution, int domination_number);
 
-    void remove_all_entries_partial_solution();
+    void remove_all_entries_partial_solution(std::vector<partial_solution>& child_partial_solutions);
 
     void fill_instruction_stack();
 
@@ -35,13 +41,13 @@ public:
 
     void run_operation_leaf();
 
-    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_forget(std::vector<int>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b);
+    void run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b);
 
-    void run_operation_join(std::vector<uint>& bag);
+    void run_operation_join(std::vector<int>& bag);
 
     void solve_root_vertex();
 };
