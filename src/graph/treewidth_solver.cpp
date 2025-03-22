@@ -1,7 +1,16 @@
 #include "treewidth_solver.h"
 
 TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
+    //initialize
+    this->nice_tree_decomposition_ptr = std::move(nice_tree_decomposition);
+    instruction_stack;
+    partial_solution_stack;
+    local_solution;
+    global_solution;
 
+    //run.
+    fill_instruction_stack();
+    run_instruction_stack(dominated, excluded, newToOldIndex);
 }
 
 void TREEWIDTH_SOLVER::insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, std::vector<int>& solution, int domination_number) {
@@ -102,12 +111,11 @@ void TREEWIDTH_SOLVER::run_operation_leaf(){
     partial_solution_stack.push(partial_solutions);
 }
 
-void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
     int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
     //get previous partial solution.
     std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
-
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(child_partial_solution.size() * 3); // in the worst case.
 
@@ -152,16 +160,66 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<int>& bag, int introd
     partial_solution_stack.push(child_partial_solution);
 }
 
-void TREEWIDTH_SOLVER::run_operation_join(std::vector<int>& bag){
+void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
+    std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
+    boost::unordered_map<std::uint64_t, partial_solution> child_partial_solution_a;
+    for (auto& child : temp_child_partial_solution_a){
+        child_partial_solution_a.insert({child.encoding, child});
+    }
+    partial_solution_stack.pop();
 
+    std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
+
+    boost::unordered_map<std::uint64_t, std::pair<partial_solution*, partial_solution*>> best_combinations;
+
+    std::vector<std::uint64_t> parent_encodings;
+    parent_encodings.reserve(child_partial_solution_b.size());
+
+    for (auto& child : child_partial_solution_b){
+        std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding);
+        std::uint64_t parent_encoding = create_parent_join(compliment_encoding);
+        if (auto it = child_partial_solution_a.find(compliment_encoding); it == child_partial_solution_a.end()){
+            continue;
+        } else {
+            if (auto itt = best_combinations.find(parent_encoding); itt == best_combinations.end()){
+                //create first.
+                best_combinations[parent_encoding] = {&child, &it->second};
+            } else {
+                //check if this solution is better.
+                int result_exist = itt->second.first->domination_number + itt->second.second->domination_number;
+                int result_new = child.domination_number + it->second.domination_number;
+                if (result_exist > result_new){
+                    best_combinations[parent_encoding] = {&child, &it->second};
+                }
+                //else do nothing.
+            }
+        }
+    }
+    std::vector<partial_solution> new_partial_solutions;
+    new_partial_solutions.reserve(parent_encodings.size());
+
+    for (auto& parent_encoding : parent_encodings){
+        auto [partial_solution_a, partial_solution_b] = best_combinations[parent_encoding];
+        int domination_number = partial_solution_a->domination_number + partial_solution_b->domination_number - count_white_vertices(parent_encoding);
+        std::vector<int> solution = partial_solution_a->solution->solution;
+        for (int a : partial_solution_b->solution->solution){
+            auto pos = lower_bound(solution.begin(), solution.end(), a);
+            solution.insert(pos,a);
+        }
+        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+    }
+    remove_all_entries_partial_solution(temp_child_partial_solution_a);
+    remove_all_entries_partial_solution(child_partial_solution_b);
+    partial_solution_stack.pop();
+    partial_solution_stack.push(new_partial_solutions);
 }
 
-void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b){
+void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
     //find index of introduced vertex in the bag.
     int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
     int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
 
-    const std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
+    std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
 
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(child_partial_solution.size());
@@ -195,14 +253,14 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<int>& bag, int e
             insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.domination_number);
         }
     }
-    remove_all_entries_partial_solution(new_partial_solutions);
+    remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solutions);
 
 
 }
 
-void TREEWIDTH_SOLVER::run_operation_forget(std::vector<int>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
     int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 
     //get previous partial solution.
@@ -268,6 +326,39 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<int>& bag, int forget_ve
 }
 
 void TREEWIDTH_SOLVER::solve_root_vertex() {
+    std::vector<uint>& bag_root_vertex = nice_tree_decomposition_ptr->nice_bags[nice_tree_decomposition_ptr->root_vertex].bag;
+    std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
+
+    int lowest_domination_number = INT_MAX;
+    partial_solution* lowest_encoding = nullptr;
+
+    for (auto& child : child_partial_solution){
+        if (contains_no_gray(child.encoding)){
+            if (lowest_domination_number < child.domination_number){
+                lowest_domination_number = child.domination_number;
+                lowest_encoding = &child;
+            }
+        }
+    }
+    if (lowest_encoding == nullptr){
+        throw std::runtime_error("should never be null");
+    }
+    global_solution = lowest_encoding->solution->solution;
+    std::vector<int> white_indices = get_white_indices(lowest_encoding->encoding, bag_root_vertex.size());
+    for (int index : white_indices) {
+        if (global_solution.size() == 0)
+        {
+            global_solution.push_back(bag_root_vertex[index]);
+        } else
+        {
+            auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
+            if (*pos == bag_root_vertex[index])
+            {
+                throw std::runtime_error(":(");
+            }
+            global_solution.insert(pos, bag_root_vertex[index]);
+        }
+    }
 
 }
 
@@ -282,17 +373,32 @@ partial_solution::partial_solution(std::uint64_t encoding, solution_struct* solu
     this->domination_number = domination_number;
 }
 
-forget_info::forget_info(bool is_white, int domination_number, int index_solution){
-    this->is_white = is_white;
-    this->domination_number = domination_number;
-    this->index_solution = index_solution;
+bool contains_no_gray(std::uint64_t encoding) {
+    // Create a mask that isolates all even-positioned bit-pairs
+    std::uint64_t mask = 0x5555555555555555; // 0b01 repeated (ensures checking pairs)
+
+    // Check if value has any '11' pairs
+    return (encoding & (encoding >> 1) & mask) == 0;
 }
 
+//set all GRAY to BLACK
+std::uint64_t create_parent_join(const std::uint64_t encoding){
+    const std::uint64_t mask = 0x5555555555555555;
+    const std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
+    return (find_gray << 1) ^ encoding;
+}
 
+//makes all GRAY encodings BLACK and all BLACK encodings GRAY.
+std::uint64_t create_compliment_encoding(const std::uint64_t encoding) {
+    const std::uint64_t mask = 0x5555555555555555;
+    const std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
+    const std::uint64_t find_black = ((encoding & (~encoding >> 1) & mask));
+    return ((find_gray | find_black) << 1) ^ encoding;
+}
 
 //Helper function. Assumption: bag is ordered.
 //either returns the index of the element, or the location where element should be inserted (to keep the bag sorted).
-int find_index_in_bag(const std::vector<int>& bag, const int element) {
+int find_index_in_bag(const std::vector<uint>& bag, const int element) {
     auto it = std::lower_bound(bag.begin(), bag.end(), element); // point to the first element equal or bigger than the element.
 
     return it - bag.begin(); //returns the index.
@@ -320,5 +426,24 @@ std::uint64_t remove_color_at_index(const std::uint64_t encoding, const int inde
 
 int extract_bits(std::uint64_t encoding, int size_bag, int pos) {
     return (encoding >> (2 * (size_bag - 1 - pos))) & 0b11;
+}
+
+int count_white_vertices(std::uint64_t encoding) {
+    uint64_t mask = 0x5555555555555555; // 0b01 repeated (ensures checking pairs)
+    return __builtin_popcountll((~encoding) & (encoding >> 1) & mask); // ~ = bitflip, & = AND. & popcountll counts the number of 1 bits.
+}
+
+std::vector<int> get_white_indices(std::uint64_t encoding, int num_of_pairs) {
+    std::vector<int> whiteIndices;
+
+    // Start from the most significant 2-bit pair
+    for (int i = num_of_pairs - 1; i >= 0; --i) {
+        uint64_t pair = (encoding >> (i * 2)) & 0b11; // Extract 2-bit pair
+        if (pair == 0b10) { // Check if it is '10' (white)
+            whiteIndices.push_back((num_of_pairs - 1) - i); // Adjust index to match left-to-right order
+        }
+    }
+
+    return whiteIndices;
 }
 

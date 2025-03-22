@@ -12,15 +12,6 @@ struct solution_struct {
     explicit solution_struct(const std::vector<int>& solution);
 };
 
-struct forget_info
-{
-    bool is_white;
-    int domination_number;
-    int index_solution;
-
-    forget_info(bool is_white, int domination_number, int index_solution);
-};
-
 struct partial_solution {
     std::uint64_t encoding;
     int domination_number;
@@ -35,6 +26,7 @@ public:
     std::stack<nice_bag*> instruction_stack;
     std::stack<std::vector<partial_solution>> partial_solution_stack;
     boost::unordered_map<std::vector<int>, solution_struct> local_solution;
+    std::vector<int> global_solution;
 
     explicit TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
@@ -50,19 +42,19 @@ public:
 
     void run_operation_leaf();
 
-    void run_operation_introduce(std::vector<int>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_forget(std::vector<int>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_introduce_edge(std::vector<int>& bag, int endpoint_a, int endpoint_b);
+    void run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b);
 
-    void run_operation_join(std::vector<int>& bag);
+    void run_operation_join(std::vector<uint>& bag);
 
     void solve_root_vertex();
 };
 
 //helper functions.
-int find_index_in_bag(std::vector<int>& bag, int element);
+int find_index_in_bag(std::vector<uint>& bag, int element);
 
 std::uint64_t remove_color_at_index(std::uint64_t encoding,int index);
 
@@ -71,3 +63,13 @@ std::uint64_t add_color_at_index(std::uint64_t encoding, int index);
 std::uint64_t manipulate_color(int index_vertex, int bag_size);
 
 int extract_bits(std::uint64_t encoding, int size_bag, int pos);
+
+int count_white_vertices(std::uint64_t encoding);
+
+std::uint64_t create_compliment_encoding(std::uint64_t encoding);
+
+std::uint64_t create_parent_join(std::uint64_t encoding);
+
+bool contains_no_gray(std::uint64_t encoding);
+
+std::vector<int> get_white_indices(std::uint64_t encoding, int num_of_pairs);

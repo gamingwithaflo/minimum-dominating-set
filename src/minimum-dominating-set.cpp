@@ -14,6 +14,7 @@
 #include "util/logger.h"
 #include <filesystem>
 #include <boost/graph/connected_components.hpp>
+#include "graph/treewidth_solver.h"
 
 #include "util/timer.h"
 #include "graph/generate_tree_decomposition.h"
@@ -137,10 +138,10 @@ void component_reduction(std::string path)
 	std::vector<int>solution;
 	for (int i = 0; i < sub_components.size(); ++i){
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
-		std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 
-		td_comp->fill_instruction_stack();
-		td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+		// td_comp->fill_instruction_stack();
+		// td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {
 			//we need a +1 te correct the previous -1.
