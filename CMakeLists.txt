@@ -40,6 +40,8 @@ set(SOURCES
         src/graph/generate_tree_decomposition.cpp
         src/graph/nice_tree_decomposition.cpp
         src/graph/tree_decomposition.cpp
+        src/graph/treewidth_solver.cpp
+        src/graph/treewidth_solver.h
 
 )
 
