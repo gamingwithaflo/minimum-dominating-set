@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_044.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
@@ -135,17 +135,29 @@ void component_reduction(std::string path)
 			throw std::runtime_error("Edge endpoints must always be in the same component.");
 		}
 	}
-	int domination_number = 0;
+	std::vector<int>solution;
 	for (int i = 0; i < sub_components.size(); ++i){
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
 		std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
 
 		td_comp->fill_instruction_stack();
 		td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
-		domination_number = td_comp->global_solution.size() + domination_number;
+		//generate final solution.
+		for (int newIndex : td_comp->global_solution) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back(sub_newToOldIndex[i][newIndex] + 1);
+		}
 	}
-	domination_number += mds_context.cnt_sel;
-	std::cout << domination_number << std::endl;
+
+	for (int i = 0; i < mds_context.selected.size(); ++i) {
+		if (mds_context.is_selected(i)) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back(i + 1);
+		}
+	}
+	//return domination number.
+	std::cout << solution.size() << std::endl;
+	parse::output_solution(solution, path);
 }
 
 

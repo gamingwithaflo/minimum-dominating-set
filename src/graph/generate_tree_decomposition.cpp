@@ -144,9 +144,14 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         //Check whether the algorithm indeed computed a valid decomposition.
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
-             if (decomposition->maximumBagSize() < 50){
+            if (decomposition->maximumBagSize() < 8) {
+                std::cout << decomposition->maximumBagSize() << std::endl;
+                nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
+                std::cout << "i want to read" << std::endl;
+            }
+             else if (decomposition->maximumBagSize() < 50){
                  // Print the size of the largest bag of the decomposition to stdout.
-                 algorithm.setIterationCount(-1); // set iterations to infinite.
+                 algorithm.setIterationCount(0); // set iterations to infinite.
 
                  //run where you left off.
                  htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,

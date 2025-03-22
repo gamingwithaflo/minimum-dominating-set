@@ -15,53 +15,6 @@ namespace parse {
         }
         return g;
     }
-    
-    NICE_TREE_DECOMPOSITION read_tree_decomposition(std::istream& is, MDS_CONTEXT& mds_context) {
-        std::vector<std::vector<int>> bags;
-        std::vector<std::pair<int, int>> edges; 
-
-        int i = 0;
-        int u, v;
-        std::string temp;
-        char identifier;
-        int bagIndex, item, numBags, treewidth;
-
-        //Assumption : no spaces before the first letter.
-        for (std::string line; std::getline(is, line);) {
-            if (line.empty()) continue;
-
-            if (line[i] == 'c') continue;  // ignore comments
-
-            auto ss = std::stringstream(line);
-            if (line[i] == 's') {
-                ss >> temp >> temp >> numBags >> treewidth;
-                bags.resize(numBags);
-                --treewidth; //treewidth is one lower.
-            }
-            else if (line[i] == 'b') {
-                ss >> identifier >> bagIndex; // Read 'b' and bag index
-                while (ss >> item) {
-                    bags[bagIndex - 1].push_back(item - 1);
-                }
-            }
-            else {
-                ss >> u >> v;
-                edges.push_back({ u - 1, v - 1 });
-            }
-        }
-        adjacencyListBoost g = construct_AdjacencyList_Boost(numBags, edges);
-        //we do not want the vertices which bags which are selected or removed to be taken in the Treedecomposition. (NOT NEEDED ANYMORE)
-        //auto [vert_itt, vert_itt_end] = boost::vertices(g);
-        //for (; vert_itt != vert_itt_end; ++vert_itt) {
-        //    if (bags[*vert_itt].size() == 1) {
-        //        if (mds_context.is_selected(bags[*vert_itt][0]) || mds_context.is_removed(bags[*vert_itt][0])) {
-        //            boost::clear_vertex(*vert_itt, g);
-        //        }
-        //    }
-        //}
-
-        return NICE_TREE_DECOMPOSITION(bags, g);
-    }
 
     adjacencyListBoost read_pace_2024(std::istream& is) {
         std::vector<std::pair<int, int>> edges;
@@ -98,14 +51,6 @@ namespace parse {
         return read_pace_2024(f);
     }
 
-    NICE_TREE_DECOMPOSITION load_tree_decomposition(std::string path, MDS_CONTEXT& mds_context) {
-        std::ifstream f(path);
-        if (f.fail()) {
-            throw std::invalid_argument("Failed to open file");
-        }
-        return read_tree_decomposition(f, mds_context);
-    }
-
     void output_reduced_graph_instance(adjacencyListBoost& reduced_graph, std::string& path) {
         std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/reduced_instances/reduced_instance_";
         std::string name = getNameFile(path);
@@ -133,7 +78,7 @@ namespace parse {
     }
 
     void output_solution(std::vector<int>& solution, std::string& path) {
-        std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/solution/solution_";
+        std::string prefix = "/home/floris/github/minimum-dominating-set/output/solutions/solution_";
         std::string name = getNameFile(path);
         //assumption the graph always has the .gr extention.
         std::string new_name = name.substr(0, name.size() - 3) + ".sol";
