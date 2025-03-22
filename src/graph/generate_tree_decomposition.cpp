@@ -123,7 +123,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *  the algorithm after the first non-improving solution has been found, i.e. the algorithm
      *  will perform a simple hill-climbing approach.
      */
-    algorithm.setNonImprovementLimit(50);
+    algorithm.setNonImprovementLimit(500);
 
     // Record the optimal maximal bag size of the tree decomposition to allow printing the progress.
     std::size_t optimalBagSize = (std::size_t)-1;
