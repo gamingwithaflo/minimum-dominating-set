@@ -12,6 +12,15 @@ struct solution_struct {
     explicit solution_struct(const std::vector<int>& solution);
 };
 
+struct forget_info
+{
+    bool is_white;
+    int domination_number;
+    int index_solution;
+
+    forget_info(bool is_white, int domination_number, int index_solution);
+};
+
 struct partial_solution {
     std::uint64_t encoding;
     int domination_number;
@@ -60,3 +69,5 @@ std::uint64_t remove_color_at_index(std::uint64_t encoding,int index);
 std::uint64_t add_color_at_index(std::uint64_t encoding, int index);
 
 std::uint64_t manipulate_color(int index_vertex, int bag_size);
+
+int extract_bits(std::uint64_t encoding, int size_bag, int pos);
