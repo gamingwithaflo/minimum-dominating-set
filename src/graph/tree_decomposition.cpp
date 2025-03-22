@@ -1129,7 +1129,7 @@ void TREE_DECOMPOSITION::solve_root_vertex() {
 	for (int index : white_indices) {
 		if (global_solution.size() == 0)
 		{
-			global_solution.push_back(index);
+			global_solution.push_back(bag_root_vertex[index]);
 		} else
 		{
 			auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);

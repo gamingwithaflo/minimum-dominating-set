@@ -25,70 +25,6 @@ typedef boost::graph_traits<adjacencyListBoost>::vertex_descriptor vertex;
 
 typedef boost::graph_traits<adjacencyListBoost>::edge_iterator edge_itt;
 
-//enum operation_enum {
-//    FORGET,
-//    JOIN,
-//    INTRODUCE,
-//    INTRODUCE_EDGE,
-//    LEAF
-//};
-//
-//struct operation {
-//    operation_enum opp;
-//
-//    //constructor
-//    operation(operation_enum type);
-//    //destructor
-//    virtual ~operation() = default;
-//};
-//
-//struct operation_join : public operation {
-//
-//    //constructor
-//    operation_join();
-//};
-//
-//struct operation_leaf : public operation {
-//
-//    //constructor
-//    operation_leaf();
-//};
-//
-//struct operation_forget : public operation {
-//    int vertex;
-//
-//    //constructor
-//    operation_forget(int v);
-//};
-//
-//
-//struct operation_introduce : public operation {
-//    int vertex;
-//
-//    //constructor
-//    operation_introduce(int v);
-//};
-//
-//struct operation_introduce_edge : public operation {
-//    int endpoint_a;
-//    int endpoint_b;
-//
-//    //constructor
-//    operation_introduce_edge(int v, int w);
-//};
-//
-//class nice_bag {
-//public:
-//    std::variant<operation_join, operation_leaf, operation_introduce, operation_forget, operation_introduce_edge> op;
-//    std::vector<int> bag;
-//
-//    //overloading constructor
-//    nice_bag();
-//    nice_bag(operation_enum operation, std::vector<int>bag_input); //For leaf & join opperation.
-//    nice_bag(operation_enum operation, int v, std::vector<int>bag_input); //For Introduce and Forget opperation.
-//    nice_bag(operation_enum operation, int v, int w, std::vector<int>bag_input); //For Introduce_edge operation.
-//};
-
 std::vector<std::uint64_t> generate_all_encoding(int n);
 
 void generate_encoding(int n, int coloring, int position, std::vector<std::uint64_t>& results);
@@ -115,23 +51,9 @@ public:
 	// Constructor
 	explicit TREE_DECOMPOSITION(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition);
 
-    //void introduce_all_edges_default(adjacencyListBoost& original_graph);
-
-    //int select_root_bag();
-
     void insert_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& partial_solution, std::uint64_t encoding, std::vector<int> key, int size);
 
     void remove_all_entry_partial_solution(std::unordered_map<std::uint64_t, std::pair<int, solution_struct*>>& child_partial_solution_vector);
-
-    //void introduce_all_edges(std::pair< edge_itt, edge_itt> edges_itterator);
-
-    //void unfold_parent_vertex(int parent, std::vector<int>& bag_parent, int child, std::vector<int>& bag_child);
-
-    //void create_nice_tree_decomposition(adjacencyListBoost& reduced_graph);
-
-    //void traverse_tree_decomposition(int parent_index, vertex v);
-
-    //void unfold_leaf_vertex(int vertex);
 
     void fill_instruction_stack();
 

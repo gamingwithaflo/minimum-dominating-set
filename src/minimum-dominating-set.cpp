@@ -65,7 +65,7 @@ void output_reduced_graph(std::string path) {
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
-	reduce::reduce_ijcai(mds_context);
+	//reduce::reduce_ijcai(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
@@ -145,7 +145,7 @@ void component_reduction(std::string path)
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {
 			//we need a +1 te correct the previous -1.
-			solution.push_back(sub_newToOldIndex[i][newIndex] + 1);
+			solution.push_back((sub_newToOldIndex[i][newIndex]) + 1);
 		}
 	}
 
@@ -157,6 +157,7 @@ void component_reduction(std::string path)
 	}
 	//return domination number.
 	std::cout << solution.size() << std::endl;
+	std::sort(solution.begin(), solution.end());
 	parse::output_solution(solution, path);
 }
 
