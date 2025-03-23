@@ -7,7 +7,7 @@
 #include "graph/context.h"
 
 #include "graph/nice_tree_decomposition.h"
-#include "graph/tree_decomposition.h"
+//#include "graph/tree_decomposition.h"
 #include "reduce.h"
 #include "solver.h"
 #include <iostream>
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_031.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/bremen_subgraph_20.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
@@ -140,7 +140,7 @@ void component_reduction(std::string path)
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
 		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 
-		// td_comp->fill_instruction_stack();
+		// td_comp->fill_instruction_stack();F
 		// td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {
@@ -188,10 +188,10 @@ void reduction(std::string path, std::string path_td) {
 	int num_components = boost::connected_components(reduced_graph, &component_map[0]);
 
 	std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(reduced_graph);
-	std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+	//std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
 
-	td_comp->fill_instruction_stack();
-	td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, newToOldIndex);
+	//td_comp->fill_instruction_stack();
+	//td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, newToOldIndex);
 
 	// timer t_treewidth;
 	// td_comp.create_nice_tree_decomposition(reduced_graph);
@@ -200,33 +200,33 @@ void reduction(std::string path, std::string path_td) {
 	// td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
 	//
 	// //create a solution.
-	std::vector<int>solution;
-	int domination_number = mds_context.cnt_sel + td_comp->global_solution.size();
-	solution.reserve(domination_number);
-	//get vertices old index from global solution (which uses the new index)
-	for (int newIndex : td_comp->global_solution) {
-		//we need a +1 te correct the previous -1.
-		if (mds_context.is_excluded(newToOldIndex[newIndex]))
-		{
-			throw std::runtime_error("should not be allowed");
-		}
-		solution.push_back(newToOldIndex[newIndex] + 1);
-	}
-	for (int i = 0; i < mds_context.selected.size(); ++i) {
-		if (mds_context.is_selected(i)) {
-			//we need a +1 te correct the previous -1.
-			solution.push_back(i + 1);
-		}
-	}
+	// std::vector<int>solution;
+	// int domination_number = mds_context.cnt_sel + td_comp->global_solution.size();
+	// solution.reserve(domination_number);
+	// //get vertices old index from global solution (which uses the new index)
+	// for (int newIndex : td_comp->global_solution) {
+	// 	//we need a +1 te correct the previous -1.
+	// 	if (mds_context.is_excluded(newToOldIndex[newIndex]))
+	// 	{
+	// 		throw std::runtime_error("should not be allowed");
+	// 	}
+	// 	solution.push_back(newToOldIndex[newIndex] + 1);
+	// }
+	// for (int i = 0; i < mds_context.selected.size(); ++i) {
+	// 	if (mds_context.is_selected(i)) {
+	// 		//we need a +1 te correct the previous -1.
+	// 		solution.push_back(i + 1);
+	// 	}
+	// }
+	// //
+	// // long long timer_2 = t_run_instruction.count();
+	// // Logger::execution_reduction = t_treewidth.count();
+	// // std::cout << solution.size() << std::endl;
+	// // std::cout << t_treewidth.count() << std::endl;
 	//
-	// long long timer_2 = t_run_instruction.count();
-	// Logger::execution_reduction = t_treewidth.count();
 	// std::cout << solution.size() << std::endl;
-	// std::cout << t_treewidth.count() << std::endl;
-
-	std::cout << solution.size() << std::endl;
-	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
-	Logger::is_planar = is_planar;
+	// bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
+	// Logger::is_planar = is_planar;
 
 	//operations_research::solve_dominating_set(mds_context, true);
 

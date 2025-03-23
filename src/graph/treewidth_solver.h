@@ -3,6 +3,10 @@
 #include <vector>
 #include <stack>
 #include "nice_tree_decomposition.h"
+#include <memory>
+#include <unordered_map>
+#include <cinttypes>
+
 
 
 struct solution_struct {
@@ -54,13 +58,13 @@ public:
 };
 
 //helper functions.
-int find_index_in_bag(std::vector<uint>& bag, int element);
+int find_index_in_bag(const std::vector<uint>& bag, const int element) ;
 
-std::uint64_t remove_color_at_index(std::uint64_t encoding,int index);
+std::uint64_t remove_color_at_index(std::uint64_t encoding,int index, int bag_size);
 
-std::uint64_t add_color_at_index(std::uint64_t encoding, int index);
+std::uint64_t add_color_at_index(std::uint64_t encoding, int index, int bag_size);
 
-std::uint64_t manipulate_color(int index_vertex, int bag_size);
+std::uint64_t manipulate_color_default(int index_vertex, int bag_size);
 
 int extract_bits(std::uint64_t encoding, int size_bag, int pos);
 
