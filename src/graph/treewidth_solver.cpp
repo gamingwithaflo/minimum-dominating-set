@@ -1,6 +1,7 @@
 #pragma once
 
 #include "treewidth_solver.h"
+#include "../util/timer.h"
 
 #include <iostream>
 
@@ -116,10 +117,11 @@ void TREEWIDTH_SOLVER::run_operation_leaf()
     std::vector<int> empty = {};
     insert_entry_new_partial_solution(partial_solutions, 0, empty, 0);
     partial_solution_stack.push(partial_solutions);
-    std::cout << "run operation leaf" << std::endl;
+    //std::cout << "run operation leaf" << std::endl;
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+    timer t_operation_introduce;
     int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
     //get previous partial solution.
@@ -151,10 +153,12 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solutions);
-    std::cout << "run_operation_introduce" << std::endl;
+    std::cout <<  "bag_size: " << bag.size() << "time: introduce " << t_operation_introduce.count() << std::endl;
+    //"run_operation_introduce" << std::endl;
 }
 
 void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
+    timer t_operation_join;
     std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
     boost::unordered_map<std::uint64_t, partial_solution> child_partial_solution_a;
     for (auto& child : temp_child_partial_solution_a){
@@ -170,39 +174,20 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     parent_encodings.reserve(child_partial_solution_b.size());
 
     for (auto& child : child_partial_solution_b){
-        std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding);
-        std::uint64_t parent_encoding = create_parent_join(child.encoding);
+        const std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding);
+        const std::uint64_t parent_encoding = create_parent_join(child.encoding);
 
-        if (auto it = child_partial_solution_a.find(compliment_encoding); it != child_partial_solution_a.end()){
-            if (auto itt = best_combinations.find(parent_encoding); itt == best_combinations.end()){
-                //create first.
-                parent_encodings.emplace_back(parent_encoding);
-                best_combinations[parent_encoding] = {&child, &it->second};
-            } else
-            {
-                //check if this solution is better.
-                int result_exist = itt->second.first->domination_number + itt->second.second->domination_number;
-                int result_new = child.domination_number + it->second.domination_number;
-                if (result_exist > result_new){
-                    best_combinations[parent_encoding] = {&child, &it->second};
-                }
-                //else do nothing.
-            }
-        }
-        if (auto iterator = child_partial_solution_a.find(child.encoding); iterator != child_partial_solution_a.end()){
-            if (auto i = best_combinations.find(parent_encoding); i == best_combinations.end()){
-                //create first.
-                parent_encodings.emplace_back(child.encoding);
-                best_combinations[child.encoding] = {&child, &iterator->second};
-            } else
-            {
-                //check if this solution is better.
-                int result_exist = i->second.first->domination_number + i->second.second->domination_number;
-                int result_new = child.domination_number + iterator->second.domination_number;
-                if (result_exist > result_new){
-                    best_combinations[child.encoding] = {&child, &iterator->second};
-                }
-                //else do nothing.
+        std::vector<int> gray_indices = get_gray_indices(child.encoding, bag.size());
+
+        if (gray_indices.empty()){
+            //No gray vertices.
+            update_best_combinations_join(child, best_combinations, child_partial_solution_a, parent_encodings, compliment_encoding, parent_encoding);
+        } else {
+            //combinations if i == 0; (no GRAY vertex is fixed).
+            update_best_combinations_join(child, best_combinations, child_partial_solution_a, parent_encodings, compliment_encoding, parent_encoding);
+
+            for (int i = 1; i <= gray_indices.size(); ++i){
+                generate_combination(child, best_combinations, child_partial_solution_a, parent_encodings, i, bag.size(), gray_indices);
             }
         }
     }
@@ -219,17 +204,19 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
         }
         insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
     }
+
     remove_all_entries_partial_solution(temp_child_partial_solution_a);
     remove_all_entries_partial_solution(child_partial_solution_b);
     partial_solution_stack.pop();
     if (new_partial_solutions.empty()){
         throw std::runtime_error("sad");
     }
+    std::cout <<  "bag_size: " << bag.size() << "time: " << t_operation_join.count() << std::endl;
     partial_solution_stack.push(new_partial_solutions);
-    std::cout << "run_operation_join" << std::endl;
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
+    //timer t_operation_introduce_edge;
     //find index of introduced vertex in the bag.
     int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
     int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
@@ -273,11 +260,13 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     if (new_partial_solutions.empty()){
         throw std::runtime_error("sad");
     }
+    //std::cout <<  "bag_size: " << bag.size() << "time: " << t_operation_introduce_edge.count() << std::endl;
     partial_solution_stack.push(new_partial_solutions);
-    std::cout << "run edge introduce" << std::endl;
+    //std::cout << "run edge introduce" << std::endl;
 }
 
 void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+    timer t_operation_forget;
     int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 
     //get previous partial solution.
@@ -349,10 +338,11 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
     if (new_partial_solution.empty()){
         throw std::runtime_error("sad");
     }
+    //std::cout <<  "bag_size: " << bag.size() << "time_forget: " << t_operation_forget.count() << std::endl;
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solution);
-    std::cout << "run forget" << std::endl;
+    //std::cout << "run forget" << std::endl;
 }
 
 void TREEWIDTH_SOLVER::solve_root_vertex() {
@@ -483,5 +473,95 @@ std::vector<int> get_white_indices(std::uint64_t encoding, int num_of_pairs) {
     }
 
     return whiteIndices;
+}
+
+std::vector<int> get_gray_indices(std::uint64_t encoding, int num_of_pairs){
+    std::vector<int> grayIndices;
+
+    //Start from the most significant 2-bit pair
+    for (int i = num_of_pairs - 1; i >= 0; --i) {
+        uint64_t pair = (encoding >> (i * 2)) & 0b11;
+        if (pair == 0b11) {
+            grayIndices.push_back((num_of_pairs - 1) - i);
+        }
+    }
+    return grayIndices;
+}
+
+void update_best_combinations_join(partial_solution& child,
+                                                     boost::unordered_map<std::uint64_t, std::pair<partial_solution*, partial_solution*>>& best_combinations,
+                                                     boost::unordered_map<std::uint64_t, partial_solution>& child_partial_solution_a,
+                                                     std::vector<std::uint64_t>& parent_encodings,
+                                                     std::uint64_t compliment_encoding,
+                                                     std::uint64_t parent_encoding){
+
+    if (auto complement_encoding_a = child_partial_solution_a.find(compliment_encoding); complement_encoding_a != child_partial_solution_a.end())
+    {
+        if (auto i = best_combinations.find(parent_encoding); i == best_combinations.end()){
+            //create first.
+            parent_encodings.emplace_back(parent_encoding);
+            best_combinations[parent_encoding] = {&child, &complement_encoding_a->second};
+        } else
+        {
+            //check if this solution is better.
+            int result_exist = i->second.first->domination_number + i->second.second->domination_number;
+            int result_new = child.domination_number + complement_encoding_a->second.domination_number;
+            if (result_exist > result_new){
+                best_combinations[parent_encoding] = {&child, &complement_encoding_a->second};
+            }
+            //else do nothing.
+        }
+    }
+}
+
+//
+void generate_combination(partial_solution& child,
+                          boost::unordered_map<std::uint64_t, std::pair<partial_solution*, partial_solution*>>& best_combinations,
+                          boost::unordered_map<std::uint64_t, partial_solution>& child_partial_solution_a,
+                          std::vector<std::uint64_t>& parent_encodings,
+                          int number_of_gray_fixed,
+                          int bag_size,
+                          std::vector<int>& gray_indices) {
+    std::string bitmask(number_of_gray_fixed, 1);
+    bitmask.resize(gray_indices.size(), 0);
+
+    do {
+        std::vector<int> index_ignored_gray_indices;
+        index_ignored_gray_indices.reserve(gray_indices.size());
+        for (int i = 0; i < gray_indices.size(); ++i){
+            if (bitmask[i]){
+                index_ignored_gray_indices.push_back(gray_indices[i]);
+            }
+        }
+        //
+        std::uint64_t parent_encoding = create_parent_encoding_ignore(child.encoding, bag_size, index_ignored_gray_indices);
+        std::uint64_t compliment_encoding = create_compliment_encoding_ignore(child.encoding, bag_size, index_ignored_gray_indices);
+        update_best_combinations_join(child, best_combinations, child_partial_solution_a, parent_encodings, compliment_encoding, parent_encoding);
+
+    } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
+}
+
+std::uint64_t create_parent_encoding_ignore(const std::uint64_t encoding, const int bag_size, std::vector<int>& index_ignored_vertices){
+    constexpr std::uint64_t mask = 0x5555555555555555;
+    std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
+    //undo changed bit.
+    for (const int index : index_ignored_vertices) {
+        const int new_index = bag_size - 1 - index;
+        find_gray = find_gray ^ (1 << (new_index * 2));
+    }
+    return (find_gray << 1) ^ encoding;
+}
+
+//makes all GRAY encodings BLACK and all BLACK encodings GRAY.
+std::uint64_t create_compliment_encoding_ignore(const std::uint64_t encoding, const int bag_size, std::vector<int>& index_ignored_vertices) {
+    const std::uint64_t mask = 0x5555555555555555;
+    std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
+    //undo changed bit.
+    for (const int index : index_ignored_vertices) {
+        const int new_index = bag_size - 1 - index;
+        find_gray = find_gray ^ (1 << (new_index * 2));
+    }
+    const std::uint64_t find_black = ((encoding & (~encoding >> 1) & mask));
+    return ((find_gray | find_black) << 1) ^ encoding;
 }
 
