@@ -153,27 +153,37 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solutions);
-    std::cout <<  "bag_size: " << bag.size() << "time: introduce " << t_operation_introduce.count() << std::endl;
-    //"run_operation_introduce" << std::endl;
+    // if (bag.size() > 10){
+    //     std::cout <<  "bag_size: " << bag.size() << "time: introduce " << t_operation_introduce.count() << std::endl;
+    // }
 }
 
 void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     timer t_operation_join;
     std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
+    partial_solution_stack.pop();
+    std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
+
+    auto& smaller_map = (temp_child_partial_solution_a.size() <= child_partial_solution_b.size())
+                           ? temp_child_partial_solution_a
+                           : child_partial_solution_b;
+    auto& bigger_map = (temp_child_partial_solution_a.size() > child_partial_solution_b.size())
+                            ? temp_child_partial_solution_a
+                            : child_partial_solution_b;
+
     boost::unordered_map<std::uint64_t, partial_solution> child_partial_solution_a;
-    for (auto& child : temp_child_partial_solution_a){
+    for (auto& child : bigger_map) {
         child_partial_solution_a.insert({child.encoding, child});
     }
-    partial_solution_stack.pop();
 
-    std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
 
     boost::unordered_map<std::uint64_t, std::pair<partial_solution*, partial_solution*>> best_combinations;
 
     std::vector<std::uint64_t> parent_encodings;
-    parent_encodings.reserve(child_partial_solution_b.size());
+    parent_encodings.reserve(3 * smaller_map.size());
 
-    for (auto& child : child_partial_solution_b){
+
+    for (auto& child : smaller_map){
         const std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding);
         const std::uint64_t parent_encoding = create_parent_join(child.encoding);
 
@@ -208,15 +218,14 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     remove_all_entries_partial_solution(temp_child_partial_solution_a);
     remove_all_entries_partial_solution(child_partial_solution_b);
     partial_solution_stack.pop();
-    if (new_partial_solutions.empty()){
-        throw std::runtime_error("sad");
-    }
-    std::cout <<  "bag_size: " << bag.size() << "time: " << t_operation_join.count() << std::endl;
+    // if (bag.size() > 10){
+    //     std::cout <<  "bag_size: " << bag.size() << "time join: " << t_operation_join.count() << std::endl;
+    // }
     partial_solution_stack.push(new_partial_solutions);
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
-    //timer t_operation_introduce_edge;
+    timer t_operation_introduce_edge;
     //find index of introduced vertex in the bag.
     int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
     int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
@@ -224,7 +233,7 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
 
     std::vector<partial_solution> new_partial_solutions;
-    new_partial_solutions.reserve(child_partial_solution.size());
+    new_partial_solutions.reserve(2 * child_partial_solution.size());
 
     for (auto& child_encoding : child_partial_solution){
         int color_endpoint_a = extract_bits(child_encoding.encoding, bag.size(), index_endpoint_a);
@@ -257,11 +266,11 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     }
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
-    if (new_partial_solutions.empty()){
-        throw std::runtime_error("sad");
-    }
-    //std::cout <<  "bag_size: " << bag.size() << "time: " << t_operation_introduce_edge.count() << std::endl;
     partial_solution_stack.push(new_partial_solutions);
+
+    // if (bag.size() > 10){
+    //     std::cout <<  "bag_size: " << bag.size() << "time introduce edge: " << t_operation_introduce_edge.count() << std::endl;
+    // }
     //std::cout << "run edge introduce" << std::endl;
 }
 
@@ -273,7 +282,7 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
     std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
 
     std::vector<std::uint64_t> parent_encodings;
-    parent_encodings.reserve(child_partial_solution.size() / 2);
+    parent_encodings.reserve(child_partial_solution.size());
     boost::unordered_map<std::uint64_t,partial_solution*> temp_partial_solutions; //parent encoding, child.
 
     for (auto& child_encoding : child_partial_solution){
@@ -335,13 +344,13 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
         }
         throw std::runtime_error("should not be anything else");
     }
-    if (new_partial_solution.empty()){
-        throw std::runtime_error("sad");
-    }
-    //std::cout <<  "bag_size: " << bag.size() << "time_forget: " << t_operation_forget.count() << std::endl;
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solution);
+    // if (bag.size() > 10)
+    // {
+    //     std::cout <<  "bag_size: " << bag.size() << "time_forget: " << t_operation_forget.count() << std::endl;
+    // }
     //std::cout << "run forget" << std::endl;
 }
 
@@ -525,9 +534,10 @@ void generate_combination(partial_solution& child,
     std::string bitmask(number_of_gray_fixed, 1);
     bitmask.resize(gray_indices.size(), 0);
 
+    std::vector<int> index_ignored_gray_indices;
+    index_ignored_gray_indices.reserve(gray_indices.size());
     do {
-        std::vector<int> index_ignored_gray_indices;
-        index_ignored_gray_indices.reserve(gray_indices.size());
+        index_ignored_gray_indices.clear();
         for (int i = 0; i < gray_indices.size(); ++i){
             if (bitmask[i]){
                 index_ignored_gray_indices.push_back(gray_indices[i]);

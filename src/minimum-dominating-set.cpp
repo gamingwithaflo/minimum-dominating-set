@@ -7,7 +7,7 @@
 #include "graph/context.h"
 
 #include "graph/nice_tree_decomposition.h"
-//#include "graph/tree_decomposition.h"
+#include "graph/tree_decomposition.h"
 #include "reduce.h"
 #include "solver.h"
 #include <iostream>
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_041.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
@@ -79,6 +79,7 @@ void output_reduced_graph(std::string path) {
 
 void component_reduction(std::string path)
 {
+	timer t_complete;
 	//create the original graph & context.
 	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
 
@@ -139,6 +140,12 @@ void component_reduction(std::string path)
 	for (int i = 0; i < sub_components.size(); ++i){
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
 		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+
+
+		// std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+		// td_comp->fill_instruction_stack();
+		// td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {
 			//we need a +1 te correct the previous -1.
@@ -153,6 +160,7 @@ void component_reduction(std::string path)
 		}
 	}
 	//return domination number.
+	std::cout << t_complete.count() << std::endl;
 	std::cout << solution.size() << std::endl;
 	std::sort(solution.begin(), solution.end());
 	parse::output_solution(solution, path);
