@@ -79,6 +79,12 @@ long long Logger::execution_ilp_without_reduction = 0;
 long long Logger::execution_ilp_with_reduction = 0;
 long long Logger::execution_reduction = 0;
 
+long long Logger::execution_time_introduce = 0;
+long long Logger::execution_time_forget = 0;
+long long Logger::execution_time_join = 0;
+long long Logger::execution_time_introduce_edge = 0;
+long long Logger::execution_time_leaf = 0;
+
 bool Logger::is_planar = true; //temp value, gets updated
 
 void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded) {

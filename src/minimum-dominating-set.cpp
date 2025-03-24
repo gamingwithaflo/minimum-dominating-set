@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_018.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
@@ -160,6 +160,11 @@ void component_reduction(std::string path)
 		}
 	}
 	//return domination number.
+	std::cout << "execution_time_join: "<< Logger::execution_time_join << std::endl;
+	std::cout << "execution_time_Introduce: "<< Logger::execution_time_introduce << std::endl;
+	std::cout << "execution_time_Introduce_edge: "<< Logger::execution_time_introduce_edge << std::endl;
+	std::cout << "execution_time_forget: "<< Logger::execution_time_forget << std::endl;
+	std::cout << "execution_time_leaf: "<< Logger::execution_time_leaf << std::endl;
 	std::cout << t_complete.count() << std::endl;
 	std::cout << solution.size() << std::endl;
 	std::sort(solution.begin(), solution.end());

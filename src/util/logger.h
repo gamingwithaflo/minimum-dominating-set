@@ -39,6 +39,12 @@ public:
 	static long long execution_ilp_with_reduction;
 	static long long execution_reduction;
 
+	static long long execution_time_introduce;
+	static long long execution_time_forget;
+	static long long execution_time_join;
+	static long long execution_time_introduce_edge;
+	static long long execution_time_leaf;
+
 	static bool is_planar;
 };
 

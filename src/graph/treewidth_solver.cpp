@@ -2,6 +2,9 @@
 
 #include "treewidth_solver.h"
 #include "../util/timer.h"
+#include "../util/logger.h"
+#include <iterator>
+#include <algorithm>
 
 #include <iostream>
 
@@ -113,11 +116,13 @@ const int NUM_COLORS = 3;
 
 void TREEWIDTH_SOLVER::run_operation_leaf()
 {
+    timer t_operation_leaf;
     std::vector<partial_solution> partial_solutions;
     std::vector<int> empty = {};
     insert_entry_new_partial_solution(partial_solutions, 0, empty, 0);
     partial_solution_stack.push(partial_solutions);
     //std::cout << "run operation leaf" << std::endl;
+    Logger::execution_time_leaf += t_operation_leaf.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
@@ -156,10 +161,10 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
     // if (bag.size() > 10){
     //     std::cout <<  "bag_size: " << bag.size() << "time: introduce " << t_operation_introduce.count() << std::endl;
     // }
+    Logger::execution_time_introduce += t_operation_introduce.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
-    timer t_operation_join;
     std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
     partial_solution_stack.pop();
     std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
@@ -205,25 +210,24 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     }
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(parent_encodings.size());
-
+    timer t_operation_join;
     for (auto& parent_encoding : parent_encodings){
         auto [partial_solution_a, partial_solution_b] = best_combinations[parent_encoding];
         int domination_number = partial_solution_a->domination_number + partial_solution_b->domination_number - count_white_vertices(parent_encoding);
-        std::vector<int> solution = partial_solution_a->solution->solution;
-        for (int a : partial_solution_b->solution->solution){
-            auto pos = lower_bound(solution.begin(), solution.end(), a);
-            solution.insert(pos,a);
-        }
+        std::vector<int> solution = {};
+        solution.reserve(partial_solution_b->solution->solution.size() + partial_solution_a->solution->solution.size());
+        std::merge(partial_solution_a->solution->solution.begin(), partial_solution_a->solution->solution.end(), partial_solution_b->solution->solution.begin(), partial_solution_b->solution->solution.end(), std::back_inserter(solution));
         insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
     }
-
-    remove_all_entries_partial_solution(temp_child_partial_solution_a);
+    Logger::execution_time_join += t_operation_join.count();
     remove_all_entries_partial_solution(child_partial_solution_b);
     partial_solution_stack.pop();
     // if (bag.size() > 10){
     //     std::cout <<  "bag_size: " << bag.size() << "time join: " << t_operation_join.count() << std::endl;
     // }
     partial_solution_stack.push(new_partial_solutions);
+    remove_all_entries_partial_solution(temp_child_partial_solution_a);
+    //Logger::execution_time_join += t_operation_join.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
@@ -274,6 +278,7 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     //     std::cout <<  "bag_size: " << bag.size() << "time introduce edge: " << t_operation_introduce_edge.count() << std::endl;
     // }
     //std::cout << "run edge introduce" << std::endl;
+    Logger::execution_time_introduce_edge += t_operation_introduce_edge.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
@@ -354,6 +359,7 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
     //     std::cout <<  "bag_size: " << bag.size() << "time_forget: " << t_operation_forget.count() << std::endl;
     // }
     //std::cout << "run forget" << std::endl;
+    Logger::execution_time_forget += t_operation_forget.count();
 }
 
 void TREEWIDTH_SOLVER::solve_root_vertex() {

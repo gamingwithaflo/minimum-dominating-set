@@ -2,6 +2,8 @@
 //
 #include <iostream>
 #include <limits.h>
+#include "../util/timer.h"
+#include "../util/logger.h"
 //
 solution_struct_2::solution_struct_2(std::vector<int> sol) : ref_count(1), solution(sol) {}
 //
@@ -602,9 +604,11 @@ const int NUM_COLORS = 3;
 
 
 void TREE_DECOMPOSITION::run_operation_leaf() {
+	timer t_operation_leaf;
 	//Push an empty partial solution onto the partial solution stack.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct_2*>> empty_partial_solution;
 	partial_solution_stack.push(empty_partial_solution);
+	Logger::execution_time_leaf += t_operation_leaf.count();
 }
 
 void generate_encoding_forget(int n, std::uint64_t coloring, std::uint64_t child_coloring, int position, int index_forget, std::vector<std::pair<std::uint64_t, std::uint64_t>>& results) {
@@ -631,6 +635,7 @@ std::vector<std::pair<std::uint64_t, std::uint64_t>> generate_all_encoding_forge
 }
 
 void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex) {
+	timer t_operation_forget;
 	//find index of introduced vertex in the bag.
 	int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 
@@ -701,7 +706,7 @@ void TREE_DECOMPOSITION::run_operation_forget(std::vector<uint>& bag, int forget
 	}
 	remove_all_entry_partial_solution(child_partial_solution);
 	partial_solution_stack.push(partial_solution);
-
+	Logger::execution_time_forget += t_operation_forget.count();
 }
 
 std::vector<std::uint64_t> generate_all_encoding(int n) {
@@ -743,6 +748,7 @@ void generate_encoding_introduce(int n, std::uint64_t coloring, std::uint64_t ch
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
+	timer t_operation_introduce;
 	//find index of introduced vertex in the bag.
 	int index_introduced_vertex = find_index_in_bag_edge(bag, introduced_vertex);
 
@@ -835,6 +841,7 @@ void TREE_DECOMPOSITION::run_operation_introduce(std::vector<uint>& bag, int int
 		//remove all references of child_partial_solution as it will be removed after this.
 		remove_all_entry_partial_solution(child_partial_solution);
 		partial_solution_stack.push(partial_solution);
+		Logger::execution_time_introduce += t_operation_introduce.count();
 	}
 }
 
@@ -913,6 +920,7 @@ void generate_all_encoding_join(int n,
 
 
 void TREE_DECOMPOSITION::run_operation_join(std::vector<uint>& bag) {
+	timer t_operation_join;
 	//create an empty partial solution.
 	std::unordered_map<std::uint64_t, std::pair<int, solution_struct_2*>> partial_solution;
 	if (bag.size() == 0)
@@ -999,12 +1007,14 @@ void TREE_DECOMPOSITION::run_operation_join(std::vector<uint>& bag) {
 		}
 		insert_entry_partial_solution(partial_solution, encoding_vector[i], solution, lowest_pair_cost);
 	}
-	partial_solution_stack.push(partial_solution);
 	remove_all_entry_partial_solution(child_partial_solution_a);
 	remove_all_entry_partial_solution(child_partial_solution_b);
+	partial_solution_stack.push(partial_solution);
+	Logger::execution_time_join += t_operation_join.count();
 }
 
 void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b) {
+	timer t_operation_intoduce_edge;
 	//find index of introduced vertex in the bag.
 	int index_endpoint_a = find_index_in_bag_edge(bag, endpoint_a);
 	int index_endpoint_b = find_index_in_bag_edge(bag, endpoint_b);
@@ -1073,7 +1083,7 @@ void TREE_DECOMPOSITION::run_operation_introduce_edge(std::vector<uint>& bag, in
 	}
 	remove_all_entry_partial_solution(child_partial_solution);
 	partial_solution_stack.push(partial_solution);
-
+	Logger::execution_time_introduce_edge += t_operation_intoduce_edge.count();
 }
 
 bool contains_no_gray_2(std::uint64_t encoding) {
