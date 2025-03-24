@@ -70,10 +70,6 @@ int extract_bits(std::uint64_t encoding, int size_bag, int pos);
 
 int count_white_vertices(std::uint64_t encoding);
 
-std::uint64_t create_compliment_encoding(std::uint64_t encoding);
-
-std::uint64_t create_parent_join(std::uint64_t encoding);
-
 bool contains_no_gray(std::uint64_t encoding);
 
 std::vector<int> get_white_indices(std::uint64_t encoding, int num_of_pairs);
@@ -86,7 +82,8 @@ void generate_combination(partial_solution& child,
                           std::vector<std::uint64_t>& parent_encodings,
                           int number_of_gray_fixed,
                           int bag_size,
-                          std::vector<int>& gray_indices);
+                          std::vector<int>& gray_indices,
+                          std::uint64_t find_black);
 
 void update_best_combinations_join(partial_solution& child,
                                                      boost::unordered_map<std::uint64_t, std::pair<partial_solution*, partial_solution*>>& best_combinations,
@@ -95,6 +92,11 @@ void update_best_combinations_join(partial_solution& child,
                                                      std::uint64_t compliment_encoding,
                                                      std::uint64_t parent_encoding);
 
-std::uint64_t create_parent_encoding_ignore(std::uint64_t encoding, int bag_size, std::vector<int>& index_ignored_vertices);
+std::uint64_t create_parent_encoding(std::uint64_t encoding, const std::uint64_t& find_gray);
 
-std::uint64_t create_compliment_encoding_ignore(std::uint64_t encoding, int bag_size, std::vector<int>& index_ignored_vertices);
+std::uint64_t create_compliment_encoding(std::uint64_t encoding, std::uint64_t& find_gray, std::uint64_t& find_black);
+
+std::uint64_t create_find_black(std::uint64_t encoding);
+
+std::uint64_t create_find_gray(std::uint64_t encoding);
+

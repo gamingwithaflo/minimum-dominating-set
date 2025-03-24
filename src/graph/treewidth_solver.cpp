@@ -184,8 +184,10 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
 
 
     for (auto& child : smaller_map){
-        const std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding);
-        const std::uint64_t parent_encoding = create_parent_join(child.encoding);
+        std::uint64_t find_gray = create_find_gray(child.encoding);
+        std::uint64_t find_black = create_find_black(child.encoding);
+        const std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding, find_gray, find_black);
+        const std::uint64_t parent_encoding = create_parent_encoding(child.encoding, find_gray);
 
         std::vector<int> gray_indices = get_gray_indices(child.encoding, bag.size());
 
@@ -197,7 +199,7 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
             update_best_combinations_join(child, best_combinations, child_partial_solution_a, parent_encodings, compliment_encoding, parent_encoding);
 
             for (int i = 1; i <= gray_indices.size(); ++i){
-                generate_combination(child, best_combinations, child_partial_solution_a, parent_encodings, i, bag.size(), gray_indices);
+                generate_combination(child, best_combinations, child_partial_solution_a, parent_encodings, i, bag.size(), gray_indices, find_black);
             }
         }
     }
@@ -410,21 +412,6 @@ bool contains_no_gray(std::uint64_t encoding) {
     return (encoding & (encoding >> 1) & mask) == 0;
 }
 
-//set all GRAY to BLACK
-std::uint64_t create_parent_join(const std::uint64_t encoding){
-    const std::uint64_t mask = 0x5555555555555555;
-    const std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
-    return (find_gray << 1) ^ encoding;
-}
-
-//makes all GRAY encodings BLACK and all BLACK encodings GRAY.
-std::uint64_t create_compliment_encoding(const std::uint64_t encoding) {
-    const std::uint64_t mask = 0x5555555555555555;
-    const std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
-    const std::uint64_t find_black = ((encoding & (~encoding >> 1) & mask));
-    return ((find_gray | find_black) << 1) ^ encoding;
-}
-
 //Helper function. Assumption: bag is ordered.
 //either returns the index of the element, or the location where element should be inserted (to keep the bag sorted).
 int find_index_in_bag(const std::vector<uint>& bag, const int element) {
@@ -530,7 +517,8 @@ void generate_combination(partial_solution& child,
                           std::vector<std::uint64_t>& parent_encodings,
                           int number_of_gray_fixed,
                           int bag_size,
-                          std::vector<int>& gray_indices) {
+                          std::vector<int>& gray_indices,
+                          std::uint64_t find_black) {
     std::string bitmask(number_of_gray_fixed, 1);
     bitmask.resize(gray_indices.size(), 0);
 
@@ -538,40 +526,40 @@ void generate_combination(partial_solution& child,
     index_ignored_gray_indices.reserve(gray_indices.size());
     do {
         index_ignored_gray_indices.clear();
+        std::uint64_t find_gray = create_find_gray(child.encoding);
+        find_gray = find_gray >> 1;
         for (int i = 0; i < gray_indices.size(); ++i){
             if (bitmask[i]){
-                index_ignored_gray_indices.push_back(gray_indices[i]);
+                const int new_index = bag_size - 1 - gray_indices[i];
+                find_gray ^= (1 << (new_index * 2));
             }
         }
-        //
-        std::uint64_t parent_encoding = create_parent_encoding_ignore(child.encoding, bag_size, index_ignored_gray_indices);
-        std::uint64_t compliment_encoding = create_compliment_encoding_ignore(child.encoding, bag_size, index_ignored_gray_indices);
+        find_gray = find_gray << 1;
+
+        std::uint64_t parent_encoding = create_parent_encoding(child.encoding, find_gray);
+        std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding, find_gray, find_black);
         update_best_combinations_join(child, best_combinations, child_partial_solution_a, parent_encodings, compliment_encoding, parent_encoding);
 
     } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 }
 
-std::uint64_t create_parent_encoding_ignore(const std::uint64_t encoding, const int bag_size, std::vector<int>& index_ignored_vertices){
-    constexpr std::uint64_t mask = 0x5555555555555555;
-    std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
-    //undo changed bit.
-    for (const int index : index_ignored_vertices) {
-        const int new_index = bag_size - 1 - index;
-        find_gray = find_gray ^ (1 << (new_index * 2));
-    }
-    return (find_gray << 1) ^ encoding;
+std::uint64_t create_parent_encoding(const std::uint64_t encoding, const std::uint64_t& find_gray){
+    return find_gray ^ encoding;
 }
 
 //makes all GRAY encodings BLACK and all BLACK encodings GRAY.
-std::uint64_t create_compliment_encoding_ignore(const std::uint64_t encoding, const int bag_size, std::vector<int>& index_ignored_vertices) {
-    const std::uint64_t mask = 0x5555555555555555;
-    std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
-    //undo changed bit.
-    for (const int index : index_ignored_vertices) {
-        const int new_index = bag_size - 1 - index;
-        find_gray = find_gray ^ (1 << (new_index * 2));
-    }
-    const std::uint64_t find_black = ((encoding & (~encoding >> 1) & mask));
-    return ((find_gray | find_black) << 1) ^ encoding;
+std::uint64_t create_compliment_encoding(std::uint64_t encoding, std::uint64_t& find_gray, std::uint64_t& find_black) {
+    return ((find_gray | find_black)) ^ encoding;
 }
 
+std::uint64_t create_find_black(std::uint64_t encoding) {
+    const std::uint64_t mask = 0x5555555555555555;
+    const std::uint64_t find_black = ((encoding & (~encoding >> 1) & mask));
+    return find_black << 1;
+}
+
+std::uint64_t create_find_gray(std::uint64_t encoding) {
+    const std::uint64_t mask = 0x5555555555555555;
+    const std::uint64_t find_gray = ((encoding & (encoding >> 1) & mask));
+    return find_gray << 1;
+}
