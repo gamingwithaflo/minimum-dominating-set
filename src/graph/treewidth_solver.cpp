@@ -210,14 +210,28 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     }
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(parent_encodings.size());
+    boost::unordered_map<std::pair<std::vector<int>, std::vector<int>>, std::vector<int>> batch_merge;
     timer t_operation_join;
     for (auto& parent_encoding : parent_encodings){
         auto [partial_solution_a, partial_solution_b] = best_combinations[parent_encoding];
         int domination_number = partial_solution_a->domination_number + partial_solution_b->domination_number - count_white_vertices(parent_encoding);
         std::vector<int> solution = {};
-        solution.reserve(partial_solution_b->solution->solution.size() + partial_solution_a->solution->solution.size());
-        std::merge(partial_solution_a->solution->solution.begin(), partial_solution_a->solution->solution.end(), partial_solution_b->solution->solution.begin(), partial_solution_b->solution->solution.end(), std::back_inserter(solution));
-        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        auto& partial_solution_a_vector= partial_solution_a->solution->solution;
+        auto& partial_solution_b_vector= partial_solution_b->solution->solution;
+        if (auto it = batch_merge.find(std::make_pair(partial_solution_a_vector, partial_solution_b_vector)); it != batch_merge.end())
+        {
+            solution = it->second;
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        } else if (auto itt = batch_merge.find(std::make_pair(partial_solution_b_vector, partial_solution_a_vector)); itt != batch_merge.end())
+        {
+            solution = itt->second;
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        } else {
+            solution.reserve(partial_solution_b_vector.size() + partial_solution_a_vector.size());
+            std::merge(partial_solution_a_vector.begin(), partial_solution_a_vector.end(), partial_solution_b_vector.begin(), partial_solution_b_vector.end(), std::back_inserter(solution));
+            batch_merge.insert(std::make_pair(std::make_pair(partial_solution_a_vector, partial_solution_b_vector), solution));
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        }
     }
     Logger::execution_time_join += t_operation_join.count();
     remove_all_entries_partial_solution(child_partial_solution_b);
@@ -341,6 +355,7 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
         }
         if (color == WHITE) {
             std::vector<int> solution = best_child->solution->solution;
+            solution.reserve(1);
             auto pos = std::lower_bound(solution.begin(), solution.end(), forget_vertex);
             solution.insert(pos, forget_vertex);
             insert_entry_new_partial_solution(new_partial_solution, parent_encoding, solution, best_child->domination_number);
