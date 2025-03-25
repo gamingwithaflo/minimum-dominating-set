@@ -6,14 +6,16 @@
 #include <memory>
 #include <unordered_map>
 #include <cinttypes>
+#include <boost/dynamic_bitset.hpp>
+#include "../util/logger.h"
 
 
 
 struct solution_struct {
-    std::vector<int> solution;
     int ref_cnt;
+    boost::dynamic_bitset<> solution;
 
-    explicit solution_struct(const std::vector<int>& solution);
+    explicit solution_struct(const boost::dynamic_bitset<>& solution);
 };
 
 struct partial_solution {
@@ -29,12 +31,12 @@ public:
     std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition_ptr;
     std::stack<nice_bag*> instruction_stack;
     std::stack<std::vector<partial_solution>> partial_solution_stack;
-    boost::unordered_map<std::vector<int>, solution_struct> local_solution;
+    boost::unordered_map<boost::dynamic_bitset<>, solution_struct> local_solution;
     std::vector<int> global_solution;
 
     explicit TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
-    void insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, std::vector<int>& solution, int domination_number);
+    void insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, boost::dynamic_bitset<>& solution, int domination_number);
 
     void remove_all_entries_partial_solution(std::vector<partial_solution>& child_partial_solutions);
 
@@ -44,7 +46,7 @@ public:
 
     void depth_first_search(int start);
 
-    void run_operation_leaf();
+    void run_operation_leaf(int num_of_vertices);
 
     void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
 

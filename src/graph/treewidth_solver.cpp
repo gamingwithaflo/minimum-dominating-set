@@ -2,7 +2,6 @@
 
 #include "treewidth_solver.h"
 #include "../util/timer.h"
-#include "../util/logger.h"
 #include <iterator>
 #include <algorithm>
 
@@ -21,7 +20,7 @@ TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice
     run_instruction_stack(dominated, excluded, newToOldIndex);
 }
 
-void TREEWIDTH_SOLVER::insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, std::vector<int>& solution, int domination_number) {
+void TREEWIDTH_SOLVER::insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, boost::dynamic_bitset<>& solution, int domination_number) {
     solution_struct* ptr_solution = nullptr;
 
     auto it = local_solution.find(solution);
@@ -74,7 +73,7 @@ void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<int>& dominated, std::v
 
         //run if it is a leaf operation.
         if (std::holds_alternative<operation_leaf>(instruction.op)) {
-            run_operation_leaf();
+            run_operation_leaf(newToOldIndex.size());
             continue;
         }
 
@@ -114,12 +113,12 @@ const int WHITE = 2;
 const int GRAY = 3;
 const int NUM_COLORS = 3;
 
-void TREEWIDTH_SOLVER::run_operation_leaf()
+void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices)
 {
     timer t_operation_leaf;
     std::vector<partial_solution> partial_solutions;
-    std::vector<int> empty = {};
-    insert_entry_new_partial_solution(partial_solutions, 0, empty, 0);
+    boost::dynamic_bitset<> empty_solution(num_of_vertices);
+    insert_entry_new_partial_solution(partial_solutions, 0, empty_solution, 0);
     partial_solution_stack.push(partial_solutions);
     //std::cout << "run operation leaf" << std::endl;
     Logger::execution_time_leaf += t_operation_leaf.count();
@@ -210,28 +209,17 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     }
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(parent_encodings.size());
-    boost::unordered_map<std::pair<std::vector<int>, std::vector<int>>, std::vector<int>> batch_merge;
+    //boost::unordered_map<std::pair<std::vector<int>, std::vector<int>>, std::vector<int>> batch_merge;
     timer t_operation_join;
     for (auto& parent_encoding : parent_encodings){
         auto [partial_solution_a, partial_solution_b] = best_combinations[parent_encoding];
         int domination_number = partial_solution_a->domination_number + partial_solution_b->domination_number - count_white_vertices(parent_encoding);
-        std::vector<int> solution = {};
-        auto& partial_solution_a_vector= partial_solution_a->solution->solution;
-        auto& partial_solution_b_vector= partial_solution_b->solution->solution;
-        if (auto it = batch_merge.find(std::make_pair(partial_solution_a_vector, partial_solution_b_vector)); it != batch_merge.end())
-        {
-            solution = it->second;
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
-        } else if (auto itt = batch_merge.find(std::make_pair(partial_solution_b_vector, partial_solution_a_vector)); itt != batch_merge.end())
-        {
-            solution = itt->second;
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
-        } else {
-            solution.reserve(partial_solution_b_vector.size() + partial_solution_a_vector.size());
-            std::merge(partial_solution_a_vector.begin(), partial_solution_a_vector.end(), partial_solution_b_vector.begin(), partial_solution_b_vector.end(), std::back_inserter(solution));
-            batch_merge.insert(std::make_pair(std::make_pair(partial_solution_a_vector, partial_solution_b_vector), solution));
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
-        }
+        //std::vector<int> solution = {};
+        auto partial_solution_a_bitset = partial_solution_a->solution->solution;
+        auto partial_solution_b_bitset = partial_solution_b->solution->solution;
+        boost::dynamic_bitset<> solution = partial_solution_a_bitset | partial_solution_b_bitset;
+        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        //}
     }
     Logger::execution_time_join += t_operation_join.count();
     remove_all_entries_partial_solution(child_partial_solution_b);
@@ -354,10 +342,8 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
             continue;
         }
         if (color == WHITE) {
-            std::vector<int> solution = best_child->solution->solution;
-            solution.reserve(1);
-            auto pos = std::lower_bound(solution.begin(), solution.end(), forget_vertex);
-            solution.insert(pos, forget_vertex);
+            auto solution = best_child->solution->solution;
+            solution.flip(forget_vertex);
             insert_entry_new_partial_solution(new_partial_solution, parent_encoding, solution, best_child->domination_number);
             continue;
         }
@@ -395,26 +381,35 @@ void TREEWIDTH_SOLVER::solve_root_vertex() {
     if (lowest_encoding == nullptr){
         throw std::runtime_error("should never be null");
     }
-    global_solution = lowest_encoding->solution->solution;
+    auto solution = lowest_encoding->solution->solution;
     std::vector<int> white_indices = get_white_indices(lowest_encoding->encoding, bag_root_vertex.size());
     for (int index : white_indices) {
-        if (global_solution.size() == 0)
+        solution.flip(bag_root_vertex[index]);
+        // if (solution.none())
+        // {
+        //     solution.flip(bag_root_vertex[index]);
+        //     // global_solution.push_back(bag_root_vertex[index]);
+        // } else
+        // {
+        //     solution.flip(bag_root_vertex[index]);
+        //     // auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
+        //     // if (*pos == bag_root_vertex[index])
+        //     // {
+        //     //     throw std::runtime_error(":(");
+        //     // }
+        //     // global_solution.insert(pos, bag_root_vertex[index]);
+    }
+    global_solution.reserve(lowest_domination_number);
+    for (int i = 0; i < solution.size(); ++i) {
+        if (solution[i] == 1)
         {
-            global_solution.push_back(bag_root_vertex[index]);
-        } else
-        {
-            auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
-            if (*pos == bag_root_vertex[index])
-            {
-                throw std::runtime_error(":(");
-            }
-            global_solution.insert(pos, bag_root_vertex[index]);
+            global_solution.push_back(solution[i]);
         }
     }
-
+    partial_solution_stack.pop();
 }
 
-solution_struct::solution_struct(const std::vector<int>& solution) {
+solution_struct::solution_struct(const boost::dynamic_bitset<>& solution) {
     this->solution = solution;
     this->ref_cnt = 1;
 }
