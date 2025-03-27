@@ -138,13 +138,14 @@ void component_reduction(std::string path)
 	}
 	std::vector<int>solution;
 	for (int i = 0; i < sub_components.size(); ++i){
+		std::vector<boost::dynamic_bitset<>> domination_vector = create_domination_vector(*sub_components[i]);
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
-		//std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i], domination_vector);
 
 
-		std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
-		td_comp->fill_instruction_stack();
-		td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+		// std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
+		// td_comp->fill_instruction_stack();
+		// td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {
@@ -327,6 +328,21 @@ void reduction_info(std::string path) {
 	std::string name = parse::getNameFile(path);
 	//output_loginfo(name); TODO::DONT FORGET TO RETURN
 }
+
+std::vector<boost::dynamic_bitset<>> create_domination_vector(const adjacencyListBoost& reduced_graph){
+	std::vector bitset_vector(num_vertices(reduced_graph), boost::dynamic_bitset<>(num_vertices(reduced_graph)));
+
+	for (int vertex_index = 0; vertex_index < num_vertices(reduced_graph); ++vertex_index) {
+		bitset_vector[vertex_index][vertex_index] = true;
+		auto [vert_itt, vert_itt_end] = adjacent_vertices(vertex_index, reduced_graph);
+		for (;vert_itt != vert_itt_end; ++vert_itt) {
+			bitset_vector[vertex_index][*vert_itt] = true;
+		}
+	}
+
+	return bitset_vector;
+}
+
 
 adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex) {
 

@@ -7,9 +7,10 @@
 
 #include <iostream>
 
-TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
+TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex, std::vector<boost::dynamic_bitset<>>& dominated_vector) {
     //initialize
     this->nice_tree_decomposition_ptr = std::move(nice_tree_decomposition);
+    this->dominated_vector = dominated_vector;
     instruction_stack;
     partial_solution_stack;
     local_solution;
@@ -20,14 +21,14 @@ TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice
     run_instruction_stack(dominated, excluded, newToOldIndex);
 }
 
-void TREEWIDTH_SOLVER::insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, boost::dynamic_bitset<>& solution, int domination_number) {
+void TREEWIDTH_SOLVER::insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, boost::dynamic_bitset<>& solution,boost::dynamic_bitset<>& dominated, int domination_number) {
     solution_struct* ptr_solution = nullptr;
 
     auto it = local_solution.find(solution);
 
     if (it == local_solution.end()) {
         //Using existing vector
-        auto [new_it, succes] = local_solution.emplace(solution, solution_struct(solution));
+        auto [new_it, succes] = local_solution.emplace(solution, solution_struct(solution, dominated));
         ptr_solution = &new_it->second;
     } else {
         ptr_solution = &(it->second);
@@ -63,6 +64,13 @@ void TREEWIDTH_SOLVER::depth_first_search(int start) {
 }
 
 void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex) {
+    boost::dynamic_bitset<> dominated_solution(newToOldIndex.size());
+    //this could be done once.
+    for (int i = 0; i < newToOldIndex.size(); ++i) {
+        if (dominated[newToOldIndex[i]] == 1) {
+            dominated_solution[i] = true;
+        }
+    }
     while (!instruction_stack.empty()) {
         //get top instruction from the stack. (a pointer).
         nice_bag* instruction_ptr = instruction_stack.top();
@@ -73,7 +81,7 @@ void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<int>& dominated, std::v
 
         //run if it is a leaf operation.
         if (std::holds_alternative<operation_leaf>(instruction.op)) {
-            run_operation_leaf(newToOldIndex.size());
+            run_operation_leaf(newToOldIndex.size(), dominated_solution);
             continue;
         }
 
@@ -113,12 +121,11 @@ const int WHITE = 2;
 const int GRAY = 3;
 const int NUM_COLORS = 3;
 
-void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices)
-{
+void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices, boost::dynamic_bitset<>& dominated_solution) {
     timer t_operation_leaf;
     std::vector<partial_solution> partial_solutions;
     boost::dynamic_bitset<> empty_solution(num_of_vertices);
-    insert_entry_new_partial_solution(partial_solutions, 0, empty_solution, 0);
+    insert_entry_new_partial_solution(partial_solutions, 0, empty_solution, dominated_solution, 0);
     partial_solution_stack.push(partial_solutions);
     //std::cout << "run operation leaf" << std::endl;
     Logger::execution_time_leaf += t_operation_leaf.count();
@@ -143,16 +150,16 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
         if (dominated[newToOldIndex[introduced_vertex]]){
             //Child bag was a leaf.
             const int domination_number_black = child_encoding.domination_number; // plus 0.
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_black, child_encoding.solution->solution, domination_number_black);
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_black, child_encoding.solution->solution,child_encoding.solution->dominated, domination_number_black);
         }
         //handle white vertices.
         std::uint64_t parent_encoding_white = parent_encoding + (2 * increase_color); // White encoding : 10
         const int domination_number_white = child_encoding.domination_number + 1;
-        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_white, child_encoding.solution->solution, domination_number_white);
+        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_white, child_encoding.solution->solution, child_encoding.solution->dominated, domination_number_white);
 
         std::uint64_t parent_encoding_gray = parent_encoding + (3 * increase_color); // gray encoding : 11
         const int domination_number_gray = child_encoding.domination_number; // plus 0.
-        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_gray, child_encoding.solution->solution, domination_number_gray);
+        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding_gray, child_encoding.solution->solution, child_encoding.solution->dominated, domination_number_gray);
     }
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
@@ -185,13 +192,46 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
 
     std::vector<std::uint64_t> parent_encodings;
     parent_encodings.reserve(3 * smaller_map.size());
+    boost::unordered_map<std::uint64_t, bool> is_dominated;
 
+    std::vector<partial_solution> non_gray_encodings;
+    non_gray_encodings.reserve(smaller_map.size());
+
+    for (auto& child: smaller_map){
+        //find non_gray
+        std::uint64_t find_gray = create_find_gray(child.encoding);
+
+        if (find_gray == 0){
+            std::vector<int>index_white = get_white_indices(child.encoding, bag.size());
+            auto child_dominated = child.solution->dominated;
+            for (auto index : index_white){
+                child_dominated |= dominated_vector[bag[index]];
+            }
+            for (auto& non_gray_child : non_gray_encodings){
+                if (non_gray_child.domination_number >= child.domination_number) {
+                    std::vector<int>index_white_parent = get_white_indices(non_gray_child.encoding, bag.size());
+                    auto parent_dominated = non_gray_child.solution->dominated;
+                    for (auto index : index_white_parent){
+                        parent_dominated |= dominated_vector[bag[index]];
+                    }
+                    if ((parent_dominated & child_dominated) == parent_dominated){
+                        is_dominated[non_gray_child.encoding] = true;
+                    }
+                }
+            }
+            non_gray_encodings.push_back(child);
+        }
+
+    }
 
     for (auto& child : smaller_map){
         std::uint64_t find_gray = create_find_gray(child.encoding);
+        const std::uint64_t parent_encoding = create_parent_encoding(child.encoding, find_gray);
+        if (auto itt = is_dominated.find(parent_encoding); itt != is_dominated.end()){
+            continue;
+        }
         std::uint64_t find_black = create_find_black(child.encoding);
         const std::uint64_t compliment_encoding = create_compliment_encoding(child.encoding, find_gray, find_black);
-        const std::uint64_t parent_encoding = create_parent_encoding(child.encoding, find_gray);
 
         std::vector<int> gray_indices = get_gray_indices(child.encoding, bag.size());
 
@@ -218,7 +258,8 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
         auto partial_solution_a_bitset = partial_solution_a->solution->solution;
         auto partial_solution_b_bitset = partial_solution_b->solution->solution;
         boost::dynamic_bitset<> solution = partial_solution_a_bitset | partial_solution_b_bitset;
-        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
+        boost::dynamic_bitset<> dominated = partial_solution_a->solution->dominated | partial_solution_b->solution->dominated;
+        insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, dominated, domination_number);
         //}
     }
     Logger::execution_time_join += t_operation_join.count();
@@ -257,8 +298,8 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
             std::uint64_t manipulate_color_b = manipulate_color_default(index_endpoint_b, bag.size());
             std::uint64_t parent_encoding = child_encoding.encoding - (2 * manipulate_color_b);
             // first copy entry.
-            insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.domination_number);
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, child_encoding.solution->solution, child_encoding.domination_number);
+            insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.solution->dominated, child_encoding.domination_number);
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, child_encoding.solution->solution, child_encoding.solution->dominated, child_encoding.domination_number);
             continue;
         }
         if (color_endpoint_a == GRAY && color_endpoint_b == WHITE)
@@ -266,11 +307,11 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
             std::uint64_t manipulate_color_a = manipulate_color_default(index_endpoint_a, bag.size());
             std::uint64_t parent_encoding = child_encoding.encoding - (2 * manipulate_color_a);
             // first copy entry.
-            insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.domination_number);
-            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, child_encoding.solution->solution, child_encoding.domination_number);
+            insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.solution->dominated, child_encoding.domination_number);
+            insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, child_encoding.solution->solution, child_encoding.solution->dominated, child_encoding.domination_number);
             continue;
         }
-        insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.domination_number);
+        insert_entry_new_partial_solution(new_partial_solutions, child_encoding.encoding, child_encoding.solution->solution, child_encoding.solution->dominated, child_encoding.domination_number);
     }
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
@@ -338,13 +379,16 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
         const int color = extract_bits(best_child->encoding, bag.size()+1, index_forget_vertex);
         if (color == BLACK){
             //no new introduces.
-            insert_entry_new_partial_solution(new_partial_solution, parent_encoding, best_child->solution->solution, best_child->domination_number);
+            insert_entry_new_partial_solution(new_partial_solution, parent_encoding, best_child->solution->solution, best_child->solution->dominated, best_child->domination_number);
             continue;
         }
         if (color == WHITE) {
             auto solution = best_child->solution->solution;
+            auto dominated = best_child->solution->dominated;
+            dominated |= dominated_vector[forget_vertex];
             solution.flip(forget_vertex);
-            insert_entry_new_partial_solution(new_partial_solution, parent_encoding, solution, best_child->domination_number);
+
+            insert_entry_new_partial_solution(new_partial_solution, parent_encoding, solution, dominated, best_child->domination_number);
             continue;
         }
         if  (color == GRAY) {
@@ -409,8 +453,9 @@ void TREEWIDTH_SOLVER::solve_root_vertex() {
     partial_solution_stack.pop();
 }
 
-solution_struct::solution_struct(const boost::dynamic_bitset<>& solution) {
+solution_struct::solution_struct(const boost::dynamic_bitset<>& solution, const boost::dynamic_bitset<>& dominated) {
     this->solution = solution;
+    this->dominated = dominated;
     this->ref_cnt = 1;
 }
 
