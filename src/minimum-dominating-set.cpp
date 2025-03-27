@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_018.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
 	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
