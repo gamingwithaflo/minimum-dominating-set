@@ -14,6 +14,7 @@
 struct solution_struct {
     int ref_cnt;
     boost::dynamic_bitset<> solution;
+    boost::dynamic_bitset<> dominated;
 
     explicit solution_struct(const boost::dynamic_bitset<>& solution);
 };
