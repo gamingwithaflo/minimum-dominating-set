@@ -200,7 +200,6 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     for (auto& child: smaller_map){
         //find non_gray
         std::uint64_t find_gray = create_find_gray(child.encoding);
-
         if (find_gray == 0){
             std::vector<int>index_white = get_white_indices(child.encoding, bag.size());
             auto child_dominated = child.solution->dominated;
@@ -208,14 +207,20 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
                 child_dominated |= dominated_vector[bag[index]];
             }
             for (auto& non_gray_child : non_gray_encodings){
+                std::vector<int>index_white_parent = get_white_indices(non_gray_child.encoding, bag.size());
+                auto parent_dominated = non_gray_child.solution->dominated;
+                for (auto index : index_white_parent){
+                    parent_dominated |= dominated_vector[bag[index]];
+                }
                 if (non_gray_child.domination_number >= child.domination_number) {
-                    std::vector<int>index_white_parent = get_white_indices(non_gray_child.encoding, bag.size());
-                    auto parent_dominated = non_gray_child.solution->dominated;
-                    for (auto index : index_white_parent){
-                        parent_dominated |= dominated_vector[bag[index]];
-                    }
                     if ((parent_dominated & child_dominated) == parent_dominated){
                         is_dominated[non_gray_child.encoding] = true;
+                    }
+                } else
+                {
+                    if ((parent_dominated & child_dominated) == child_dominated)
+                    {
+                        is_dominated[child.encoding] = true;
                     }
                 }
             }
