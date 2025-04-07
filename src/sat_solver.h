@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "util/timer.h"
 #include <algorithm>
 #include <string>
 #include "ortools/base/logging.h"
