@@ -14,10 +14,13 @@
 #include "util/logger.h"
 #include <filesystem>
 #include <boost/graph/connected_components.hpp>
+
+#include "sat_solver.h"
 #include "graph/treewidth_solver.h"
 
 #include "util/timer.h"
 #include "graph/generate_tree_decomposition.h"
+#include "ortools/sat/cp_model_solver.h"
 
 bool stringToBool(const std::string& str) {
 	std::string s = str;
@@ -34,10 +37,10 @@ int main(int argc, char* argv[])
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/pace/bremen_subgraph";
 
 	//default values
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr"; //original graph.
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_001.gr"; //original graph.
 	bool dir_mode = false;
 	std::string dir_path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/";
-	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_028.txt"; //
+	std::string path_td = "/home/floris/Documents/Thesis/Dataset/Tree_decomposition/reduced_instance_exact_001.txt"; //
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -52,9 +55,9 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		component_reduction(path);
+		//component_reduction(path);
 		//reduction(path, path_td);
-		//output_reduced_graph(path);
+		output_reduced_graph(path);
 	}
 
 	return 0;
@@ -66,10 +69,13 @@ void output_reduced_graph(std::string path) {
 	adjacencyListBoost& refGraph = adjLBoost;
 	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
 
-	//reduce::reduce_ijcai(mds_context);
+	reduce::reduce_ijcai(mds_context);
 	//after reduction rules, define which vertices could be removed.
 	mds_context.fill_removed_vertex();
 
+	timer t_sat;
+	ds_sat_solver(mds_context);
+	std::cout << t_sat.count() << "\n";
 	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
 	std::unordered_map<int, int> newToOldIndex;
 	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
