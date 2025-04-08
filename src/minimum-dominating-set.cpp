@@ -22,6 +22,12 @@
 #include "graph/generate_tree_decomposition.h"
 #include "ortools/sat/cp_model_solver.h"
 
+#include <thread>
+#include <chrono>
+#include <csignal>
+#include <future>
+#include <unistd.h>
+
 bool stringToBool(const std::string& str) {
 	std::string s = str;
 	std::transform(s.begin(), s.end(), s.begin(), ::tolower); // Convert to lowercase
@@ -29,8 +35,28 @@ bool stringToBool(const std::string& str) {
 	return (s == "1" || s == "true" || s == "yes" || s == "on");
 }
 
+void signal_handler(int signum) {
+	std::cout << "Received signal " << signum << ". Stopping the main task...\n";
+	//print temporary results.
+}
+
+void timer_thread(std::future<void>& main_future){
+	std::cout << "Timer thread waiting for 30 minutes...\n";
+
+	// Wait for either the main task to finish or 30 minutes to pass
+	if (main_future.wait_for(std::chrono::minutes(1)) == std::future_status::timeout) {
+		// Timeout reached (30 minutes passed) and main task is still running
+		std::cout << "30 minutes passed. Sending SIGINT to stop main task...\n";
+		kill(getpid(), SIGINT);  // Send SIGINT to the current process
+	} else {
+		// Main task finished before the timeout
+		std::cout << "Main task completed early. Timer thread exiting...\n";
+	}
+}
+
 int main(int argc, char* argv[])
 {
+	signal(SIGINT, signal_handler);
 	//templates.
 	//std::string path = "C:/Users/Flori/OneDrive/Documenten/GitHub/Exact-dominating-set/tests/complete_5_graph.gr";
 	//std::string path = "/mnt/c/Users/Flori/OneDrive/Universiteit-Utrecht/Thesis/code/parser/dataset/exact/exact_001.gr";
@@ -55,11 +81,23 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		//component_reduction(path);
-		//reduction(path, path_td);
-		output_reduced_graph(path);
-	}
+		std::promise<void> main_promise;
+		std::future<void> main_future = main_promise.get_future();
+		std::thread main_thread([&main_promise, &path]() {
+			output_reduced_graph(path);
+		main_promise.set_value();  // Notify that the main task is finished
+	});
+		// Create and launch the timer thread
+		std::thread timer(timer_thread, std::ref(main_future));
 
+		// Wait for the main task thread to finish (either by completion or signal)
+		main_thread.join();
+
+		// Wait for the timer thread to finish (it may finish early if main task completes)
+		timer.join();
+
+		std::cout << "Program has finished execution.\n";
+	}
 	return 0;
 }
 

@@ -14,13 +14,13 @@ void ds_sat_solver(MDS_CONTEXT& mds_context){
     decision_vars.reserve(num_undetermined_vertices);
 
     int index = 0;
-    for (int i = 0; i < num_undetermined_vertices; i++) {
+    for (int i = 0; i < num_undetermined_vertices; i++)
+    {
         if (mds_context.is_undetermined(i)){
-                    decision_vars.push_back(cp_model.NewBoolVar().WithName(std::to_string(i)));
-                    translation_pace_to_ilp[i] = index++;
+            decision_vars.push_back(cp_model.NewBoolVar().WithName(std::to_string(i)));
+            translation_pace_to_ilp[i] = index++;
         }
     }
-    absl::Span<const BoolVar> span(decision_vars);
 
     //Create constraint.
     for (int i = 0; i < mds_context.num_nodes; i++) {
@@ -50,7 +50,11 @@ void ds_sat_solver(MDS_CONTEXT& mds_context){
         }
 
     }
-    cp_model.Minimize(LinearExpr::Sum(span));
+    LinearExpr sum;
+    for (auto decision_var : decision_vars) {
+        sum += decision_var;
+    }
+    cp_model.Minimize(sum);
     // Solving part.
     timer test;
     const CpSolverResponse response = Solve(cp_model.Build());
