@@ -16,6 +16,17 @@ void output_reduced_graph(std::string path);
 
 adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex);
 
+void treewidth_solver(std::string path);
+
 void component_reduction(std::string path);
+
+void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
+                                        std::vector<std::unique_ptr<adjacencyListBoost>>& sub_sub_components,
+                                        std::vector<std::unordered_map<int, int>>& sub_sub_newToOldIndex,
+                                        std::unordered_map<int, int>& newToOldIndex);
+
+void create_component_subgraphs(const std::string& path,
+                                std::vector<std::unique_ptr<adjacencyListBoost>>& sub_components,
+                                std::vector<std::unordered_map<int, int>>& sub_newToOldIndex);
 
 // TODO: Reference additional headers your program requires here.

@@ -385,25 +385,12 @@ void TREEWIDTH_SOLVER::solve_root_vertex() {
     std::vector<int> white_indices = get_white_indices(lowest_encoding->encoding, bag_root_vertex.size());
     for (int index : white_indices) {
         solution.flip(bag_root_vertex[index]);
-        // if (solution.none())
-        // {
-        //     solution.flip(bag_root_vertex[index]);
-        //     // global_solution.push_back(bag_root_vertex[index]);
-        // } else
-        // {
-        //     solution.flip(bag_root_vertex[index]);
-        //     // auto pos = std::lower_bound(global_solution.begin(), global_solution.end(), bag_root_vertex[index]);
-        //     // if (*pos == bag_root_vertex[index])
-        //     // {
-        //     //     throw std::runtime_error(":(");
-        //     // }
-        //     // global_solution.insert(pos, bag_root_vertex[index]);
     }
     global_solution.reserve(lowest_domination_number);
     for (int i = 0; i < solution.size(); ++i) {
         if (solution[i] == 1)
         {
-            global_solution.push_back(solution[i]);
+            global_solution.push_back(i);
         }
     }
     partial_solution_stack.pop();
