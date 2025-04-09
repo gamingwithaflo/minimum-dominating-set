@@ -2,72 +2,68 @@
 
 #include <fstream>
 
-void initialize_logger()
-{
-    //reduction rules.
-    Logger::cnt_alber_simple_rule_1 = 0;
-    Logger::attempt_alber_simple_rule_1 = 0;
+int Logger::cnt_alber_simple_rule_1 = 0;
+int Logger::attempt_alber_simple_rule_1 = 0;
 
-    Logger::cnt_alber_simple_rule_2 = 0;
-    Logger::attempt_alber_simple_rule_2 = 0;
+int Logger::cnt_alber_simple_rule_2 = 0;
+int Logger::attempt_alber_simple_rule_2 = 0;
 
-    Logger::cnt_alber_simple_rule_3dot1 = 0;
-    Logger::cnt_alber_simple_rule_3dot2 = 0;
-    Logger::attempt_alber_simple_rule_3 = 0;
+int Logger::cnt_alber_simple_rule_3dot1 = 0;
+int Logger::cnt_alber_simple_rule_3dot2 = 0;
+int Logger::attempt_alber_simple_rule_3 = 0;
 
-    Logger::cnt_alber_simple_rule_4 = 0;
-    Logger::attempt_alber_simple_rule_4 = 0;
+int Logger::cnt_alber_simple_rule_4 = 0;
+int Logger::attempt_alber_simple_rule_4 = 0;
 
-    Logger::cnt_alber_rule_1_default = 0;
-    Logger::cnt_alber_rule_1_guard = 0;
-    Logger::attempt_alber_rule_1 = 0;
+int Logger::cnt_alber_rule_1_default = 0;
+int Logger::cnt_alber_rule_1_guard = 0;
+int Logger::attempt_alber_rule_1 = 0;
 
-    Logger::cnt_alber_rule_2_single = 0;
-    Logger::cnt_alber_rule_2_either = 0;
-    Logger::cnt_alber_rule_2_both = 0;
-    Logger::attempt_alber_rule_2 = 0;
+int Logger::cnt_alber_rule_2_single = 0;
+int Logger::cnt_alber_rule_2_either = 0;
+int Logger::cnt_alber_rule_2_both = 0;
+int Logger::attempt_alber_rule_2 = 0;
 
-    Logger::cnt_ijcai_rule_1 = 0;
-    Logger::attempt_ijcai_rule_1 = 0;
+int Logger::cnt_ijcai_rule_1 = 0;
+int Logger::attempt_ijcai_rule_1 = 0;
 
-    Logger::cnt_ijcai_rule_2 = 0;
-    Logger::attempt_ijcai_rule_2 = 0;
+int Logger::cnt_ijcai_rule_2 = 0;
+int Logger::attempt_ijcai_rule_2 = 0;
 
-    Logger::cnt_ijcai_rule_3 = 0;
-    Logger::attempt_ijcai_rule_3 = 0;
+int Logger::cnt_ijcai_rule_3 = 0;
+int Logger::attempt_ijcai_rule_3 = 0;
 
-    //components.
-    Logger::num_components = 0;
-    Logger::num_reduced_components = 0;
+//components.
+int Logger::num_components = 0;
+int Logger::num_reduced_components = 0;
 
-    //effectiveness reduction rules.
-    Logger::num_vertices = 0;
-    Logger::num_edges = 0;
-    Logger::cnt_undetermined_vertices = 0;
-    Logger::cnt_selected_vertices = 0;
-    Logger::cnt_ignored_vertices = 0;
-    Logger::cnt_excluded_vertices = 0;
-    Logger::cnt_removed_vertices = 0;
+//effectiveness reduction rules.
+int Logger::num_vertices = 0;
+int Logger::num_edges = 0;
+int Logger::cnt_undetermined_vertices = 0;
+int Logger::cnt_selected_vertices = 0;
+int Logger::cnt_ignored_vertices = 0;
+int Logger::cnt_excluded_vertices = 0;
+int Logger::cnt_removed_vertices = 0;
 
-    //timer functions.
-    Logger::execution_time_complete = 0;
-    Logger::execution_time_treewidth = 0;
-    Logger::execution_time_reduction = 0;
-    Logger::execution_time_ilp = 0;
-    Logger::execution_time_sat = 0;
+//timer functions.
+long long Logger::execution_time_complete = 0;
+long long  Logger::execution_time_treewidth = 0;
+long long  Logger::execution_time_reduction = 0;
+long long Logger::execution_time_ilp = 0;
+long long  Logger::execution_time_sat = 0;
 
     //treewidth specific.
-    Logger::maximum_treewidth = 0;
-    Logger::execution_time_introduce = 0;
-    Logger::execution_time_forget = 0;
-    Logger::execution_time_join = 0;
-    Logger::execution_time_introduce_edge = 0;
-    Logger::execution_time_leaf = 0;
+int Logger::maximum_treewidth = 0;
+long long Logger::execution_time_introduce = 0;
+long long Logger::execution_time_forget = 0;
+long long Logger::execution_time_join = 0;
+long long Logger::execution_time_introduce_edge = 0;
+long long Logger::execution_time_leaf = 0;
 
-    //strategy.
-    static std::string reduction_strategy = "Combination";
-    static std::string solver_strategy = "Combination";
-}
+//strategy.
+strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
+strategy_solver Logger::solver_strategy = REDUCTION_COMBINATION;
 
 void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded) {
     std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/log_info/loginfo_";
@@ -85,17 +81,17 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
     //Timer
     outFile << "Execution time complete: " << Logger::execution_time_complete << std::endl;
     outFile << "Execution time reduction: " << Logger::execution_time_reduction << std::endl;
-    if (Logger::solver_strategy != "non")
+    if (Logger::solver_strategy != SOLVER_NON)
     {
-        if (Logger::solver_strategy == "Combination") {
+        if (Logger::solver_strategy == SOLVER_COMBINATION) {
             outFile << "Execution time ILP: " << Logger::execution_time_ilp << std::endl;
             outFile << "Execution time SAT: " << Logger::execution_time_sat << std::endl;
             outFile << "Execution time treewidth: " << Logger::execution_time_treewidth << std::endl;
-        } else if (Logger::solver_strategy == "sat"){
+        } else if (Logger::solver_strategy == SOLVER_SAT){
             outFile << "Execution time SAT: " << Logger::execution_time_sat << std::endl;
-        } else if (Logger::solver_strategy == "ilp") {
+        } else if (Logger::solver_strategy == SOLVER_ILP) {
             outFile << "Execution time ILP: " << Logger::execution_time_ilp << std::endl;
-        } else if (Logger::solver_strategy == "treewidth"){ // Extra information only if you run treewidth specifically.
+        } else if (Logger::solver_strategy == SOLVER_TREEWIDTH){ // Extra information only if you run treewidth specifically.
             outFile << "Execution time treewidth: " << Logger::execution_time_treewidth << std::endl;
             outFile << "Execution time spent in join: " << Logger::execution_time_join << std::endl;
             outFile << "Execution time spent in leaf: " << Logger::execution_time_leaf << std::endl;
@@ -117,12 +113,12 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
 
     //Components:
     outFile << "Number of components: " << Logger::num_components << std::endl;
-    if (Logger::reduction_strategy != "non"){
+    if (Logger::reduction_strategy != REDUCTION_NON){
         outFile << "Number of components after reduction: " << Logger::num_reduced_components << std::endl;
     }
 
-    if (Logger::solver_strategy == "non"){ // Extra information only if you run reductions only.
-        if (Logger::reduction_strategy == "Combination") {
+    if (Logger::solver_strategy == SOLVER_NON){ // Extra information only if you run reductions only.
+        if (Logger::reduction_strategy == REDUCTION_COMBINATION) {
             outFile << "Attempts of rule_1: " << Logger::attempt_ijcai_rule_1 << std::endl;
             outFile << "Successful reduction of IJCAI rule 1: " << Logger::cnt_ijcai_rule_1 << std::endl;
 
@@ -136,7 +132,7 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
             outFile << "Successful reduction of Alber rule 2 (single): " << Logger::cnt_alber_rule_2_single << std::endl;
             outFile << "Successful reduction of alber rule 2 (either): " << Logger::cnt_alber_rule_2_either << std::endl;
             outFile << "Successful reduction of alber rule 2 (both): " << Logger::cnt_alber_rule_2_both << std::endl;
-        } else if (Logger::reduction_strategy == "Alber"){
+        } else if (Logger::reduction_strategy == REDUCTION_ALBER){
             outFile << "Attempts of alber simple rule 1: " << Logger::attempt_alber_simple_rule_1 << std::endl;
             outFile << "Successful reduction of alber simple rule 1: " << Logger::cnt_alber_simple_rule_1 << std::endl;
 
@@ -158,7 +154,7 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
             outFile << "Successful reduction of Alber rule 2 (single): " << Logger::cnt_alber_rule_2_single << std::endl;
             outFile << "Successful reduction of alber rule 2 (either): " << Logger::cnt_alber_rule_2_either << std::endl;
             outFile << "Successful reduction of alber rule 2 (both): " << Logger::cnt_alber_rule_2_both << std::endl;
-        } else if (Logger::reduction_strategy == "IJCAI") {
+        } else if (Logger::reduction_strategy == REDUCTION_IJCAI) {
             outFile << "Attempts of IJCAI rule 1: " << Logger::attempt_ijcai_rule_1 << std::endl;
             outFile << "Successful reduction of IJCAI rule 1: " << Logger::cnt_ijcai_rule_1 << std::endl;
 
@@ -167,7 +163,7 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
 
             outFile << "Attempts of rule 3: " << Logger::attempt_ijcai_rule_3 << std::endl;
             outFile << "Successful reduction of rule 3: " << Logger::cnt_ijcai_rule_3 << std::endl;
-        } else if (Logger::reduction_strategy == "non"){
+        } else if (Logger::reduction_strategy == REDUCTION_NON){
         } else {
             throw std::runtime_error("non-supported reduction strategy.");
         }

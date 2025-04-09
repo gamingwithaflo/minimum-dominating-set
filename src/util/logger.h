@@ -2,7 +2,20 @@
 #include <string>
 #include <vector>
 
-void initialize_logger();
+enum strategy_solver{
+	SOLVER_COMBINATION,
+	SOLVER_ILP,
+	SOLVER_SAT,
+	SOLVER_TREEWIDTH,
+	SOLVER_NON
+};
+
+enum strategy_reduction{
+	REDUCTION_COMBINATION,
+	REDUCTION_ALBER,
+	REDUCTION_IJCAI,
+	REDUCTION_NON
+};
 
 class Logger {
 public:
@@ -67,8 +80,8 @@ public:
 	static long long execution_time_leaf;
 
 	//strategy.
-	static std::string reduction_strategy;
-	static std::string solver_strategy;
+	static strategy_reduction reduction_strategy;
+	static strategy_solver solver_strategy;
 };
 
 void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded);
