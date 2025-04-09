@@ -91,17 +91,18 @@ int main(int argc, char* argv[])
 }
 
 void treewidth_solver(std::string path){
-	timer t_treewidth_complete;
+	timer t_complete;
 	//create empty sub-graphs + translation function.
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
+	//Fill sub-graphs + translation function (no reduction).
 	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
 
 	std::vector<int>solution;
 
 	for (int i = 0; i < sub_components.size(); ++i){
-		//Create a mds_context & reduce.
+		//Create a mds_context & reduce. for each subgraph.
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 		reduce::reduce_ijcai(mds_context);
 		mds_context.fill_removed_vertex();
@@ -113,6 +114,7 @@ void treewidth_solver(std::string path){
 			}
 		}
 
+		//Has reduction broke up a subgraph, into multiple sub-graphs.
 		std::vector<std::unique_ptr<adjacencyListBoost>> sub_sub_components;
 		std::vector<std::unordered_map<int, int>> sub_sub_newToOldIndex;
 
@@ -129,6 +131,7 @@ void treewidth_solver(std::string path){
 
 			create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
 		}
+		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
 			std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
@@ -141,7 +144,7 @@ void treewidth_solver(std::string path){
 			}
 		}
 	}
-	std::cout << t_treewidth_complete.count() << std::endl;
+	std::cout << t_complete.count() << std::endl;
 	std::cout << solution.size() << std::endl;
 
 	parse::output_solution(solution, path);

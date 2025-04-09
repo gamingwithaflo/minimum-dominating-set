@@ -6,46 +6,69 @@ void initialize_logger();
 
 class Logger {
 public:
-	static bool flag_sr_1;
-	static bool flag_sr_2;
-	static bool flag_sr_3;
-	static bool flag_sr_4;
-	static bool flag_neigh_single;
-	static bool flag_neigh_pair;
+	//reduction rules.
+	static int cnt_alber_simple_rule_1;
+	static int attempt_alber_simple_rule_1;
 
-	static int cnt_simple_rule_one;
-	static int cnt_simple_rule_two;
-	static int cnt_simple_rule_three_dot_one;
-	static int cnt_simple_rule_three_dot_two;
-	static int cnt_simple_rule_four;
-	static int cnt_reduce_neighborhood_single_vertex; //reduce a vertex.
-	static int cnt_reduce_neighborhood_single_vertex_guard;
-	static int cnt_reduce_neighborhood_pair_vertex_single; //can be dominated by only v or only w
-	static int cnt_reduce_neighborhood_pair_vertex_both; //dont know whether to choose v or w
-	static int cnt_reduce_neighborhood_pair_vertex_either; //has to be dominated by both v and w.
+	static int cnt_alber_simple_rule_2;
+	static int attempt_alber_simple_rule_2;
 
-	static bool no_undetermined_vertices;
-	static std::vector<int> solution_vector_with_reduction;
-	static std::vector<int> solution_vector_without_reduction;
+	static int cnt_alber_simple_rule_3dot1;
+	static int cnt_alber_simple_rule_3dot2;
+	static int attempt_alber_simple_rule_3;
 
-	static int att_simple_rule_one;
-	static int att_simple_rule_two;
-	static int att_simple_rule_three;
-	static int att_simple_rule_four;
-	static int att_reduce_neighborhood_single_vertex;
-	static int att_reduce_neighborhood_pair_vertex;
+	static int cnt_alber_simple_rule_4;
+	static int attempt_alber_simple_rule_4;
 
-	static long long execution_ilp_without_reduction;
-	static long long execution_ilp_with_reduction;
-	static long long execution_reduction;
+	static int cnt_alber_rule_1_default;
+	static int cnt_alber_rule_1_guard;
+	static int attempt_alber_rule_1;
 
+	static int cnt_alber_rule_2_single;
+	static int cnt_alber_rule_2_either;
+	static int cnt_alber_rule_2_both;
+	static int attempt_alber_rule_2;
+
+	static int cnt_ijcai_rule_1;
+	static int attempt_ijcai_rule_1;
+
+	static int cnt_ijcai_rule_2;
+	static int attempt_ijcai_rule_2;
+
+	static int cnt_ijcai_rule_3;
+	static int attempt_ijcai_rule_3;
+
+	//components.
+	static int num_components;
+	static int num_reduced_components;
+
+	//effectiveness reduction rules.
+	static int num_vertices;
+	static int num_edges;
+	static int cnt_undetermined_vertices;
+	static int cnt_selected_vertices;
+	static int cnt_ignored_vertices;
+	static int cnt_excluded_vertices;
+	static int cnt_removed_vertices;
+
+	//timer functions.
+	static long long execution_time_complete;
+	static long long execution_time_treewidth;
+	static long long execution_time_reduction;
+	static long long execution_time_ilp;
+	static long long execution_time_sat;
+
+	//treewidth specific.
+	static int maximum_treewidth;
 	static long long execution_time_introduce;
 	static long long execution_time_forget;
 	static long long execution_time_join;
 	static long long execution_time_introduce_edge;
 	static long long execution_time_leaf;
 
-	static bool is_planar;
+	//strategy.
+	static std::string reduction_strategy;
+	static std::string solver_strategy;
 };
 
 void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded);
