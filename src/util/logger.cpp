@@ -63,7 +63,7 @@ long long Logger::execution_time_leaf = 0;
 
 //strategy.
 strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
-strategy_solver Logger::solver_strategy = REDUCTION_COMBINATION;
+strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
 
 void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded) {
     std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/log_info/loginfo_";
@@ -132,7 +132,7 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
             outFile << "Successful reduction of Alber rule 2 (single): " << Logger::cnt_alber_rule_2_single << std::endl;
             outFile << "Successful reduction of alber rule 2 (either): " << Logger::cnt_alber_rule_2_either << std::endl;
             outFile << "Successful reduction of alber rule 2 (both): " << Logger::cnt_alber_rule_2_both << std::endl;
-        } else if (Logger::reduction_strategy == REDUCTION_ALBER){
+        } else if (Logger::reduction_strategy == REDUCTION_ALBER || Logger::reduction_strategy == REDUCTION_ALBER_RULE_1) {
             outFile << "Attempts of alber simple rule 1: " << Logger::attempt_alber_simple_rule_1 << std::endl;
             outFile << "Successful reduction of alber simple rule 1: " << Logger::cnt_alber_simple_rule_1 << std::endl;
 
@@ -150,10 +150,12 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
             outFile << "Successful reduction alber rule 1 default: " << Logger::cnt_alber_rule_1_default << std::endl;
             outFile << "Successful reduction alber rule 1 guard: " << Logger::cnt_alber_rule_1_guard << std::endl;
 
-            outFile << "Attempts of Alber rule 2: " << Logger::attempt_alber_rule_2 << std::endl;
-            outFile << "Successful reduction of Alber rule 2 (single): " << Logger::cnt_alber_rule_2_single << std::endl;
-            outFile << "Successful reduction of alber rule 2 (either): " << Logger::cnt_alber_rule_2_either << std::endl;
-            outFile << "Successful reduction of alber rule 2 (both): " << Logger::cnt_alber_rule_2_both << std::endl;
+            if (Logger::reduction_strategy == REDUCTION_ALBER) {
+                outFile << "Attempts of Alber rule 2: " << Logger::attempt_alber_rule_2 << std::endl;
+                outFile << "Successful reduction of Alber rule 2 (single): " << Logger::cnt_alber_rule_2_single << std::endl;
+                outFile << "Successful reduction of alber rule 2 (either): " << Logger::cnt_alber_rule_2_either << std::endl;
+                outFile << "Successful reduction of alber rule 2 (both): " << Logger::cnt_alber_rule_2_both << std::endl;
+            }
         } else if (Logger::reduction_strategy == REDUCTION_IJCAI) {
             outFile << "Attempts of IJCAI rule 1: " << Logger::attempt_ijcai_rule_1 << std::endl;
             outFile << "Successful reduction of IJCAI rule 1: " << Logger::cnt_ijcai_rule_1 << std::endl;

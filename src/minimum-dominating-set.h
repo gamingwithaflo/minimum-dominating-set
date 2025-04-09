@@ -16,7 +16,7 @@ void output_reduced_graph(std::string path);
 
 adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex);
 
-void treewidth_solver(std::string path);
+void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy);
 
 void component_reduction(std::string path);
 

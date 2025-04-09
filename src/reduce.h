@@ -8,9 +8,11 @@
 #include <boost/graph/graph_traits.hpp>
 
 namespace reduce {
-    void refractored_reduce_graph(MDS_CONTEXT& mds_context);
+    void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy);
 
-    void reduce_ijcai(MDS_CONTEXT& mds_context);
+    void reduce_alber(MDS_CONTEXT& mds_context, bool run_rule_2);
+
+    void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2);
 
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 

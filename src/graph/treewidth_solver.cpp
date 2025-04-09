@@ -113,8 +113,7 @@ const int WHITE = 2;
 const int GRAY = 3;
 const int NUM_COLORS = 3;
 
-void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices)
-{
+void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices) {
     timer t_operation_leaf;
     std::vector<partial_solution> partial_solutions;
     boost::dynamic_bitset<> empty_solution(num_of_vertices);
@@ -157,13 +156,12 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solutions);
-    // if (bag.size() > 10){
-    //     std::cout <<  "bag_size: " << bag.size() << "time: introduce " << t_operation_introduce.count() << std::endl;
-    // }
+
     Logger::execution_time_introduce += t_operation_introduce.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
+    timer t_operation_join;
     std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
     partial_solution_stack.pop();
     std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
@@ -210,7 +208,6 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     std::vector<partial_solution> new_partial_solutions;
     new_partial_solutions.reserve(parent_encodings.size());
     //boost::unordered_map<std::pair<std::vector<int>, std::vector<int>>, std::vector<int>> batch_merge;
-    timer t_operation_join;
     for (auto& parent_encoding : parent_encodings){
         auto [partial_solution_a, partial_solution_b] = best_combinations[parent_encoding];
         int domination_number = partial_solution_a->domination_number + partial_solution_b->domination_number - count_white_vertices(parent_encoding);
@@ -221,15 +218,11 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
         insert_entry_new_partial_solution(new_partial_solutions, parent_encoding, solution, domination_number);
         //}
     }
-    Logger::execution_time_join += t_operation_join.count();
     remove_all_entries_partial_solution(child_partial_solution_b);
     partial_solution_stack.pop();
-    // if (bag.size() > 10){
-    //     std::cout <<  "bag_size: " << bag.size() << "time join: " << t_operation_join.count() << std::endl;
-    // }
     partial_solution_stack.push(new_partial_solutions);
     remove_all_entries_partial_solution(temp_child_partial_solution_a);
-    //Logger::execution_time_join += t_operation_join.count();
+    Logger::execution_time_join += t_operation_join.count();
 }
 
 void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
@@ -276,10 +269,6 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solutions);
 
-    // if (bag.size() > 10){
-    //     std::cout <<  "bag_size: " << bag.size() << "time introduce edge: " << t_operation_introduce_edge.count() << std::endl;
-    // }
-    //std::cout << "run edge introduce" << std::endl;
     Logger::execution_time_introduce_edge += t_operation_introduce_edge.count();
 }
 
@@ -355,11 +344,6 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
     remove_all_entries_partial_solution(child_partial_solution);
     partial_solution_stack.pop();
     partial_solution_stack.push(new_partial_solution);
-    // if (bag.size() > 10)
-    // {
-    //     std::cout <<  "bag_size: " << bag.size() << "time_forget: " << t_operation_forget.count() << std::endl;
-    // }
-    //std::cout << "run forget" << std::endl;
     Logger::execution_time_forget += t_operation_forget.count();
 }
 

@@ -13,6 +13,7 @@ enum strategy_solver{
 enum strategy_reduction{
 	REDUCTION_COMBINATION,
 	REDUCTION_ALBER,
+	REDUCTION_ALBER_RULE_1,
 	REDUCTION_IJCAI,
 	REDUCTION_NON
 };

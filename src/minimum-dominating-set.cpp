@@ -35,6 +35,45 @@ bool stringToBool(const std::string& str) {
 	return (s == "1" || s == "true" || s == "yes" || s == "on");
 }
 
+strategy_solver string_to_strategy_solver(const std::string& str) {
+	if (str == "sat" || str == "SAT") {
+		return SOLVER_SAT;
+	}
+	if (str == "ilp" || str == "ILP") {
+		return SOLVER_ILP;
+	}
+	if (str == "treewidth" || str == "TREEWIDTH"){
+		return SOLVER_TREEWIDTH;
+	}
+	if (str == "combination" || str == "COMBINATION") {
+		return SOLVER_COMBINATION; // TODO:: implement.
+	}
+	if (str == "non" || str == "none") {
+		return SOLVER_NON;
+	}
+	throw new std::runtime_error("not a viable strategy");
+
+}
+
+strategy_reduction string_to_strategy_reduction(const std::string& str) {
+	if (str == "none" || str == "non") {
+		return REDUCTION_NON;
+	}
+	if (str == "alber" || str == "ALBER") {
+		return REDUCTION_ALBER;
+	}
+	if (str == "alber_rule_1" || str == "ALBER_RULE_1") {
+		return REDUCTION_ALBER_RULE_1;
+	}
+	if (str == "IJCAI" || str == "ijcai") {
+		return REDUCTION_IJCAI;
+	}
+	if (str == "COMBINATION" || str == "combination") {
+		return REDUCTION_COMBINATION;
+	}
+	throw new std::runtime_error("not a viable strategy");
+}
+
 void signal_handler(int signum) {
 	std::cout << "Received signal " << signum << ". Stopping the main task...\n";
 	//print temporary results.
@@ -61,22 +100,22 @@ int main(int argc, char* argv[])
 	//default values
 	// path : string with path to instance graph.
 	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
-	//reduction_strategy: [options: Alber, IJCAI, Combination, non]
-	std::string reduction_strategy = "Combination";
-	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination]
-	std::string solver_strategy = "Combination";
+	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
+	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
+	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
+	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
-	if (argc > 2) reduction_strategy = std::string(argv[2]);
-	if (argc > 3) solver_strategy = std::string(argv[3]);
+	if (argc > 2) reduction_strategy = string_to_strategy_reduction(std::string(argv[2]));
+	if (argc > 3) solver_strategy = string_to_strategy_solver(std::string(argv[3]));
 
 	//Sigint handler.
 	std::promise<void> main_promise;
 	std::future<void> main_future = main_promise.get_future();
 
-	std::thread main_thread([&main_promise, &path]() {
-	 	treewidth_solver(path);
+	std::thread main_thread([&main_promise, &path, &reduction_strategy,&solver_strategy]() {
+	 	separate_solver(path, reduction_strategy, solver_strategy);
 	 	main_promise.set_value();  // Notify that the main task is finished
 	});
 
@@ -90,7 +129,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void treewidth_solver(std::string path){
+void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy){
 	timer t_complete;
 	//create empty sub-graphs + translation function.
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
@@ -104,13 +143,21 @@ void treewidth_solver(std::string path){
 	for (int i = 0; i < sub_components.size(); ++i){
 		//Create a mds_context & reduce. for each subgraph.
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
-		reduce::reduce_ijcai(mds_context);
+		reduce::reduction_rule_manager(mds_context, red_strategy);
 		mds_context.fill_removed_vertex();
+
+		Logger::cnt_selected_vertices += mds_context.cnt_sel;
+		Logger::cnt_excluded_vertices += mds_context.cnt_excl;
+		Logger::cnt_ignored_vertices += mds_context.cnt_ign;
+		Logger::cnt_removed_vertices += mds_context.cnt_rem;
 
 		for (int v = 0; v < mds_context.selected.size(); ++v) {
 			if (mds_context.is_selected(v)) {
 				//we need a +1 te correct the previous -1.
 				solution.push_back(sub_newToOldIndex[i][v] + 1);
+			}
+			if (mds_context.is_undetermined(v)){
+				Logger::cnt_undetermined_vertices++;
 			}
 		}
 
@@ -134,18 +181,28 @@ void treewidth_solver(std::string path){
 		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
-			std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
-			std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[j]);
+			if (sol_strategy == SOLVER_TREEWIDTH)
+			{
+				timer t_treewidth;
+				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
+				std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[j]);
 
-			//generate final solution.
-			for (int newIndex : td_comp->global_solution) {
-				auto sub_index = sub_sub_newToOldIndex[j][newIndex];
-				solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				//generate final solution.
+				for (int newIndex : td_comp->global_solution) {
+					auto sub_index = sub_sub_newToOldIndex[j][newIndex];
+					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				}
+				Logger::execution_time_treewidth += t_treewidth.count();
+			}
+			else if (sol_strategy == SOLVER_ILP) {
+
+			}
+			else if (sol_strategy == SOLVER_SAT) {
+
 			}
 		}
 	}
-	std::cout << t_complete.count() << std::endl;
-	std::cout << solution.size() << std::endl;
+	Logger::execution_time_complete = t_complete.count();
 
 	parse::output_solution(solution, path);
 }
@@ -154,25 +211,6 @@ void treewidth_solver(std::string path){
 //
 // }
 
-void output_reduced_graph(std::string path) {
-	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
-
-	adjacencyListBoost& refGraph = adjLBoost;
-	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
-
-	reduce::reduce_ijcai(mds_context);
-	//after reduction rules, define which vertices could be removed.
-	mds_context.fill_removed_vertex();
-
-	timer t_sat;
-	ds_sat_solver(mds_context);
-	std::cout << t_sat.count() << "\n";
-	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
-	std::unordered_map<int, int> newToOldIndex;
-	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-
-	parse::output_reduced_graph_instance(reduced_graph, path);
-}
 
 
 
@@ -271,163 +309,6 @@ void component_reduction(std::string path)
 	parse::output_solution(solution, path);
 }
 
-
-
-
-
-void reduction(std::string path, std::string path_td) {
-	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
-
-	adjacencyListBoost& refGraph = adjLBoost;
-	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
-
-	timer t_reduction;
-	reduce::reduce_ijcai(mds_context);
-	//reduce::refractored_reduce_graph(mds_context);
-	//after reduction rules, define which vertices could be removed.
-	mds_context.fill_removed_vertex();
-
-	Logger::execution_reduction = t_reduction.count();
-
-	//remove edges which are not needed (we do this because we only want to introduce the needed vertices (for the reduced graph).
-	std::unordered_map<int, int> newToOldIndex;
-	std::unordered_map<int, int> oldToNewIndex;
-	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-
-	std::vector<int> component_map(boost::num_vertices(reduced_graph));
-	int num_components = boost::connected_components(reduced_graph, &component_map[0]);
-
-	std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(reduced_graph);
-	//std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
-
-	//td_comp->fill_instruction_stack();
-	//td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, newToOldIndex);
-
-	// timer t_treewidth;
-	// td_comp.create_nice_tree_decomposition(reduced_graph);
-	// td_comp.fill_instruction_stack();
-	// timer t_run_instruction;
-	// td_comp.run_instruction_stack(mds_context.dominated, newToOldIndex);
-	//
-	// //create a solution.
-	// std::vector<int>solution;
-	// int domination_number = mds_context.cnt_sel + td_comp->global_solution.size();
-	// solution.reserve(domination_number);
-	// //get vertices old index from global solution (which uses the new index)
-	// for (int newIndex : td_comp->global_solution) {
-	// 	//we need a +1 te correct the previous -1.
-	// 	if (mds_context.is_excluded(newToOldIndex[newIndex]))
-	// 	{
-	// 		throw std::runtime_error("should not be allowed");
-	// 	}
-	// 	solution.push_back(newToOldIndex[newIndex] + 1);
-	// }
-	// for (int i = 0; i < mds_context.selected.size(); ++i) {
-	// 	if (mds_context.is_selected(i)) {
-	// 		//we need a +1 te correct the previous -1.
-	// 		solution.push_back(i + 1);
-	// 	}
-	// }
-	// //
-	// // long long timer_2 = t_run_instruction.count();
-	// // Logger::execution_reduction = t_treewidth.count();
-	// // std::cout << solution.size() << std::endl;
-	// // std::cout << t_treewidth.count() << std::endl;
-	//
-	// std::cout << solution.size() << std::endl;
-	// bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
-	// Logger::is_planar = is_planar;
-
-	//operations_research::solve_dominating_set(mds_context, true);
-
-	timer t_ilp_reduction;
-	//if (operations_research::solve_dominating_set(mds_context, true)) {
-	//	Logger::execution_ilp_without_reduction = -1; //timelimit reached.
-	//}
-	//else {
-	//	Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
-	//}
-
-	//parse::output_solution(solution , path);
-
-	//parse::output_context(mds_context, path);
-
-	//get reduction results
-	std::vector<int>dominated;
-	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.dominated[i] == 1) {
-			dominated.push_back(i);
-		}
-	}
-	std::vector<int>selected;
-	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.selected[i] == 1) {
-			selected.push_back(i);
-		}
-	}
-	std::vector<int>removed;
-	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.removed[i] == 1) {
-			removed.push_back(i);
-		}
-	}
-	std::vector<int>ignored;
-	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.ignored[i] == 1) {
-			ignored.push_back(i);
-		}
-	}
-	std::vector<int>excluded;
-	for (int i = 0; i < mds_context.get_total_vertices(); ++i) {
-		if (mds_context.excluded[i] == 1) {
-			excluded.push_back(i);
-		}
-	}
-
-	//Log info
-	//std::string name = parse::getNameFile(path);
-	//output_loginfo(name, selected, dominated, removed, ignored, excluded);
-	//parse::output_context(mds_context, path);
-}
-
-void reduction_info(std::string path) {
-	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
-	adjacencyListBoost& refGraph = adjLBoost;
-
-	bool is_planar = boost::boyer_myrvold_planarity_test(adjLBoost);
-	Logger::is_planar = is_planar;
-
-	//create context of the graph.
-	MDS_CONTEXT mds_context = MDS_CONTEXT(refGraph);
-
-	//Solve graph with ILP without reductions.
-	timer t_ilp_no_reduction;
-	if (operations_research::solve_dominating_set(mds_context, false)) {
-		Logger::execution_ilp_without_reduction = -1; // timelimit reached.
-	}
-	else {
-		Logger::execution_ilp_without_reduction = t_ilp_no_reduction.count();
-	}
-
-	timer t_reduction;
-	//reduce::log_reduce_graph(mds_context);
-	Logger::execution_reduction = t_reduction.count();
-
-	timer t_ilp_reduction;
-	if (operations_research::solve_dominating_set(mds_context, true)) {
-		Logger::execution_ilp_without_reduction = -1; //timelimit reached.
-	}
-	else {
-		Logger::execution_ilp_with_reduction = t_ilp_reduction.count();
-	}
-
-	parse::output_context(mds_context, path);
-
-	//Log info
-	std::string name = parse::getNameFile(path);
-	//output_loginfo(name); TODO::DONT FORGET TO RETURN
-}
-
 void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
 										std::vector<std::unique_ptr<adjacencyListBoost>>& sub_sub_components,
 										std::vector<std::unordered_map<int, int>>& sub_sub_newToOldIndex,
@@ -437,6 +318,7 @@ void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
 	int num_components = boost::connected_components(reduced_graph, &component_map[0]);
 	sub_sub_components.resize(num_components);
 	sub_sub_newToOldIndex.resize(num_components);
+	Logger::num_reduced_components += num_components;
 
 	if (num_components == 1){
 		sub_sub_components[0] = std::make_unique<adjacencyListBoost>(reduced_graph);
@@ -485,10 +367,14 @@ void create_component_subgraphs(const std::string& path,
 								std::vector<std::unordered_map<int, int>>& sub_newToOldIndex){
 
 	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
+	Logger::num_vertices = num_vertices(*graph);
+	Logger::num_edges = num_edges(*graph);
 
 	//Find components (which can be solved separately).
 	std::vector<int> component_map(boost::num_vertices(*graph));
 	int num_components = boost::connected_components(*graph, &component_map[0]);
+	Logger::num_components = num_components;
+
 	sub_components.resize(num_components);
 	sub_newToOldIndex.resize(num_components);
 

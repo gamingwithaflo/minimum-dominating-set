@@ -6,11 +6,28 @@
 
 
 namespace reduce {
-	
+	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy) {
+		if (strategy == REDUCTION_COMBINATION) {
+			//IJCAI with Alber rule 1.
+			reduce_ijcai(mds_context, true);
+		}
+		else if (strategy == REDUCTION_ALBER) {
+			reduce_alber(mds_context, true);
+		}
+		else if (strategy == REDUCTION_IJCAI){
+			reduce_ijcai(mds_context, false);
+		}
+		else if (strategy == REDUCTION_ALBER_RULE_1){
+			reduce_alber(mds_context, false);
 
-	void refractored_reduce_graph(MDS_CONTEXT& mds_context) {
+		} else if (strategy == REDUCTION_NON){
+			//Do nothing.
+		}
+	}
+
+	void reduce_alber(MDS_CONTEXT& mds_context, bool run_rule_2) {
 		auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-		bool first_time = true;
+		bool first_time = run_rule_2;
 		int cnt_reductions;
 		do {
 			//reset counter
@@ -28,15 +45,18 @@ namespace reduce {
 				}
 				if (mds_context.is_dominated(*vertex)) {
 					if (simple_rule_one(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_1++;
 						++cnt_reductions;
 					}
 					if (simple_rule_two(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_2++;
 						++cnt_reductions;
 					}
 					if (simple_rule_three(mds_context, *vertex)) {
 						++cnt_reductions;
 					}
 					if (simple_rule_four(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_4++;
 						++cnt_reductions;
 					}
 				}
@@ -68,10 +88,10 @@ namespace reduce {
 		} while (cnt_reductions > 0);
 	}
 
-	void reduce_ijcai(MDS_CONTEXT& mds_context) {
+	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2) {
 		bool reduced;
 		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
-		bool first_time = true;
+		bool first_time = run_rule_2;
 
 		do {
 			reduced = false;
@@ -189,8 +209,8 @@ namespace reduce {
 		//Check whether the graph can be reduced.
 		if (mds_context.can_be_reduced(prison_vertices)) {
 			is_reduced = true;
+			++Logger::cnt_alber_rule_1_default;
 			mds_context.select_vertex(u);
-			++Logger::cnt_reduce_neighborhood_single_vertex;
 			//Remove all Prison vertices for complete graph.
 			for (auto itt : prison_vertices) {
 				mds_context.remove_vertex(itt);
@@ -203,12 +223,15 @@ namespace reduce {
 			}
 			mds_context.remove_vertex(u);
 		}
-		else if (guard_vertices.size() > 0) {
+		else if (!guard_vertices.empty()) {
 			for (auto itt : guard_vertices) {
 				if (!mds_context.is_excluded(itt)) {
 					mds_context.exclude_vertex(itt);
 					is_reduced = true;
 				}
+			}
+			if (is_reduced){
+				Logger::cnt_alber_rule_1_guard++;
 			}
 		}
 		return is_reduced;
@@ -227,7 +250,7 @@ namespace reduce {
 			std::vector<int>guard_vertices; //N_{2}
 			std::vector<int>prison_vertices; //N_{1}
 
-			//Identify exit_vertices (TODO: could be abstracted).
+			//Identify exit_vertices
 			for (auto u = pair_neighborhood_vector.begin(); u < pair_neighborhood_vector.end(); ++u) {
 				//for each vertex get the neighborhood
 				auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
@@ -302,7 +325,7 @@ namespace reduce {
 				bool dominated_by_w = (domination[w] == size);
 				//divide the cases.
 				if (dominated_by_v && dominated_by_w) {
-					++Logger::cnt_reduce_neighborhood_pair_vertex_either;
+					Logger::cnt_alber_rule_2_either++;
 					//the optimal is either to choose v, w (or both)
 
 					//Create gadget which forces either v, w or both. (because we excluded this vertex, you dont need the gadget)
@@ -323,13 +346,14 @@ namespace reduce {
 						}
 					}
 
+					//should not actually be excluded: just do it.
 					mds_context.exclude_vertex(z1);
 
 					return true;
 				}
 				if (dominated_by_v) {
 					// the optimal is to choose v.
-					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					Logger::cnt_alber_rule_2_single++;
 					mds_context.select_vertex(v);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
@@ -349,7 +373,7 @@ namespace reduce {
 				}
 				if (dominated_by_w) {
 					// the optimal is to choose w.
-					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					Logger::cnt_alber_rule_2_single++;
 					mds_context.select_vertex(w);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
@@ -369,7 +393,7 @@ namespace reduce {
 					return true;
 				}
 				//the optimal is to choose both v & w.
-				++Logger::cnt_reduce_neighborhood_pair_vertex_both;
+				Logger::cnt_alber_rule_2_both++;
 				mds_context.select_vertex(v);
 				mds_context.select_vertex(w);
 
@@ -488,7 +512,7 @@ namespace reduce {
 				bool dominated_by_w = (domination[w] == size);
 				//divide the cases.
 				if (dominated_by_v && dominated_by_w) {
-					++Logger::cnt_reduce_neighborhood_pair_vertex_either;
+					++Logger::cnt_alber_rule_2_either;
 					//the optimal is either to choose v, w (or both)
 
 					//Create gadget which forces either v, w or both. when created, automatically excluded.
@@ -518,7 +542,7 @@ namespace reduce {
 				if (dominated_by_v) {
 					// the optimal is to choose v.
 					mds_context.select_vertex(v);
-					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					++Logger::cnt_alber_rule_2_single;
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 						mds_context.exclude_vertex(*i);
@@ -536,7 +560,7 @@ namespace reduce {
 				}
 				if (dominated_by_w) {
 					// the optimal is to choose w.
-					++Logger::cnt_reduce_neighborhood_pair_vertex_single;
+					++Logger::cnt_alber_rule_2_single;
 					mds_context.select_vertex(w);
 					//remove all prison vertices.
 					for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
@@ -554,7 +578,7 @@ namespace reduce {
 					return true;
 				}
 				//the optimal is to choose both v & w.
-				++Logger::cnt_reduce_neighborhood_pair_vertex_both;
+				++Logger::cnt_alber_rule_2_both;
 				mds_context.select_vertex(v);
 
 				mds_context.select_vertex(w);
@@ -620,7 +644,7 @@ namespace reduce {
 			//rule 3.1
 			if (mds_context.edge_exists(u_one, u_two)) {
 				mds_context.remove_vertex(v);
-				++Logger::cnt_simple_rule_three_dot_one;
+				++Logger::cnt_alber_simple_rule_3dot1;
 				return true;
 			}
 			//rule 3.2
@@ -629,7 +653,7 @@ namespace reduce {
 				//u_2 must be not dominated & not excluded (or undetermined) (is allowed to be ignored /dominated)
 				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && mds_context.is_undetermined(*neigh_u_one_itt)) { //pretty sure this is a bug.
 					mds_context.remove_vertex(v);
-					++Logger::cnt_simple_rule_three_dot_two;
+					++Logger::cnt_alber_simple_rule_3dot2;
 					return true;
 				}
 			}
@@ -664,8 +688,7 @@ namespace reduce {
 		return false;
 	}
 
-	//Helper function: does the closed neighborhood of v, contain u. 
-	// TODO: if we have a adjacencyMatrix could be done much faster.
+	//Helper function: does the closed neighborhood of v, contain u.
 	bool contains(MDS_CONTEXT& mds_context, vertex v, vertex u) {
 		if (v == u) {
 			return true;
