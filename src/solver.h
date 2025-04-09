@@ -3,7 +3,7 @@
 
 namespace operations_research {
 
-    bool solve_dominating_set(MDS_CONTEXT& mds_context, bool is_reduced);
+    std::vector<int> ilp_solver(MDS_CONTEXT& mds_context);
 
     double roundToInteger(double value);
 }

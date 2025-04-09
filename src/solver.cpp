@@ -18,17 +18,11 @@ namespace operations_research {
         return value;  // Otherwise, return the original value
     }
 
-    bool solve_dominating_set(MDS_CONTEXT& mds_context, bool is_reduced) {
+    std::vector<int> ilp_solver(MDS_CONTEXT& mds_context) {
         //initialize the needed information.
         auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
-        if (undetermined.size() == 0) {
-            Logger::no_undetermined_vertices = true;
-            for (auto i = 0; i < mds_context.selected.size(); ++i) {
-                if (mds_context.selected[i] == 1) {
-                    Logger::solution_vector_with_reduction.push_back(i);
-                }
-            }
-            return false;
+        if (undetermined.empty()) {
+            return std::vector<int>();
         }
 
         std::map<int, int> map_ilp_to_pace;
@@ -105,8 +99,8 @@ namespace operations_research {
         //create a highs instance
         Highs highs;
         HighsStatus return_status;
-        double time_limit = 30 * 60; //time_limit in seconds. 
-        highs.setOptionValue("time_limit", time_limit);
+        //double time_limit = 30 * 60; //time_limit in seconds.
+        //highs.setOptionValue("time_limit", time_limit);
 
         return_status = highs.passModel(ds_model);
         assert(return_status == HighsStatus::kOk);
@@ -123,28 +117,14 @@ namespace operations_research {
                     selected_vertices.push_back(map_ilp_to_pace[i]);
                 }
             }
-            for (auto i = 0; i < mds_context.selected.size(); ++i) {
-                if (mds_context.selected[i] == 1) {
-                    selected_vertices.push_back(i);
-                }
-            }
-            std::sort(selected_vertices.begin(), selected_vertices.end());
-            if (is_reduced == true) {
-                Logger::solution_vector_with_reduction = selected_vertices;
-            }
-            else {
-                Logger::solution_vector_without_reduction = selected_vertices;
-            }
 
-            return false;
+            return selected_vertices;
         }
-        else if (return_status == HighsStatus::kWarning) {
+        if (return_status == HighsStatus::kWarning) {
             //time limit reached.
-            return true;
+            return vector<int>();
         }
-        else {
-            //should never happen (set a breakpoint for sure);
-            return true;
-        }
+        //should never happen (set a breakpoint for sure);
+        throw new std::runtime_error("solver error");
     }
 }  

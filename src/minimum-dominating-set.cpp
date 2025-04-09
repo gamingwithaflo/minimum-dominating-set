@@ -99,11 +99,11 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_032.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
+	strategy_solver solver_strategy = SOLVER_SAT;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -111,21 +111,22 @@ int main(int argc, char* argv[])
 	if (argc > 3) solver_strategy = string_to_strategy_solver(std::string(argv[3]));
 
 	//Sigint handler.
-	std::promise<void> main_promise;
-	std::future<void> main_future = main_promise.get_future();
-
-	std::thread main_thread([&main_promise, &path, &reduction_strategy,&solver_strategy]() {
-	 	separate_solver(path, reduction_strategy, solver_strategy);
-	 	main_promise.set_value();  // Notify that the main task is finished
-	});
+	separate_solver(path, reduction_strategy, solver_strategy);
+	// std::promise<void> main_promise;
+	// std::future<void> main_future = main_promise.get_future();
+	//
+	// std::thread main_thread([&main_promise, &path, &reduction_strategy,&solver_strategy]() {
+	//  	separate_solver(path, reduction_strategy, solver_strategy);
+	//  	main_promise.set_value();  // Notify that the main task is finished
+	// });
 
 	// Create and launch the timer thread
-	std::thread timer(timer_thread, std::ref(main_future));
+	//std::thread timer(timer_thread, std::ref(main_future));
 
 	// Wait for the main task thread to finish (either by completion or signal)
-	main_thread.join();
+	//main_thread.join();
 	// Wait for the timer thread to finish (it may finish early if main task completes)
-	timer.join();
+	//timer.join();
 	return 0;
 }
 
@@ -175,7 +176,6 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		} else {
 			std::unordered_map<int, int> newToOldIndex;
 			adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-
 			create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
 		}
 		//Solve each subgraph with a solver.
@@ -195,21 +195,25 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				Logger::execution_time_treewidth += t_treewidth.count();
 			}
 			else if (sol_strategy == SOLVER_ILP) {
+				timer t_ilp;
 
 			}
 			else if (sol_strategy == SOLVER_SAT) {
+				timer t_sat;
+				std::vector<int> partial_solution = sat_solver_dominating_set(mds_context, *sub_sub_components[j], sub_sub_newToOldIndex[j]);
 
+				for (int newIndex : partial_solution) {
+					auto sub_index = sub_sub_newToOldIndex[j][newIndex];
+					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				}
+				Logger::execution_time_sat += t_sat.count();
 			}
 		}
 	}
 	Logger::execution_time_complete = t_complete.count();
-
+	std::cout << Logger::execution_time_complete << std::endl;
 	parse::output_solution(solution, path);
 }
-
-// void sat_solver(std::string path){
-//
-// }
 
 
 
@@ -223,7 +227,7 @@ void component_reduction(std::string path)
 
 	//run reduction rules & fill the context.
 	MDS_CONTEXT mds_context = MDS_CONTEXT(adjLBoost);
-	reduce::reduce_ijcai(mds_context);
+	reduce::reduce_ijcai(mds_context, true);
 	mds_context.fill_removed_vertex();
 
 	//Remove the unneeded vertices. (the reduced graph is 0 indexed so we have a map from new indicies and the old ones).
@@ -380,11 +384,11 @@ void create_component_subgraphs(const std::string& path,
 
 	//no different components.
 	if (num_components == 1){
-		sub_components[0] = std::move(graph);
 
 		for (int q = 0; q < boost::num_vertices(*graph); q++) {
 			sub_newToOldIndex[0].insert({q, q});
 		}
+		sub_components[0] = std::move(graph);
 		return;
 	}
 

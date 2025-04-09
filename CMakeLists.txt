@@ -11,6 +11,7 @@ endif()
 
 project ("minimum-dominating-set" VERSION 1.0 LANGUAGES CXX)
 
+#TEST
 set(HIGHS_INCLUDE_DIR "/usr/local/HiGHS/src")
 set(HIGHS_LIBRARY_DIR "/usr/local/HiGHS/build/lib")
 set(HIGHS_CONFIG_DIR "/usr/local/HiGHS/build/")
