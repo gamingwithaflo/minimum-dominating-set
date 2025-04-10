@@ -136,6 +136,21 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
+	// if (sol_strategy == SOLVER_SAT) {
+	// 	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
+	// 	MDS_CONTEXT mds_context = MDS_CONTEXT(*graph);
+	// 	reduce::reduction_rule_manager(mds_context, red_strategy);
+	// 	mds_context.fill_removed_vertex();
+	//
+	// 	std::unordered_map<int, int> newToOldIndex;
+	// 	auto reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+	//
+	// 	std::vector<int> partial_solution = sat_solver_dominating_set(mds_context, reduced_graph, newToOldIndex);
+	//
+	// 	std::cout << partial_solution.size() + mds_context.cnt_sel << std::endl;
+	// 	return;
+	// }
+
 	//Fill sub-graphs + translation function (no reduction).
 	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
 
@@ -166,18 +181,9 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		std::vector<std::unique_ptr<adjacencyListBoost>> sub_sub_components;
 		std::vector<std::unordered_map<int, int>> sub_sub_newToOldIndex;
 
-		if (mds_context.cnt_rem == 0){
-			//No changes to the structure of sub_component[i]
-			sub_sub_components.resize(1);
-			sub_sub_newToOldIndex.resize(1);
-
-			sub_sub_components[i] = std::move(sub_components[i]);
-			sub_sub_newToOldIndex[i] = sub_newToOldIndex[i];
-		} else {
-			std::unordered_map<int, int> newToOldIndex;
-			adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-			create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
-		}
+		std::unordered_map<int, int> newToOldIndex;
+		adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+		create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
 		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
@@ -282,11 +288,6 @@ void component_reduction(std::string path)
 	for (int i = 0; i < sub_components.size(); ++i){
 		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
 		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
-
-
-		// std::unique_ptr<TREE_DECOMPOSITION> td_comp = std::make_unique<TREE_DECOMPOSITION>(std::move(nice_tree_decomposition));
-		// td_comp->fill_instruction_stack();
-		// td_comp->run_instruction_stack(mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
 
 		//generate final solution.
 		for (int newIndex : td_comp->global_solution) {

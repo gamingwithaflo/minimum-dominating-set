@@ -51,6 +51,10 @@ std::vector<int> sat_solver_dominating_set(MDS_CONTEXT& mds_context, adjacencyLi
         undetermined_neighbours.reserve(std::distance(neigh_itt, neigh_itt_end));
         for (auto vertex = neigh_itt ; vertex != neigh_itt_end; ++vertex) {
             if (mds_context.is_undetermined(newToOldIndex[*vertex])){
+                // if (mds_context.is_removed(newToOldIndex[*vertex]))
+                // {
+                //     throw std::runtime_error("bad");
+                // }
                 undetermined_neighbours.push_back(*vertex);
             }
         }

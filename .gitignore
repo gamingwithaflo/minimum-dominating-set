@@ -3,6 +3,10 @@
 
 cmake-build-debug/
 
+cmake-build-release/
+
+.idea/
+
 # Add this line
 out/
 

@@ -11,6 +11,22 @@ endif()
 
 project ("minimum-dominating-set" VERSION 1.0 LANGUAGES CXX)
 
+#problem was that i already have HIGHS so support for it will dubble
+
+# Build OR-tools dependencies.
+set(BUILD_DEPS ON)
+
+include(FetchContent)
+FetchContent_Declare(
+        or-tools
+        GIT_REPOSITORY https://github.com/google/or-tools.git
+        GIT_TAG        main
+)
+
+# After the following call, the CMake targets defined by OR-Tools
+# will be defined and available to the rest of the build
+FetchContent_MakeAvailable(or-tools)
+
 #TEST
 set(HIGHS_INCLUDE_DIR "/usr/local/HiGHS/src")
 set(HIGHS_LIBRARY_DIR "/usr/local/HiGHS/build/lib")
@@ -26,27 +42,6 @@ include_directories(${HIGHS_CONFIG_DIR})
 link_directories(${HIGHS_LIBRARY_DIR})
 
 find_package(Boost REQUIRED)
-
-#problem was that i already have HIGHS so support for it will dubble
-
-# Build OR-tools dependencies.
-set(BUILD_DEPS ON)
-
-set(USE_HIGHS OFF)
-set(BUILD_HIGHS OFF)
-# Disable SCIP solver.
-set(USE_SCIP OFF)
-
-include(FetchContent)
-FetchContent_Declare(
-        or-tools
-        GIT_REPOSITORY https://github.com/google/or-tools.git
-        GIT_TAG        main
-)
-
-# After the following call, the CMake targets defined by OR-Tools
-# will be defined and available to the rest of the build
-FetchContent_MakeAvailable(or-tools)
 
 #Create a sources variable with a lik to all cpp files to compile
 set(SOURCES
