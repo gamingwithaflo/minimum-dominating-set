@@ -99,11 +99,11 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_032.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_033.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
+	strategy_solver solver_strategy = SOLVER_ILP;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -202,7 +202,13 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			}
 			else if (sol_strategy == SOLVER_ILP) {
 				timer t_ilp;
+				std::vector<int> partial_solution = operations_research::ilp_solver(mds_context, *sub_sub_components[j], sub_sub_newToOldIndex[j]);
 
+				for (int newIndex : partial_solution) {
+					auto sub_index = sub_sub_newToOldIndex[j][newIndex];
+					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				}
+				Logger::execution_time_ilp += t_ilp.count();
 			}
 			else if (sol_strategy == SOLVER_SAT) {
 				timer t_sat;

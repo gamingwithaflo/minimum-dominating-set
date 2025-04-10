@@ -16,6 +16,9 @@ project ("minimum-dominating-set" VERSION 1.0 LANGUAGES CXX)
 # Build OR-tools dependencies.
 set(BUILD_DEPS ON)
 
+set(USE_HIGHS OFF)
+set(BUILD_HIGHS OFF)
+
 include(FetchContent)
 FetchContent_Declare(
         or-tools

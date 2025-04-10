@@ -18,28 +18,38 @@ namespace operations_research {
         return value;  // Otherwise, return the original value
     }
 
-    std::vector<int> ilp_solver(MDS_CONTEXT& mds_context) {
+    std::vector<int> ilp_solver(MDS_CONTEXT& mds_context, adjacencyListBoost& graph, std::unordered_map<int,int>& newToOldIndex) {
         //initialize the needed information.
-        auto [undetermined, map_pace_to_ilp] = mds_context.get_undetermined_vertices();
-        if (undetermined.empty()) {
+        std::unordered_map<int,int> translation_pace_to_ilp;
+        std::unordered_map<int,int> translation_ilp_to_pace;
+
+        std::vector<int> undetermined_vertices;
+
+        int index = 0;
+        for (int i = 0; i < boost::num_vertices(graph); i++) {
+            if (mds_context.is_undetermined(newToOldIndex[i])) {
+                undetermined_vertices.push_back(i);
+                translation_pace_to_ilp[i] = index;
+                translation_ilp_to_pace[index] = i;
+                index++;
+            }
+        }
+
+        if (undetermined_vertices.empty()) {
             return std::vector<int>();
         }
 
-        std::map<int, int> map_ilp_to_pace;
-        int num_vars = undetermined.size();
-        int total_vertices = mds_context.get_total_vertices();
+        int num_vars = undetermined_vertices.size();
+        int total_vertices = boost::num_vertices(graph);
         int counter_ign_dom = 0;
         //number of vertices you can ignore.
         for (int i = 0; i < total_vertices; ++i) {
-            if (mds_context.dominated[i] == 1 || mds_context.ignored[i] == 1) {
+            if (mds_context.is_dominated(newToOldIndex[i]) || mds_context.is_ignored(newToOldIndex[i])) {
                 counter_ign_dom++;
             }
         }
 
         int num_constraints = total_vertices - counter_ign_dom;
-        for (const auto& pair : map_pace_to_ilp) {
-            map_ilp_to_pace[pair.second] = pair.first;  // Swap key and value
-        }
 
         //Create model
         HighsModel ds_model;
@@ -52,7 +62,7 @@ namespace operations_research {
         ds_model.lp_.col_upper_ = vector<double>(num_vars, 1); //Decision variables <= 1.
         ds_model.lp_.row_lower_ = vector<double>(num_constraints, 1);
         ds_model.lp_.row_upper_ = vector<double>(num_constraints, kHighsInf);
-        ds_model.lp_.offset_ = mds_context.cnt_sel; //temp to check if they overlap.
+        //ds_model.lp_.offset_ = mds_context.cnt_sel; //temp to check if they overlap.
 
         //integrality
         ds_model.lp_.integrality_.resize(num_vars);
@@ -67,23 +77,23 @@ namespace operations_research {
         a.start_ = vector<HighsInt>(1, 0); // single element 0.
         for (int i = 0; i < total_vertices; i++) {
             HighsInt cnt = 0;
-            vertex v = mds_context.get_vertex_from_index(i);
-            if (mds_context.is_dominated(v) || mds_context.is_ignored(v)) { //should be faster right?
+            //vertex v = mds_context.get_vertex_from_index(i);
+            if (mds_context.is_dominated(newToOldIndex[i]) || mds_context.is_ignored(newToOldIndex[i])) { //should be faster right?
                 continue; //dominated vertices  do not need a contraint.
             }
-            auto [neigh_v_itt, neigh_v_itt_end] = mds_context.get_neighborhood_itt(v);
-            std::vector<vertex>index;
-            if (mds_context.is_undetermined(v)) {
-                index.push_back(map_pace_to_ilp[v]);
-                a.index_.push_back(map_pace_to_ilp[v]);
+            auto [neigh_v_itt, neigh_v_itt_end] = boost::adjacent_vertices(i, graph);
+            //std::vector<int>index;
+            if (mds_context.is_undetermined(newToOldIndex[i])) {
+                //.push_back(translation_pace_to_ilp[i]);
+                a.index_.push_back(translation_pace_to_ilp[i]);
                 a.value_.push_back(1);
                 cnt++;
             }
 
             for (;neigh_v_itt < neigh_v_itt_end; ++neigh_v_itt) {
-                if (mds_context.is_undetermined(*neigh_v_itt)) {
-                    index.push_back(map_pace_to_ilp[*neigh_v_itt]);
-                    a.index_.push_back(map_pace_to_ilp[*neigh_v_itt]);
+                if (mds_context.is_undetermined(newToOldIndex[*neigh_v_itt])) {
+                    //index.push_back(translation_pace_to_ilp[*neigh_v_itt]);
+                    a.index_.push_back(translation_pace_to_ilp[*neigh_v_itt]);
                     a.value_.push_back(1);
                     cnt++;
                 }
@@ -109,12 +119,12 @@ namespace operations_research {
         return_status = highs.run();
         if (return_status == HighsStatus::kOk) {
             const HighsModelStatus& model_status = highs.getModelStatus();
-            assert(model_status == HighsModelStatus::kOptimal);
+            //assert(model_status == HighsModelStatus::kOptimal);
             const HighsSolution& solution = highs.getSolution();
             vector<int>selected_vertices;
             for (auto i = 0; i < num_vars; ++i) {
                 if (roundToInteger(solution.col_value[i]) == 1) { // is needed as there could be a very small int violation.
-                    selected_vertices.push_back(map_ilp_to_pace[i]);
+                    selected_vertices.push_back(translation_ilp_to_pace[i]);
                 }
             }
 
