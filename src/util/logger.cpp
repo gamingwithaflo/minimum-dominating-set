@@ -1,6 +1,7 @@
 #include "logger.h"
 
 #include <fstream>
+#include <iostream>
 
 int Logger::cnt_alber_simple_rule_1 = 0;
 int Logger::attempt_alber_simple_rule_1 = 0;
@@ -65,9 +66,45 @@ long long Logger::execution_time_leaf = 0;
 strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
 strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
 
-void output_loginfo(std::string& name, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded) {
-    std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/log_info/loginfo_";
-    std::string output_path = prefix + name;
+std::string getReductionString(strategy_reduction reduction) {
+    switch (reduction) {
+    case REDUCTION_COMBINATION:
+        return "REDUCTION_COMBINATION";
+    case REDUCTION_ALBER:
+        return "REDUCTION_ALBER";
+    case REDUCTION_ALBER_RULE_1:
+        return "REDUCTION_ALBER_RULE_1";
+    case REDUCTION_IJCAI:
+        return "REDUCTION_IJCAI";
+    case REDUCTION_NON:
+        return "REDUCTION_NON";
+    default:
+        throw std::runtime_error("Unknown reduction");
+    }
+}
+
+std::string getSolverString(strategy_solver reduction) {
+    switch (reduction) {
+    case SOLVER_SAT:
+        return "SOLVER_SAT";
+    case SOLVER_ILP:
+        return "SOLVER_ILP";
+    case SOLVER_NON:
+        return "SOLVER_NON";
+    case SOLVER_TREEWIDTH:
+        return "SOLVER_TREEWIDTH";
+    case SOLVER_COMBINATION:
+        return "SOLVER_COMBINATION";
+    default:
+        throw std::runtime_error("Unknown reduction");
+    }
+}
+
+void output_loginfo(std::string& name) {
+    std::string prefix = "/home/floris/github/minimum-dominating-set/log_info/";
+
+    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/loginfo_" + name;
+    std::cout << output_path << std::endl;
 
     std::ofstream outFile(output_path);
 
@@ -76,8 +113,8 @@ void output_loginfo(std::string& name, std::vector<int>& included, std::vector<i
         return;
     }
     //strategy
-    outFile << "Reduction strategy: " << Logger::reduction_strategy << std::endl;
-    outFile << "Solver strategy: " << Logger::solver_strategy << std::endl;
+    outFile << "Reduction strategy: " << getReductionString(Logger::reduction_strategy) << std::endl;
+    outFile << "Solver strategy: " << getSolverString(Logger::solver_strategy) << std::endl;
     //Timer
     outFile << "Execution time complete: " << Logger::execution_time_complete << std::endl;
     outFile << "Execution time reduction: " << Logger::execution_time_reduction << std::endl;

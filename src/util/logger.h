@@ -85,4 +85,4 @@ public:
 	static strategy_solver solver_strategy;
 };
 
-void output_loginfo(std::string& path, std::vector<int>& included, std::vector<int>& dominated, std::vector<int>& removed, std::vector<int>& ignored, std::vector<int>& excluded);
+void output_loginfo(std::string& name);

@@ -95,21 +95,21 @@ void timer_thread(std::future<void>& main_future){
 
 int main(int argc, char* argv[])
 {
-	signal(SIGINT, signal_handler);
 
 	//default values
 	// path : string with path to instance graph.
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_033.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_ILP;
+	strategy_solver solver_strategy = SOLVER_SAT;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
 	if (argc > 2) reduction_strategy = string_to_strategy_reduction(std::string(argv[2]));
 	if (argc > 3) solver_strategy = string_to_strategy_solver(std::string(argv[3]));
 
+	signal(SIGINT, signal_handler);
 	//Sigint handler.
 	separate_solver(path, reduction_strategy, solver_strategy);
 	// std::promise<void> main_promise;
@@ -132,6 +132,8 @@ int main(int argc, char* argv[])
 
 void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy){
 	timer t_complete;
+	Logger::solver_strategy = sol_strategy;
+	Logger::reduction_strategy = red_strategy;
 	//create empty sub-graphs + translation function.
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
@@ -159,7 +161,9 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	for (int i = 0; i < sub_components.size(); ++i){
 		//Create a mds_context & reduce. for each subgraph.
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
+		timer t_reduction;
 		reduce::reduction_rule_manager(mds_context, red_strategy);
+		Logger::execution_time_reduction += t_reduction.count();
 		mds_context.fill_removed_vertex();
 
 		Logger::cnt_selected_vertices += mds_context.cnt_sel;
@@ -225,99 +229,8 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	Logger::execution_time_complete = t_complete.count();
 	std::cout << Logger::execution_time_complete << std::endl;
 	parse::output_solution(solution, path);
-}
-
-
-
-
-
-void component_reduction(std::string path)
-{
-	timer t_complete;
-	//create the original graph & context.
-	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
-
-	//run reduction rules & fill the context.
-	MDS_CONTEXT mds_context = MDS_CONTEXT(adjLBoost);
-	reduce::reduce_ijcai(mds_context, true);
-	mds_context.fill_removed_vertex();
-
-	//Remove the unneeded vertices. (the reduced graph is 0 indexed so we have a map from new indicies and the old ones).
-	std::unordered_map<int, int> newToOldIndex;
-	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-
-
-	std::vector<int> component_map_reduced(boost::num_vertices(reduced_graph));
-	std::vector<int> component_map_default(boost::num_vertices(adjLBoost));
-	int num_components_reduced = boost::connected_components(reduced_graph, &component_map_reduced[0]);
-	int num_components_default = boost::connected_components(adjLBoost, &component_map_default[0]);
-
-	std::vector<std::vector<int>> components(num_components_reduced);
-
-	//distribute components.
-	for (size_t i = 0; i < component_map_reduced.size(); ++i) {
-		components[component_map_reduced[i]].push_back(i);
-	}
-
-	std::cout << num_components_reduced << std::endl;
-	std::cout << num_components_default << std::endl;
-
-	//create empty sub-graphs + translation function.
-	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components(num_components_reduced);
-	std::vector<std::unordered_map<int, int>> sub_newToOldIndex(num_components_reduced);
-
-	for (size_t i = 0; i < components.size(); ++i) {
-		std::unique_ptr<adjacencyListBoost> sub_component = std::make_unique<adjacencyListBoost>(components[i].size());
-		sub_components[i] = std::move(sub_component);
-	}
-
-	//add all edges.
-	for (auto edge_iter = edges(reduced_graph); edge_iter.first != edge_iter.second; ++edge_iter.first) {
-		auto u = source(*edge_iter.first, reduced_graph);
-		auto v = target(*edge_iter.first, reduced_graph);
-		int component_u = component_map_reduced[u];
-		int component_v = component_map_reduced[v];
-
-		if (component_u == component_v) {
-			auto it_u = std::find(components[component_u].begin(), components[component_u].end(), u);
-			auto it_v = std::find(components[component_v].begin(), components[component_v].end(), v);
-			auto index_u = std::distance(components[component_u].begin(), it_u);
-			auto index_v = std::distance(components[component_v].begin(), it_v);
-			boost::add_edge(index_u, index_v, *sub_components[component_u]);
-			sub_newToOldIndex[component_u].insert({index_u,newToOldIndex[u]});
-			sub_newToOldIndex[component_v].insert({index_v,newToOldIndex[v]});
-		} else {
-			throw std::runtime_error("Edge endpoints must always be in the same component.");
-		}
-	}
-	std::vector<int>solution;
-	for (int i = 0; i < sub_components.size(); ++i){
-		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
-		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
-
-		//generate final solution.
-		for (int newIndex : td_comp->global_solution) {
-			//we need a +1 te correct the previous -1.
-			solution.push_back((sub_newToOldIndex[i][newIndex]) + 1);
-		}
-	}
-
-	for (int i = 0; i < mds_context.selected.size(); ++i) {
-		if (mds_context.is_selected(i)) {
-			//we need a +1 te correct the previous -1.
-			solution.push_back(i + 1);
-		}
-	}
-	//return domination number.
-	std::cout << "execution_time_join: "<< Logger::execution_time_join << std::endl;
-	std::cout << "execution_time_Introduce: "<< Logger::execution_time_introduce << std::endl;
-	std::cout << "execution_time_Introduce_edge: "<< Logger::execution_time_introduce_edge << std::endl;
-	std::cout << "execution_time_forget: "<< Logger::execution_time_forget << std::endl;
-	std::cout << "execution_time_leaf: "<< Logger::execution_time_leaf << std::endl;
-	std::cout << t_complete.count() << std::endl;
-	std::cout << solution.size() << std::endl;
-	std::sort(solution.begin(), solution.end());
-	parse::output_solution(solution, path);
+	std::string name = parse::getNameFile(path);
+	output_loginfo(name);
 }
 
 void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
@@ -464,5 +377,94 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 	return reduced_graph;
 }
 
+
+void component_reduction(std::string path)
+{
+	timer t_complete;
+	//create the original graph & context.
+	adjacencyListBoost adjLBoost = parse::load_pace_2024(path);
+
+	//run reduction rules & fill the context.
+	MDS_CONTEXT mds_context = MDS_CONTEXT(adjLBoost);
+	reduce::reduce_ijcai(mds_context, true);
+	mds_context.fill_removed_vertex();
+
+	//Remove the unneeded vertices. (the reduced graph is 0 indexed so we have a map from new indicies and the old ones).
+	std::unordered_map<int, int> newToOldIndex;
+	adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
+
+
+	std::vector<int> component_map_reduced(boost::num_vertices(reduced_graph));
+	std::vector<int> component_map_default(boost::num_vertices(adjLBoost));
+	int num_components_reduced = boost::connected_components(reduced_graph, &component_map_reduced[0]);
+	int num_components_default = boost::connected_components(adjLBoost, &component_map_default[0]);
+
+	std::vector<std::vector<int>> components(num_components_reduced);
+
+	//distribute components.
+	for (size_t i = 0; i < component_map_reduced.size(); ++i) {
+		components[component_map_reduced[i]].push_back(i);
+	}
+
+	std::cout << num_components_reduced << std::endl;
+	std::cout << num_components_default << std::endl;
+
+	//create empty sub-graphs + translation function.
+	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components(num_components_reduced);
+	std::vector<std::unordered_map<int, int>> sub_newToOldIndex(num_components_reduced);
+
+	for (size_t i = 0; i < components.size(); ++i) {
+		std::unique_ptr<adjacencyListBoost> sub_component = std::make_unique<adjacencyListBoost>(components[i].size());
+		sub_components[i] = std::move(sub_component);
+	}
+
+	//add all edges.
+	for (auto edge_iter = edges(reduced_graph); edge_iter.first != edge_iter.second; ++edge_iter.first) {
+		auto u = source(*edge_iter.first, reduced_graph);
+		auto v = target(*edge_iter.first, reduced_graph);
+		int component_u = component_map_reduced[u];
+		int component_v = component_map_reduced[v];
+
+		if (component_u == component_v) {
+			auto it_u = std::find(components[component_u].begin(), components[component_u].end(), u);
+			auto it_v = std::find(components[component_v].begin(), components[component_v].end(), v);
+			auto index_u = std::distance(components[component_u].begin(), it_u);
+			auto index_v = std::distance(components[component_v].begin(), it_v);
+			boost::add_edge(index_u, index_v, *sub_components[component_u]);
+			sub_newToOldIndex[component_u].insert({index_u,newToOldIndex[u]});
+			sub_newToOldIndex[component_v].insert({index_v,newToOldIndex[v]});
+		} else {
+			throw std::runtime_error("Edge endpoints must always be in the same component.");
+		}
+	}
+	std::vector<int>solution;
+	for (int i = 0; i < sub_components.size(); ++i){
+		std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_components[i]);
+		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_newToOldIndex[i]);
+
+		//generate final solution.
+		for (int newIndex : td_comp->global_solution) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back((sub_newToOldIndex[i][newIndex]) + 1);
+		}
+	}
+
+	for (int i = 0; i < mds_context.selected.size(); ++i) {
+		if (mds_context.is_selected(i)) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back(i + 1);
+		}
+	}
+	//return domination number.
+	std::cout << "execution_time_join: "<< Logger::execution_time_join << std::endl;
+	std::cout << "execution_time_Introduce: "<< Logger::execution_time_introduce << std::endl;
+	std::cout << "execution_time_Introduce_edge: "<< Logger::execution_time_introduce_edge << std::endl;
+	std::cout << "execution_time_forget: "<< Logger::execution_time_forget << std::endl;
+	std::cout << "execution_time_leaf: "<< Logger::execution_time_leaf << std::endl;
+	std::cout << t_complete.count() << std::endl;
+	std::cout << solution.size() << std::endl;
+	std::sort(solution.begin(), solution.end());
+	parse::output_solution(solution, path);
+}
 	
 
