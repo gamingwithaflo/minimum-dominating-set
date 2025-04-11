@@ -94,6 +94,7 @@ public:
     std::vector<nice_bag> nice_bags; //Nice tree decomposition bags.
     adjacencyListBoostDirected graph_nice_tree_decomposition;
     adjacencyListBoost graph_tree_decomposition; //Not needed anymore
+    int treewidth;
 
     int root_vertex;
 

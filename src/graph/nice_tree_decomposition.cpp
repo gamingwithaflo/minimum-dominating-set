@@ -13,6 +13,7 @@ NICE_TREE_DECOMPOSITION::NICE_TREE_DECOMPOSITION(adjacencyListBoost& reduced_gra
     const int vertex_cnt = decomposition->vertexCount();
 
     //initialize graph.
+    treewidth = decomposition->maximumBagSize() - 1;
     nice_bags.reserve(vertex_cnt + edge_cnt);
     graph_nice_tree_decomposition = adjacencyListBoostDirected(vertex_cnt + edge_cnt);
 

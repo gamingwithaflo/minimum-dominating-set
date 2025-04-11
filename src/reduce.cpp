@@ -76,11 +76,14 @@ namespace reduce {
 						continue;
 					}
 
-					auto possible_combinations = get_distance_three(mds_context, *itt);
+					auto possible_combinations = bfs_get_distance_three(mds_context, *itt);
 					for (vertex poss : possible_combinations) {
 						if (mds_context.is_undetermined(poss)) {
-							if (reduce_neighborhood_pair_vertices(mds_context, *itt, poss)) {
-								++cnt_reductions;
+							if (*itt < poss)
+							{
+								if (reduce_neighborhood_pair_vertices(mds_context, *itt, poss)) {
+									++cnt_reductions;
+								}
 							}
 						}
 					}
@@ -116,7 +119,6 @@ namespace reduce {
 			if (!reduced && first_time) {
 				//to prevent a pointer error.
 				std::vector<vertex>vertices = mds_context.get_vertices();
-				std::cout << "start"  << std::endl;
 				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
@@ -130,7 +132,6 @@ namespace reduce {
 							}
 						}
 					}
-					std::cout << "new vertex" << std::endl;
 				}
 				first_time = false;
 			}

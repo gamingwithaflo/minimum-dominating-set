@@ -8,6 +8,7 @@
 #include "generate_tree_decomposition.h"
 #include <queue>
 #include <boost/graph/connected_components.hpp>
+#include "../util/logger.h"
 
 //Fitness function for the decomposition process.
 class FitnessFunction : public htd::ITreeDecompositionFitnessFunction
@@ -96,12 +97,6 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         manager->treeDecompositionAlgorithmFactory().createInstance();
 
     /**
-     *  Set the optimization operation as manipulation operation in order
-     *  to choose the optimal root reducing height of the tree decomposition.
-     */
-    baseAlgorithm->addManipulationOperation(operation);
-
-    /**
      *  Create a new instance of htd::IterativeImprovementTreeDecompositionAlgorithm based
      *  on the base algorithm and the fitness function. Note that the fitness function can
      *  be an arbiraty one and can differ from the one used in the optimization operation.
@@ -145,13 +140,36 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
             if (decomposition->maximumBagSize() < 8) {
-                std::cout << decomposition->maximumBagSize() << std::endl;
-                nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
-                std::cout << "i want to read" << std::endl;
+                algorithm.setIterationCount(1); // set iterations to infinite.
+
+                /**
+               *  Set the optimization operation as manipulation operation in order
+               *  to choose the optimal root reducing height of the tree decomposition.
+               */
+                baseAlgorithm->addManipulationOperation(operation);
+
+                //run where you left off.
+                htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
+                                                   const htd::ITreeDecomposition & decomposition,
+                                                   const htd::FitnessEvaluation & fitness){});
+                //If further optimizations is done as well.
+                if (decomposition != nullptr){
+                    if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
+                        std::cout << decomposition->maximumBagSize() << std::endl;
+                        nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
+                        std::cout << "i want to read" << std::endl;
+                    }
+                }
             }
              else if (decomposition->maximumBagSize() < 50){
                  // Print the size of the largest bag of the decomposition to stdout.
                  algorithm.setIterationCount(0); // set iterations to infinite.
+
+                 /**
+                *  Set the optimization operation as manipulation operation in order
+                *  to choose the optimal root reducing height of the tree decomposition.
+                */
+                 baseAlgorithm->addManipulationOperation(operation);
 
                  //run where you left off.
                  htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
@@ -164,6 +182,11 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                         nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         std::cout << "i want to read" << std::endl;
                     }
+                }
+            }else {
+                std::cout << decomposition->maximumBagSize() << std::endl;
+                if (Logger::maximum_treewidth < decomposition->maximumBagSize()){
+                    Logger::maximum_treewidth = decomposition->maximumBagSize();
                 }
             }
         }

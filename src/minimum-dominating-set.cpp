@@ -51,6 +51,9 @@ strategy_solver string_to_strategy_solver(const std::string& str) {
 	if (str == "non" || str == "none") {
 		return SOLVER_NON;
 	}
+	if (str == "nice_tree_decomposition") {
+		return SOLVER_NICE_TREE_DECOMPOSITION;
+	}
 	throw new std::runtime_error("not a viable strategy");
 
 }
@@ -98,11 +101,11 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_057.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
+	strategy_solver solver_strategy = SOLVER_NICE_TREE_DECOMPOSITION;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -137,21 +140,6 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	//create empty sub-graphs + translation function.
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
-
-	// if (sol_strategy == SOLVER_SAT) {
-	// 	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
-	// 	MDS_CONTEXT mds_context = MDS_CONTEXT(*graph);
-	// 	reduce::reduction_rule_manager(mds_context, red_strategy);
-	// 	mds_context.fill_removed_vertex();
-	//
-	// 	std::unordered_map<int, int> newToOldIndex;
-	// 	auto reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
-	//
-	// 	std::vector<int> partial_solution = sat_solver_dominating_set(mds_context, reduced_graph, newToOldIndex);
-	//
-	// 	std::cout << partial_solution.size() + mds_context.cnt_sel << std::endl;
-	// 	return;
-	// }
 
 	//Fill sub-graphs + translation function (no reduction).
 	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
@@ -191,10 +179,28 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
+			Logger::num_reduced_vertices += boost::num_vertices(*sub_sub_components[j]);
+			Logger::num_reduced_edges += boost::num_edges(*sub_sub_components[j]);
+
+			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
+				timer t_nice_tree_decomposition;
+				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
+				if (nice_tree_decomposition)
+				{
+					if (Logger::maximum_treewidth < nice_tree_decomposition->treewidth){
+						Logger::maximum_treewidth = nice_tree_decomposition->treewidth;
+					}
+				}
+				Logger::execution_time_nice_tree_decomposition += t_nice_tree_decomposition.count();
+			}
 			if (sol_strategy == SOLVER_TREEWIDTH)
 			{
 				timer t_treewidth;
 				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
+				if (nice_tree_decomposition == nullptr)
+				{
+					throw std::runtime_error("tree decomposition is to big");
+				}
 				std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[j]);
 
 				//generate final solution.

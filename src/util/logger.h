@@ -7,6 +7,7 @@ enum strategy_solver{
 	SOLVER_ILP,
 	SOLVER_SAT,
 	SOLVER_TREEWIDTH,
+	SOLVER_NICE_TREE_DECOMPOSITION,
 	SOLVER_NON
 };
 
@@ -59,6 +60,8 @@ public:
 	//effectiveness reduction rules.
 	static int num_vertices;
 	static int num_edges;
+	static int num_reduced_vertices;
+	static int num_reduced_edges;
 	static int cnt_undetermined_vertices;
 	static int cnt_selected_vertices;
 	static int cnt_ignored_vertices;
@@ -71,6 +74,7 @@ public:
 	static long long execution_time_reduction;
 	static long long execution_time_ilp;
 	static long long execution_time_sat;
+	static long long execution_time_nice_tree_decomposition;
 
 	//treewidth specific.
 	static int maximum_treewidth;

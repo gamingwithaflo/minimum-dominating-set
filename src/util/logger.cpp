@@ -41,6 +41,8 @@ int Logger::num_reduced_components = 0;
 //effectiveness reduction rules.
 int Logger::num_vertices = 0;
 int Logger::num_edges = 0;
+int Logger::num_reduced_vertices = 0;
+int Logger::num_reduced_edges = 0;
 int Logger::cnt_undetermined_vertices = 0;
 int Logger::cnt_selected_vertices = 0;
 int Logger::cnt_ignored_vertices = 0;
@@ -53,6 +55,7 @@ long long  Logger::execution_time_treewidth = 0;
 long long  Logger::execution_time_reduction = 0;
 long long Logger::execution_time_ilp = 0;
 long long  Logger::execution_time_sat = 0;
+long long Logger::execution_time_nice_tree_decomposition = 0;
 
     //treewidth specific.
 int Logger::maximum_treewidth = 0;
@@ -95,6 +98,8 @@ std::string getSolverString(strategy_solver reduction) {
         return "SOLVER_TREEWIDTH";
     case SOLVER_COMBINATION:
         return "SOLVER_COMBINATION";
+    case SOLVER_NICE_TREE_DECOMPOSITION:
+        return "SOLVER_NICE_TREE_DECOMPOSITION";
     default:
         throw std::runtime_error("Unknown reduction");
     }
@@ -130,18 +135,25 @@ void output_loginfo(std::string& name) {
             outFile << "Execution time ILP: " << Logger::execution_time_ilp << std::endl;
         } else if (Logger::solver_strategy == SOLVER_TREEWIDTH){ // Extra information only if you run treewidth specifically.
             outFile << "Execution time treewidth: " << Logger::execution_time_treewidth << std::endl;
+            outFile << "maximum_treewidth : " << Logger::maximum_treewidth << std::endl;
             outFile << "Execution time spent in join: " << Logger::execution_time_join << std::endl;
             outFile << "Execution time spent in leaf: " << Logger::execution_time_leaf << std::endl;
             outFile << "Execution time spent in introduce: " << Logger::execution_time_introduce << std::endl;
             outFile << "Execution time spent in introduce edge: " << Logger::execution_time_introduce_edge << std::endl;
             outFile << "Execution time spent in forget: " << Logger::execution_time_forget << std::endl;
-        } else {
+        } else if (Logger::solver_strategy == SOLVER_NICE_TREE_DECOMPOSITION) {
+            outFile << "Execution time of the nice tree decompositions: " << Logger::execution_time_nice_tree_decomposition << std::endl;
+            outFile << "maximum_treewidth : " << Logger::maximum_treewidth << std::endl;
+        }
+        else {
             throw std::runtime_error("non-supported solver strategy.");
         }
     }
     //effectiveness reduction rules.
     outFile << "Number of vertices: " << Logger::num_vertices << std::endl;
     outFile << "Number of edges: " << Logger::num_edges << std::endl;
+    outFile << "Number of reduced_vertices: " << Logger::num_reduced_vertices << std::endl;
+    outFile << "Number of reduced_edges: " << Logger::num_reduced_edges << std::endl;
     outFile << "Number of undetermined vertices: " << Logger::cnt_undetermined_vertices << std::endl;
     outFile << "Number of selected vertices: " << Logger::cnt_selected_vertices << std::endl;
     outFile << "Number of ignored vertices: "  << Logger::cnt_ignored_vertices << std::endl;
