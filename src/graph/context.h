@@ -22,11 +22,11 @@ public:
     int num_nodes;
     adjacencyListBoost graph;
 
-    std::vector<int> selected;
-    std::vector<int> dominated;
-    std::vector<int> removed;
-    std::vector<int> excluded;
-    std::vector<int> ignored;
+    std::vector<bool> selected;
+    std::vector<bool> dominated;
+    std::vector<bool> removed;
+    std::vector<bool> excluded;
+    std::vector<bool> ignored;
 
     std::vector<int> c_d;
     std::vector<int> c_nd;

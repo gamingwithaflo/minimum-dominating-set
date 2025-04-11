@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex) {
+TREEWIDTH_SOLVER::TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<bool>& dominated, std::vector<bool>&excluded, std::unordered_map<int,int>& newToOldIndex) {
     //initialize
     this->nice_tree_decomposition_ptr = std::move(nice_tree_decomposition);
     instruction_stack;
@@ -62,7 +62,7 @@ void TREEWIDTH_SOLVER::depth_first_search(int start) {
     }
 }
 
-void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex) {
+void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<bool>& dominated, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex) {
     while (!instruction_stack.empty()) {
         //get top instruction from the stack. (a pointer).
         nice_bag* instruction_ptr = instruction_stack.top();
@@ -123,7 +123,7 @@ void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices) {
     Logger::execution_time_leaf += t_operation_leaf.count();
 }
 
-void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<bool>& dominated, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex){
     timer t_operation_introduce;
     int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
@@ -272,7 +272,7 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
     Logger::execution_time_introduce_edge += t_operation_introduce_edge.count();
 }
 
-void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex){
+void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex){
     timer t_operation_forget;
     int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 

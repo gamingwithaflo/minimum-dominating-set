@@ -35,7 +35,7 @@ public:
     boost::unordered_map<boost::dynamic_bitset<>, solution_struct> local_solution;
     std::vector<int> global_solution;
 
-    explicit TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
+    explicit TREEWIDTH_SOLVER(std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition, std::vector<bool>& dominated, std::vector<bool>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
     void insert_entry_new_partial_solution(std::vector<partial_solution>& new_partial_solution, std::uint64_t encoding, boost::dynamic_bitset<>& solution, int domination_number);
 
@@ -43,15 +43,15 @@ public:
 
     void fill_instruction_stack();
 
-    void run_instruction_stack(std::vector<int>& dominated, std::vector<int>&excluded, std::unordered_map<int,int>& newToOldIndex);
+    void run_instruction_stack(std::vector<bool>& dominated, std::vector<bool>&excluded, std::unordered_map<int,int>& newToOldIndex);
 
     void depth_first_search(int start);
 
     void run_operation_leaf(int num_of_vertices);
 
-    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<int>& dominated, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<bool>& dominated, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
-    void run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<int>& excluded, std::unordered_map<int, int>& newToOldIndex);
+    void run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex);
 
     void run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b);
 

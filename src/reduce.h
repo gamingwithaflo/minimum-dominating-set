@@ -10,6 +10,8 @@
 namespace reduce {
     void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy);
 
+    std::vector<vertex> bfs_get_distance_three(MDS_CONTEXT& mds_context, vertex v);
+
     void reduce_alber(MDS_CONTEXT& mds_context, bool run_rule_2);
 
     void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2);

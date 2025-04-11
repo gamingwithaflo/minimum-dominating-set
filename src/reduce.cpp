@@ -3,6 +3,8 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <algorithm>
+#include <iostream>
+#include <queue>
 
 
 namespace reduce {
@@ -114,21 +116,53 @@ namespace reduce {
 			if (!reduced && first_time) {
 				//to prevent a pointer error.
 				std::vector<vertex>vertices = mds_context.get_vertices();
+				std::cout << "start"  << std::endl;
 				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
 					}
 
-					auto possible_combinations = get_distance_three(mds_context, *itt);
+					auto possible_combinations = bfs_get_distance_three(mds_context, *itt);
 					for (vertex poss : possible_combinations) {
 						if (mds_context.is_undetermined(poss)) {
-							reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+							if (*itt < poss) {
+								reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+							}
 						}
 					}
+					std::cout << "new vertex" << std::endl;
 				}
 				first_time = false;
 			}
 		} while (reduced);
+	}
+
+	std::vector<vertex> bfs_get_distance_three(MDS_CONTEXT& mds_context, vertex v){
+		std::unordered_set<vertex> visited;
+		std::vector<vertex> within_distance_three;
+		std::queue<std::pair<vertex,int>> queue;
+
+		visited.insert(v);
+		queue.emplace(v,0);
+
+		while (!queue.empty()){
+			auto [current, depth] = queue.front();
+			queue.pop();
+
+			if (depth == 3) continue;
+
+			auto [neigh_it, neigh_end] = mds_context.get_neighborhood_itt(current);
+			for (; neigh_it < neigh_end; ++neigh_it) {
+				vertex neighbor = *neigh_it;
+				if (!visited.count(neighbor)){
+					visited.insert(neighbor);
+					within_distance_three.push_back(neighbor);
+					queue.emplace(neighbor,depth+1);
+				}
+			}
+		}
+		return within_distance_three;
+
 	}
 
 	std::unordered_set<vertex> get_distance_three(MDS_CONTEXT& mds_context, vertex v) {

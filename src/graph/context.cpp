@@ -6,11 +6,11 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 	graph = g;
 	num_nodes = boost::num_vertices(g);
 
-	selected = std::vector<int>(num_nodes, 0);
-	dominated = std::vector<int>(num_nodes, 0);
-	removed = std::vector<int>(num_nodes, 0);
-	excluded = std::vector<int>(num_nodes, 0); 
-	ignored = std::vector<int>(num_nodes, 0);
+	selected = std::vector<bool>(num_nodes, false);
+	dominated = std::vector<bool>(num_nodes, false);
+	removed = std::vector<bool>(num_nodes, false);
+	excluded = std::vector<bool>(num_nodes, false);
+	ignored = std::vector<bool>(num_nodes, false);
 
 	c_d = std::vector<int>(num_nodes, 0);
 	c_nd = std::vector<int>(num_nodes, 0);
@@ -24,7 +24,7 @@ MDS_CONTEXT::MDS_CONTEXT(adjacencyListBoost& g) {
 }
 
 void MDS_CONTEXT::select_vertex(vertex v) {
-	selected[v] = 1;
+	selected[v] = true;
 	cnt_sel++;
 	auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
 	dominate_vertex(v);
@@ -34,13 +34,13 @@ void MDS_CONTEXT::select_vertex(vertex v) {
 }
 
 bool MDS_CONTEXT::is_selected(vertex v) {
-	return selected[v] == 1;
+	return selected[v];
 }
 
 void MDS_CONTEXT::dominate_vertex(vertex v) {
 	if (!is_dominated(v)) {
 		cnt_dom++;
-		dominated[v] = 1;
+		dominated[v] = true;
 		if (!is_ignored(v)) {
 			c_nd[v]++;
 			auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
@@ -52,17 +52,17 @@ void MDS_CONTEXT::dominate_vertex(vertex v) {
 }
 
 bool MDS_CONTEXT::is_dominated(vertex v) {
-	return dominated[v] == 1;
+	return dominated[v];
 }
 
 bool MDS_CONTEXT::is_dominated_ijcai(vertex v) {
-	return (dominated[v] == 1 || ignored[v] == 1);
+	return (dominated[v]  || ignored[v]);
 }
 
 void MDS_CONTEXT::exclude_vertex(vertex v) {
 	if (!is_excluded(v)) {
 		cnt_excl++;
-		excluded[v] = 1;
+		excluded[v] = true;
 		c_x[v]++;
 		auto [neigh_itt_v, neigh_itt_v_end] = get_neighborhood_itt(v);
 
@@ -93,12 +93,12 @@ void MDS_CONTEXT::exclude_vertex(vertex v) {
 }
 
 bool MDS_CONTEXT::is_excluded(vertex v) {
-	return excluded[v] == 1;
+	return excluded[v];
 }
 
 void MDS_CONTEXT::ignore_vertex(vertex v) {
 	if (!is_ignored(v)) {
-		ignored[v] = 1;
+		ignored[v] = true;
 		cnt_ign++;
 
 		//check if it isn't increased because it is already dominated.
@@ -113,7 +113,7 @@ void MDS_CONTEXT::ignore_vertex(vertex v) {
 }
 
 bool MDS_CONTEXT::is_ignored(vertex v) {
-	return (ignored[v] == 1);
+	return ignored[v];
 }
 
 bool MDS_CONTEXT::is_undetermined(vertex v) {
@@ -197,7 +197,7 @@ std::vector<vertex> MDS_CONTEXT::get_vertices() {
 void MDS_CONTEXT::fill_removed_vertex() {
 	for (int counter = 0; counter < removed.size(); ++counter) {
 		if (is_dominated(counter) && is_excluded(counter)) {
-			removed[counter] = 1;
+			removed[counter] = true;
 			cnt_rem++;
 		}
 	}
@@ -205,7 +205,7 @@ void MDS_CONTEXT::fill_removed_vertex() {
 
 void MDS_CONTEXT::remove_vertex(vertex v) {
 	//keep track in own list which vertices not to consider anymore.
-	removed[v] = 1;
+	removed[v] = true;
 	dominate_vertex(v);
 	if (!is_selected(v)) {
 		exclude_vertex(v);
@@ -242,7 +242,7 @@ void MDS_CONTEXT::remove_edge(vertex v, vertex w) {
 bool MDS_CONTEXT::can_be_reduced(std::vector<int>& prison_vertices) {
 	for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
 		//you need at least 1.
-		if (dominated[*i] == 0 && removed[*i] == 0) {
+		if (!dominated[*i] && !removed[*i]) {
 			return true;
 		}
 	}
@@ -251,7 +251,7 @@ bool MDS_CONTEXT::can_be_reduced(std::vector<int>& prison_vertices) {
 }
 
 bool MDS_CONTEXT::is_removed(vertex v) {
-	if (removed[v] == 1) {
+	if (removed[v]) {
 		return true;
 	}
 	else {
@@ -276,7 +276,7 @@ std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_ver
 	std::map<int, int> translation_pace_to_ilp;
 	//std::map<int, int> translation_ilp_to_pace; TODO later
 	for (int i = 0; i < total_vertices; ++i) {
-		if (excluded[i] == 0 && removed[i] == 0 && selected[i] == 0) {
+		if (!excluded[i] && !removed[i] && !selected[i]) {
 			translation_pace_to_ilp[i] = index;
 			undetermined.push_back(i);
 			index++;
@@ -296,11 +296,11 @@ vertex MDS_CONTEXT::get_target_edge(edge e) {
 vertex MDS_CONTEXT::add_vertex(){
 	vertex new_vertex = boost::add_vertex(graph);
 	//assumption new vertex id is just 1 higher.
-	selected.push_back(0);
-	dominated.push_back(0);
-	removed.push_back(0);
-	excluded.push_back(0);
-	ignored.push_back(0);
+	selected.push_back(false);
+	dominated.push_back(false);
+	removed.push_back(false);
+	excluded.push_back(false);
+	ignored.push_back(false);
 	c_d.push_back(0);
 	c_nd.push_back(0);
 	c_x.push_back(0);
