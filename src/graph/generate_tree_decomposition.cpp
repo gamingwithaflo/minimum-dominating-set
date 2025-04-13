@@ -118,7 +118,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *  the algorithm after the first non-improving solution has been found, i.e. the algorithm
      *  will perform a simple hill-climbing approach.
      */
-    algorithm.setNonImprovementLimit(500);
+    algorithm.setNonImprovementLimit(100);
 
     // Record the optimal maximal bag size of the tree decomposition to allow printing the progress.
     std::size_t optimalBagSize = (std::size_t)-1;
@@ -139,8 +139,8 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         //Check whether the algorithm indeed computed a valid decomposition.
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
-            if (decomposition->maximumBagSize() < 8) {
-                algorithm.setIterationCount(1); // set iterations to infinite.
+            if (decomposition->maximumBagSize() < 11){
+                algorithm.setIterationCount(10); // set iterations to infinite.
 
                 /**
                *  Set the optimization operation as manipulation operation in order
@@ -180,7 +180,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
                         std::cout << decomposition->maximumBagSize() << std::endl;
                         nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
-                        std::cout << "i want to read" << std::endl;
+                        std::cout << "read" << std::endl;
                     }
                 }
             }else {

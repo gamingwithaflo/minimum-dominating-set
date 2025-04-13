@@ -101,9 +101,11 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
+	bool dir_mode = false;
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
 	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
-	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
+	strategy_reduction reduction_strategy = REDUCTION_NON;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
 	strategy_solver solver_strategy = SOLVER_NICE_TREE_DECOMPOSITION;
 
@@ -114,7 +116,16 @@ int main(int argc, char* argv[])
 
 	signal(SIGINT, signal_handler);
 	//Sigint handler.
-	separate_solver(path, reduction_strategy, solver_strategy);
+	if (dir_mode) {
+		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
+			std::cout << entry.path().string() << std::endl;
+			initialize_logger();
+			separate_solver(entry.path(), reduction_strategy, solver_strategy);
+		}
+	} else {
+		separate_solver(path, reduction_strategy, solver_strategy);
+	}
+
 	// std::promise<void> main_promise;
 	// std::future<void> main_future = main_promise.get_future();
 	//
@@ -232,6 +243,56 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			}
 		}
 	}
+	Logger::execution_time_complete = t_complete.count();
+	std::cout << Logger::execution_time_complete << std::endl;
+	parse::output_solution(solution, path);
+	std::string name = parse::getNameFile(path);
+	output_loginfo(name);
+}
+
+void seperate_solver_no_components(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy){
+	timer t_complete;
+	Logger::solver_strategy = sol_strategy;
+	Logger::reduction_strategy = red_strategy;
+
+	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
+	MDS_CONTEXT mds_context = MDS_CONTEXT(*graph);
+	timer t_reduction;
+	reduce::reduction_rule_manager(mds_context, red_strategy);
+	Logger::execution_time_reduction += t_reduction.count();
+	mds_context.fill_removed_vertex();
+
+	Logger::cnt_selected_vertices += mds_context.cnt_sel;
+	Logger::cnt_excluded_vertices += mds_context.cnt_excl;
+	Logger::cnt_ignored_vertices += mds_context.cnt_ign;
+	Logger::cnt_removed_vertices += mds_context.cnt_rem;
+
+	std::unordered_map<int, int> newToOldIndex;
+	auto reduced_graph = create_reduced_graph(mds_context,newToOldIndex);
+
+	std::vector<int> solution;
+	for (int v = 0; v < mds_context.selected.size(); ++v) {
+		if (mds_context.is_selected(v)) {
+			//we need a +1 te correct the previous -1.
+			solution.push_back(v + 1);
+		}
+		if (mds_context.is_undetermined(v)){
+			Logger::cnt_undetermined_vertices++;
+		}
+	}
+
+	if (sol_strategy == SOLVER_SAT) {
+		timer t_sat;
+		std::vector<int> partial_solution = sat_solver_dominating_set(mds_context, reduced_graph, newToOldIndex);
+
+		for (int newIndex : partial_solution) {
+			solution.push_back((newToOldIndex[newIndex]) + 1);
+		}
+		Logger::execution_time_sat += t_sat.count();
+	} else {
+		throw std::runtime_error("does not yet support other solvers");
+	}
+
 	Logger::execution_time_complete = t_complete.count();
 	std::cout << Logger::execution_time_complete << std::endl;
 	parse::output_solution(solution, path);
