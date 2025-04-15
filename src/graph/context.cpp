@@ -346,5 +346,21 @@ vertex MDS_CONTEXT::add_vertex(){
 	return new_vertex;
 }
 
+void MDS_CONTEXT::fill_mds_context(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex) {
+	int num_vertices = get_total_vertices();
+	for (int i = 0; i < num_vertices; ++i) {
+		int OldIndex = newToOldIndex[i];
+		if (mds_context.is_dominated(OldIndex)) {
+			dominate_vertex(i);
+		}
+		if (mds_context.is_excluded(OldIndex)) {
+			exclude_vertex(i);
+		}
+		// if (mds_context.is_ignored(OldIndex)) {
+		// 	ignore_vertex(i);
+		// }
+	}
+}
+
 
 

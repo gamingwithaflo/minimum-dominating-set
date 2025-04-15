@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_097.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/bremen_subgraph_20.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
@@ -160,15 +160,19 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 
 	for (int i = 0; i < sub_components.size(); ++i){
 		//Create a mds_context & reduce. for each subgraph.
+		std::atomic<bool> stop_flag(false);
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 		timer t_reduction;
 		std::cout << "start reduction:" << std::endl;
-		reduce::reduction_rule_manager(mds_context, red_strategy);
+		std::future<void> reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context), std::ref(red_strategy), 0, std::ref(stop_flag));
+
+		if (reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+			reduction.get();
+		} else{
+			stop_flag = true;
+		}
+
 		Logger::execution_time_reduction += t_reduction.count();
-		std::cout << "seperate the vertices: "<< Logger::execution_time_seperate <<std::endl;
-		std::cout << "dominations: " << Logger::execution_dominations << std::endl;
-		std::cout << "is alternative: " << Logger::execution_alternative_dominations << std::endl;
-		std::cout << "is stronger: " << Logger::execution_is_stronger << std::endl;
 		mds_context.fill_removed_vertex();
 
 		Logger::cnt_selected_vertices += mds_context.cnt_sel;
@@ -191,15 +195,31 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		std::vector<std::unordered_map<int, int>> sub_sub_newToOldIndex;
 
 		std::unordered_map<int, int> newToOldIndex;
-		timer t_subgraph;
 		adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
 		create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
-		std::cout << "create reduced components execution time: " << t_subgraph.count() << std::endl;
 		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
-			Logger::num_reduced_vertices += boost::num_vertices(*sub_sub_components[j]);
-			Logger::num_reduced_edges += boost::num_edges(*sub_sub_components[j]);
+
+			// //get new MDS_CONTEXT.
+			// MDS_CONTEXT mds_context_reduced = MDS_CONTEXT(*sub_sub_components[j]);
+			// mds_context_reduced.fill_mds_context(mds_context, sub_sub_newToOldIndex[j]);
+			//
+			// strategy_reduction strategy = REDUCTION_L_ALBER;
+			// //reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
+			// //reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+			// mds_context_reduced.fill_removed_vertex();
+			//
+			// std::unordered_map<int, int> newToOld;
+			// for (int v = 0; v < mds_context_reduced.selected.size(); ++v) {
+			// 	if (mds_context_reduced.is_selected(v)) {
+			// 		//we need a +1 te correct the previous -1.
+			// 		solution.push_back(sub_newToOldIndex[i][v] + 1);
+			// 	}
+			// }
+			// adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
+
+
 
 			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
 				timer t_nice_tree_decomposition;
@@ -266,7 +286,7 @@ void seperate_solver_no_components(std::string path, strategy_reduction red_stra
 	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
 	MDS_CONTEXT mds_context = MDS_CONTEXT(*graph);
 	timer t_reduction;
-	reduce::reduction_rule_manager(mds_context, red_strategy);
+	//reduce::reduction_rule_manager(mds_context, red_strategy);
 	Logger::execution_time_reduction += t_reduction.count();
 	mds_context.fill_removed_vertex();
 
@@ -461,7 +481,7 @@ void component_reduction(std::string path)
 
 	//run reduction rules & fill the context.
 	MDS_CONTEXT mds_context = MDS_CONTEXT(adjLBoost);
-	reduce::reduce_ijcai(mds_context, true);
+	//reduce::reduce_ijcai(mds_context, true);
 	mds_context.fill_removed_vertex();
 
 	//Remove the unneeded vertices. (the reduced graph is 0 indexed so we have a map from new indicies and the old ones).

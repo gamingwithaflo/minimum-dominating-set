@@ -65,6 +65,8 @@ public:
 
     void remove_vertex(vertex v);
 
+    void fill_mds_context(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex);
+
     void get_lookup_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood);
 
     void get_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood, std::vector<int>& l_neighbourhood);

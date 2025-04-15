@@ -8,15 +8,21 @@
 #include <boost/graph/graph_traits.hpp>
 
 namespace reduce {
-    void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy);
+    void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag);
 
     bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices);
+
+    void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag);
+
+    void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices);
+
+    std::vector<vertex> bfs_get_distance_three_generalized(MDS_CONTEXT& mds_context, std::vector<int>& vertices);
 
     std::vector<vertex> bfs_get_distance_three(MDS_CONTEXT& mds_context, vertex v);
 
     void reduce_alber(MDS_CONTEXT& mds_context, bool run_rule_2);
 
-    void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2);
+    void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag);
 
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 

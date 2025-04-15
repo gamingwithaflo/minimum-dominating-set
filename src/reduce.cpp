@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include <absl/strings/str_format.h>
+#include <atomic>
 #include "util/logger.h"
 
 #include "absl/strings/internal/str_format/extension.h"
@@ -13,22 +15,24 @@
 
 
 namespace reduce {
-	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy) {
+	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag) {
 		if (strategy == REDUCTION_COMBINATION) {
 			//IJCAI with Alber rule 1.
-			reduce_ijcai(mds_context, true);
+			reduce_ijcai(mds_context, true, stop_flag);
 		}
 		else if (strategy == REDUCTION_ALBER) {
 			reduce_alber(mds_context, true);
 		}
 		else if (strategy == REDUCTION_IJCAI){
-			reduce_ijcai(mds_context, false);
+			reduce_ijcai(mds_context, false, stop_flag);
 		}
 		else if (strategy == REDUCTION_ALBER_RULE_1){
 			reduce_alber(mds_context, false);
 
 		} else if (strategy == REDUCTION_NON){
 			//Do nothing.
+		} else if (strategy == REDUCTION_L_ALBER) {
+			reduce_l_alber(mds_context, l, stop_flag);
 		}
 	}
 
@@ -98,7 +102,7 @@ namespace reduce {
 		} while (cnt_reductions > 0);
 	}
 
-	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2) {
+	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag) {
 		bool reduced;
 		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 		bool first_time = run_rule_2;
@@ -125,6 +129,9 @@ namespace reduce {
 				//to prevent a pointer error.
 				std::vector<vertex>vertices = mds_context.get_vertices();
 				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
+					if (stop_flag){
+						return;
+					}
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
 					}
@@ -144,6 +151,82 @@ namespace reduce {
 				first_time = false;
 			}
 		} while (reduced);
+	}
+
+	void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag){
+		auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
+		int counter = 0;
+		for (;vert_it != vert_it_end; ++vert_it) {
+			if (stop_flag){
+				return;
+			}
+			if (mds_context.is_undetermined(*vert_it)) {
+				std::cout << "iteration: " << counter << std::endl;
+				execute_l_alber(mds_context, l, 1, { static_cast<int>(*vert_it) });
+				++counter;
+			}
+		}
+	}
+
+	bool hasDuplicate(const std::vector<int>& nums) {
+		std::unordered_set<int> seen;
+		for (int num : nums) {
+			if (seen.count(num)) return true; // duplicate found
+			seen.insert(num);
+		}
+		return false; // no duplicates
+	}
+
+	void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices){
+		auto possible_combination = bfs_get_distance_three_generalized(mds_context, vertices);
+		if (l == counter){
+			// if (hasDuplicate(vertices)) {
+			// 	throw std::runtime_error("L alber does not have duplicates");
+			// }
+			bool reduction = reduction_l_rule(mds_context, vertices);
+			return;
+		}
+		for (auto& vtx : possible_combination){
+			if (mds_context.is_undetermined(vtx)) {
+				std::vector<int> updated_vertices = vertices;
+				updated_vertices.push_back(vtx);
+				//dont do double work.
+				if (*std::min_element(updated_vertices.begin(), updated_vertices.end()) == vtx){
+					execute_l_alber(mds_context, l, counter+1, updated_vertices);
+				}
+			}
+		}
+	}
+
+
+	std::vector<vertex> bfs_get_distance_three_generalized(MDS_CONTEXT& mds_context, std::vector<int>& vertices) {
+		std::unordered_set<vertex> visited;
+		std::vector<vertex> within_distance_three;
+		std::queue<std::pair<vertex,int>> queue;
+
+		for (auto& v : vertices) {
+			visited.insert(v);
+			queue.emplace(v,0);
+		}
+
+		while (!queue.empty()){
+			auto [current, depth] = queue.front();
+			queue.pop();
+
+			if (depth == 3) continue;
+
+			auto [neigh_it, neigh_end] = mds_context.get_neighborhood_itt(current);
+			for (; neigh_it < neigh_end; ++neigh_it) {
+				vertex neighbor = *neigh_it;
+				if (!visited.count(neighbor)){
+					visited.insert(neighbor);
+					within_distance_three.push_back(neighbor);
+					queue.emplace(neighbor,depth+1);
+				}
+			}
+		}
+		return within_distance_three;
+
 	}
 
 	std::vector<vertex> bfs_get_distance_three(MDS_CONTEXT& mds_context, vertex v){
@@ -172,30 +255,6 @@ namespace reduce {
 		}
 		return within_distance_three;
 
-	}
-
-	std::unordered_set<vertex> get_distance_three(MDS_CONTEXT& mds_context, vertex v) {
-		std::unordered_set<vertex> distance_at_most_three;
-
-		auto [neigh_depth_one, neigh_depth_one_end] = mds_context.get_neighborhood_itt(v);
-		for (;neigh_depth_one < neigh_depth_one_end; ++neigh_depth_one) {
-			//can't have duplicates.
-			distance_at_most_three.insert(*neigh_depth_one);
-
-			auto [neigh_depth_two, neigh_depth_two_end] = mds_context.get_neighborhood_itt(*neigh_depth_one);
-			for (;neigh_depth_two < neigh_depth_two_end; ++neigh_depth_two) {
-				if (!distance_at_most_three.count(*neigh_depth_two)) {
-					distance_at_most_three.insert(*neigh_depth_two);
-				}
-				auto [neigh_depth_three, neigh_depth_three_end] = mds_context.get_neighborhood_itt(*neigh_depth_two);
-				for (;neigh_depth_three < neigh_depth_three_end; ++neigh_depth_three) {
-					if (!distance_at_most_three.count(*neigh_depth_three)) {
-						distance_at_most_three.insert(*neigh_depth_three);
-					}
-				}
-			}
-		}
-		return distance_at_most_three;
 	}
 
 	bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u) {
@@ -908,30 +967,6 @@ namespace reduce {
 			}
 		}
 		return true;
-	}
-
-
-	template<typename T>
-void combineHelper(const std::vector<T>& arr, int start, int k,
-				   std::vector<T>& current, std::vector<std::vector<T>>& result) {
-		if (!current.empty() && current.size() <= k) {
-			result.push_back(current);
-		}
-		if (current.size() == k) return;
-
-		for (int i = start; i < arr.size(); ++i) {
-			current.push_back(arr[i]);
-			combineHelper(arr, i + 1, k, current, result);
-			current.pop_back();
-		}
-	}
-
-	template<typename T>
-	std::vector<std::vector<T>> allCombinationsUpToK(const std::vector<T>& arr, int k) {
-		std::vector<std::vector<T>> result;
-		std::vector<T> current;
-		combineHelper(arr, 0, k, current, result);
-		return result;
 	}
 
 	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices)
