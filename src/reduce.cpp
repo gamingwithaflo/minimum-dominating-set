@@ -129,9 +129,9 @@ namespace reduce {
 				//to prevent a pointer error.
 				std::vector<vertex>vertices = mds_context.get_vertices();
 				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
-					if (stop_flag){
-						return;
-					}
+					// if (stop_flag){
+					// 	return;
+					// }
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
 					}
@@ -1217,9 +1217,9 @@ namespace reduce {
 					for (size_t j = i + 1; j < dominating_subsets.size(); ++j) {
 						// Process each pair (vec[i], vec[j])
 						for (auto& i : dominating_subsets[i]) {
+							auto gadget = mds_context.add_vertex();
 							for (auto& j : dominating_subsets[j]) {
-								auto gadget = mds_context.add_vertex();
-								mds_context.exclude_vertex(gadget);
+								//mds_context.exclude_vertex(gadget); kan niet zomaar geexclude worden.
 								mds_context.add_edge(gadget, j);
 								mds_context.add_edge(gadget, i);
 							}
