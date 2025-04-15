@@ -122,6 +122,11 @@ void initialize_logger()
     long long  Logger::execution_time_sat = 0;
     long long Logger::execution_time_nice_tree_decomposition = 0;
 
+    long long Logger::execution_time_seperate = 0;
+    long long Logger::execution_dominations = 0;
+    long long Logger::execution_alternative_dominations = 0;
+    long long Logger:: execution_is_stronger = 0;
+
     //treewidth specific.
     int Logger::maximum_treewidth = 0;
     long long Logger::execution_time_introduce = 0;

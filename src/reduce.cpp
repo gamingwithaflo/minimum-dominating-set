@@ -5,8 +5,11 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include "util/logger.h"
 
 #include "absl/strings/internal/str_format/extension.h"
+#include "util/timer.h"
+
 
 
 namespace reduce {
@@ -125,7 +128,6 @@ namespace reduce {
 					if (!mds_context.is_undetermined(*itt)) {
 						continue;
 					}
-
 					auto possible_combinations = bfs_get_distance_three(mds_context, *itt);
 					for (vertex poss : possible_combinations) {
 						if (mds_context.is_undetermined(poss)) {
@@ -908,10 +910,34 @@ namespace reduce {
 		return true;
 	}
 
+
+	template<typename T>
+void combineHelper(const std::vector<T>& arr, int start, int k,
+				   std::vector<T>& current, std::vector<std::vector<T>>& result) {
+		if (!current.empty() && current.size() <= k) {
+			result.push_back(current);
+		}
+		if (current.size() == k) return;
+
+		for (int i = start; i < arr.size(); ++i) {
+			current.push_back(arr[i]);
+			combineHelper(arr, i + 1, k, current, result);
+			current.pop_back();
+		}
+	}
+
+	template<typename T>
+	std::vector<std::vector<T>> allCombinationsUpToK(const std::vector<T>& arr, int k) {
+		std::vector<std::vector<T>> result;
+		std::vector<T> current;
+		combineHelper(arr, 0, k, current, result);
+		return result;
+	}
+
 	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices)
 	{
 		for (vertex v : l_vertices) {
-			if (mds_context.is_excluded(v) || mds_context.is_selected(v) || mds_context.is_dominated(v))
+			if (mds_context.is_removed(v) || mds_context.is_excluded(v) || mds_context.is_selected(v) || mds_context.is_dominated(v))
 			{
 				return false;
 			}
@@ -919,6 +945,7 @@ namespace reduce {
 		//get l vertices.
 
 		//get neighbourhood l.
+		timer t_divide_neighborhood;
 		std::unordered_set<int> lookup_neighbourhood;
 		std::vector<int> l_neighbourhood;
 		mds_context.get_l_neighborhood(l_vertices, lookup_neighbourhood, l_neighbourhood);
@@ -929,6 +956,7 @@ namespace reduce {
 		std::vector<int>prison_vertices; //N_{1}
 
 		// get N_exit(V_l)
+
 		for (auto u = l_neighbourhood.begin(); u < l_neighbourhood.end(); ++u) {
 			//for each vertex get the neighborhood
 			auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
@@ -978,9 +1006,10 @@ namespace reduce {
 				undominated_prison_vertices.push_back(*i);
 			}
 		}
-
+		Logger::execution_time_seperate += t_divide_neighborhood.count();
 		//Is there a chance on profit.
 		if (!undominated_prison_vertices.empty()) {
+			timer t_domination;
 			std::vector<std::vector<int>>dominating_subsets;
 			//find all combinations.
 			const int total_combinations = 1 << l_vertices.size();
@@ -1029,7 +1058,9 @@ namespace reduce {
 					dominating_subsets.emplace_back(combination);
 				}
 			}
+			Logger::execution_dominations += t_domination.count();
 
+			timer t_alternative;
 			std::unordered_set<int> lookup_n_prison_neighbourhood;
 			std::vector<int> n_prison_neighbourhood;
 			mds_context.get_l_neighborhood(prison_vertices, lookup_n_prison_neighbourhood, n_prison_neighbourhood);
@@ -1091,6 +1122,7 @@ namespace reduce {
 						if (dominates) {
 							alternative_dominations.emplace_back(combination);
 						}
+						return;
 					}
 
 					// Try each element in the set to be included in the current combination
@@ -1107,15 +1139,22 @@ namespace reduce {
 				// Start the recursive generation from index 0
 				generate(0);
 			}
+			Logger::execution_alternative_dominations += t_alternative.count();
+			std::vector<std::pair<std::unordered_set<int>,int>> collection_lookup_dominating_subsets;
+			timer t_is_stronger;
+			for (auto& w : dominating_subsets) {
+				std::unordered_set<int> neighborhood_w;
+				mds_context.get_lookup_l_neighborhood(w, neighborhood_w);
+				collection_lookup_dominating_subsets.emplace_back(neighborhood_w,w.size());
+			}
 			//if for all W in W_alternative, which is better.
+
 			bool is_stronger = true;
 			bool subset = false;
 			for (auto& w_alter : alternative_dominations) {
-				for (auto& w : dominating_subsets ) {
+				for (auto& [subset_w,w_size] : collection_lookup_dominating_subsets ) {
 					subset = false;
-					std::unordered_set<int> subset_w;
-					mds_context.get_lookup_l_neighborhood(w, subset_w);
-					if (w.size() <= w_alter.size())
+					if (w_size <= w_alter.size())
 					{
 						if (is_superset(mds_context, subset_w, w_alter)){
 							subset = true;
@@ -1153,16 +1192,10 @@ namespace reduce {
 					}
 				}
 				//remove all non needed vertices.
-				std::vector<std::unordered_set<int>> collection_lookup_dominating_subsets;
 
-				for (auto& w : dominating_subsets) {
-					std::unordered_set<int> neighborhood_w;
-					mds_context.get_lookup_l_neighborhood(w, neighborhood_w);
-					collection_lookup_dominating_subsets.emplace_back(neighborhood_w);
-				}
 				for (auto prison : prison_vertices){
 					bool present_all = true;
-					for (auto& lookup_w : collection_lookup_dominating_subsets) {
+					for (auto& [lookup_w,w_size] : collection_lookup_dominating_subsets) {
 						if (lookup_w.find(prison) == lookup_w.end()) {
 							present_all = false;
 							break;
@@ -1175,7 +1208,7 @@ namespace reduce {
 				}
 				for (auto guard : guard_vertices){
 					bool present_all = true;
-					for (auto& lookup_w : collection_lookup_dominating_subsets) {
+					for (auto& [lookup_w,w_size] : collection_lookup_dominating_subsets) {
 						if (lookup_w.find(guard) == lookup_w.end()) {
 							present_all = false;
 							break;
@@ -1186,13 +1219,14 @@ namespace reduce {
 						mds_context.dominate_vertex(guard);
 					}
 				}
+				Logger::execution_is_stronger += t_is_stronger.count();
 				return true;
 			}
 		}
 		return false;
 	}
 
-	bool is_superset(MDS_CONTEXT mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter) {
+	bool is_superset(MDS_CONTEXT& mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter) {
 		for (vertex v : w_alter){
 			if (subset_w.find(v) == subset_w.end()){
 				return false;

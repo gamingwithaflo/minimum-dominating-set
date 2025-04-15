@@ -44,5 +44,5 @@ namespace reduce {
 
     bool reduce_single_dominator(MDS_CONTEXT& mds_context, vertex v);
 
-    bool is_superset(MDS_CONTEXT mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter);
+    bool is_superset(MDS_CONTEXT& mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter);
 }

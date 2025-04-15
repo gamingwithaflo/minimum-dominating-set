@@ -78,6 +78,11 @@ public:
 	static long long execution_time_sat;
 	static long long execution_time_nice_tree_decomposition;
 
+	static long long execution_time_seperate;
+	static long long execution_dominations;
+	static long long execution_alternative_dominations;
+	static long long execution_is_stronger;
+
 	//treewidth specific.
 	static int maximum_treewidth;
 	static long long execution_time_introduce;

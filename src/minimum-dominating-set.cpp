@@ -103,11 +103,11 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/bremen_subgraph_20.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_097.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
+	strategy_solver solver_strategy = SOLVER_SAT;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -162,8 +162,13 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		//Create a mds_context & reduce. for each subgraph.
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 		timer t_reduction;
+		std::cout << "start reduction:" << std::endl;
 		reduce::reduction_rule_manager(mds_context, red_strategy);
 		Logger::execution_time_reduction += t_reduction.count();
+		std::cout << "seperate the vertices: "<< Logger::execution_time_seperate <<std::endl;
+		std::cout << "dominations: " << Logger::execution_dominations << std::endl;
+		std::cout << "is alternative: " << Logger::execution_alternative_dominations << std::endl;
+		std::cout << "is stronger: " << Logger::execution_is_stronger << std::endl;
 		mds_context.fill_removed_vertex();
 
 		Logger::cnt_selected_vertices += mds_context.cnt_sel;
