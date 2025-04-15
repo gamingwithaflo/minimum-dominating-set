@@ -18,6 +18,8 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 
 void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy);
 
+void seperate_solver_no_components(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy);
+
 void component_reduction(std::string path);
 
 void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,

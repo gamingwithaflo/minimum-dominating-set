@@ -11,12 +11,31 @@
 #include "../util/logger.h"
 
 //Fitness function for the decomposition process.
-class FitnessFunction : public htd::ITreeDecompositionFitnessFunction
+class FitnessFunction_default : public htd::ITreeDecompositionFitnessFunction{
+public:
+    FitnessFunction_default(void)= default;
+
+    ~FitnessFunction_default()= default;
+
+    htd::FitnessEvaluation * fitness(const htd::IMultiHypergraph & graph, const htd::ITreeDecomposition & decomposition) const {
+        HTD_UNUSED(graph)
+        //actual fitness function.
+        return new htd::FitnessEvaluation(1,
+                                          -(double)(decomposition.maximumBagSize()));
+    }
+
+    FitnessFunction_default * clone(void) const {
+        return new FitnessFunction_default();
+    }
+};
+
+
+class FitnessFunction_height : public htd::ITreeDecompositionFitnessFunction
 {
     public:
-        FitnessFunction(void)= default;
+        FitnessFunction_height(void)= default;
 
-        ~FitnessFunction()=default;
+        ~FitnessFunction_height()=default;
 
         htd::FitnessEvaluation * fitness(const htd::IMultiHypergraph & graph, const htd::ITreeDecomposition & decomposition) const {
             HTD_UNUSED(graph)
@@ -26,13 +45,15 @@ class FitnessFunction : public htd::ITreeDecompositionFitnessFunction
                                               -(double)(decomposition.height()));
         }
 
-        FitnessFunction * clone(void) const {
-            return new FitnessFunction();
+        FitnessFunction_height * clone(void) const {
+            return new FitnessFunction_height();
         }
 };
 
+
 std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced_graph)
 {
+    std::cout << "Generating tree decomposition..." << std::endl;
     //Create a management instance of the 'htd' library in order to allow centralized configuration.
     const std::unique_ptr<htd::LibraryInstance> manager(htd::createManagementInstance(htd::Id::FIRST));
     std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition;
@@ -57,7 +78,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     }
 
     // Create an instance of the fitness function. (defined above)
-    const FitnessFunction fitnessFunction;
+    const FitnessFunction_height fitnessFunction;
 
     /**
      *  This operation changes the root of a given decomposition so that the provided
@@ -65,7 +86,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *  constructor, the constructed optimization operation does not perform any
      *  optimization and only applies provided manipulations.
      */
-    auto * operation = new htd::TreeDecompositionOptimizationOperation(manager.get(), fitnessFunction.clone());
+    auto * operation = new htd::TreeDecompositionOptimizationOperation(manager.get());
 
     /**
      *  Set the previously created management instance to support graceful termination.
@@ -96,6 +117,49 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     htd::ITreeDecompositionAlgorithm * baseAlgorithm =
         manager->treeDecompositionAlgorithmFactory().createInstance();
 
+    // htd::CombinedWidthMinimizingTreeDecompositionAlgorithm * algorithm_challenge = new htd::CombinedWidthMinimizingTreeDecompositionAlgorithm(manager.get());
+    //
+    // htd::AdaptiveWidthMinimizingTreeDecompositionAlgorithm * adaptiveAlgorithm = new htd::AdaptiveWidthMinimizingTreeDecompositionAlgorithm(manager.get());
+    //
+    // htd::BucketEliminationTreeDecompositionAlgorithm * algorithm1 = new htd::BucketEliminationTreeDecompositionAlgorithm(manager.get());
+    //
+    // algorithm1->setOrderingAlgorithm(new htd::MinDegreeOrderingAlgorithm(manager.get()));
+    //
+    // adaptiveAlgorithm->addDecompositionAlgorithm(algorithm1);
+    //
+    // htd::BucketEliminationTreeDecompositionAlgorithm * algorithm2 = new htd::BucketEliminationTreeDecompositionAlgorithm(manager.get());
+    //
+    // algorithm2->setOrderingAlgorithm(new htd::MinFillOrderingAlgorithm(manager.get()));
+    //
+    // adaptiveAlgorithm->addDecompositionAlgorithm(algorithm2);
+    //
+    // htd::BucketEliminationTreeDecompositionAlgorithm * algorithm3 = new htd::BucketEliminationTreeDecompositionAlgorithm(manager.get());
+    //
+    // algorithm3->setOrderingAlgorithm(new htd::MaximumCardinalitySearchOrderingAlgorithm(manager.get()));
+    //
+    // adaptiveAlgorithm->addDecompositionAlgorithm(algorithm3,
+    //                                              [](const htd::IMultiHypergraph & graph, const htd::IPreprocessedGraph & preprocessedGraph)
+    // {
+    //     HTD_UNUSED(graph)
+    //
+    //     return preprocessedGraph.vertexCount() <= 10240;
+    // });
+    // std::size_t iterations = 10;
+    // adaptiveAlgorithm->setIterationCount(iterations);
+    // std::size_t patienceOption = 3;
+    // adaptiveAlgorithm->setNonImprovementLimit(patienceOption);
+    //
+    // adaptiveAlgorithm->setDecisionRounds(5);
+    //
+    // algorithm_challenge->addDecompositionAlgorithm(new htd::TrivialTreeDecompositionAlgorithm(manager.get()));
+    //
+    // algorithm_challenge->addDecompositionAlgorithm(adaptiveAlgorithm);
+
+
+    htd::GraphPreprocessor * preprocessor = new htd::GraphPreprocessor(manager.get());
+    preprocessor->setPreprocessingStrategy(3);
+    preprocessor->setIterationCount(256);
+    preprocessor->setNonImprovementLimit(64);
     /**
      *  Create a new instance of htd::IterativeImprovementTreeDecompositionAlgorithm based
      *  on the base algorithm and the fitness function. Note that the fitness function can
@@ -118,7 +182,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      *  the algorithm after the first non-improving solution has been found, i.e. the algorithm
      *  will perform a simple hill-climbing approach.
      */
-    algorithm.setNonImprovementLimit(100);
+    algorithm.setNonImprovementLimit(50);
 
     // Record the optimal maximal bag size of the tree decomposition to allow printing the progress.
     std::size_t optimalBagSize = (std::size_t)-1;
@@ -134,6 +198,9 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                                                    const htd::ITreeDecomposition & decomposition,
                                                    const htd::FitnessEvaluation & fitness){});
 
+    std::cout << "10 itterations is fast" << std::endl;
+    std::cout << decomposition->maximumBagSize() << std::endl;
+    std::cout << decomposition->exchangeNodeCount() << std::endl;
     // If a decomposition was found we want to print it to stdout.
     if (decomposition != nullptr) {
         //Check whether the algorithm indeed computed a valid decomposition.
@@ -164,6 +231,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
              else if (decomposition->maximumBagSize() < 50){
                  // Print the size of the largest bag of the decomposition to stdout.
                  algorithm.setIterationCount(0); // set iterations to infinite.
+                 algorithm.setNonImprovementLimit(500);
 
                  /**
                 *  Set the optimization operation as manipulation operation in order
@@ -178,7 +246,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 //If further optimizations is done as well.
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
-                        std::cout << decomposition->maximumBagSize() << std::endl;
+                        std::cout << "actual running treewidth: "<< decomposition->maximumBagSize() - 1 << std::endl;
                         nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         std::cout << "read" << std::endl;
                     }

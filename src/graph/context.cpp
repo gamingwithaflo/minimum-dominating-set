@@ -136,6 +136,43 @@ int MDS_CONTEXT::get_frequency(vertex v) {
 	return num_closed_neighborhood - c_x[v];
 }
 
+void MDS_CONTEXT::get_lookup_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood){
+	for (auto& v : l_vertices) {
+		auto [vertex_it, vertex_it_end] = boost::adjacent_vertices(v, graph);
+		//insert itself.
+		lookup_neighbourhood.emplace(v);
+
+		for (; vertex_it < vertex_it_end; ++vertex_it ) {
+			// if neighbour does not exist yet, insert.
+			if (lookup_neighbourhood.find(*vertex_it) == lookup_neighbourhood.end()) {
+				lookup_neighbourhood.emplace(*vertex_it);
+			}
+		}
+	}
+}
+
+void MDS_CONTEXT::get_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood, std::vector<int>& l_neighbourhood){
+	for (auto& v : l_vertices) {
+		lookup_neighbourhood.emplace(v);
+	}
+
+	for (auto& v : l_vertices) {
+		auto [vertex_it, vertex_it_end] = boost::adjacent_vertices(v, graph);
+
+		for (; vertex_it < vertex_it_end; ++vertex_it ) {
+			// if neighbour does not exist yet, insert.
+			if (lookup_neighbourhood.find(*vertex_it) == lookup_neighbourhood.end())
+			{
+				lookup_neighbourhood.emplace(*vertex_it);
+				//only check not removed vertices.
+				if (!is_selected(*vertex_it) && !(is_excluded(*vertex_it) && is_dominated(*vertex_it))) {
+					l_neighbourhood.push_back(*vertex_it);
+				}
+			}
+		}
+	}
+}
+
 std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborhood(vertex v, vertex w) {
 	std::vector<vertex>pair_neighborhood_vector;
 	std::vector<int> lookup = std::vector<int>(get_total_vertices(), 0);
@@ -147,7 +184,7 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	for (;vertex_v_itt < vertex_v_itt_end; ++vertex_v_itt) {
 		if (lookup[*vertex_v_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_v_itt] = 1;
-			if (is_dominated(*vertex_v_itt) && (is_excluded(*vertex_v_itt) || is_selected(*vertex_v_itt))) {
+			if (is_dominated(*vertex_v_itt) && (is_selected(*vertex_v_itt))) {
 				continue;
 			}
 			pair_neighborhood_vector.push_back(*vertex_v_itt);
@@ -157,7 +194,7 @@ std::pair<std::vector<int>,std::vector<vertex>> MDS_CONTEXT::get_pair_neighborho
 	for (;vertex_w_itt < vertex_w_itt_end; ++vertex_w_itt) {
 		if (lookup[*vertex_w_itt] == 0) { // we dont want duplicates in our pair_neighborhood_vector
 			lookup[*vertex_w_itt] = 1;
-			if (is_dominated(*vertex_w_itt) && (is_excluded(*vertex_w_itt) || is_selected(*vertex_w_itt))) {
+			if (is_dominated(*vertex_w_itt) && (is_selected(*vertex_w_itt))) {
 				continue;
 			}
 			pair_neighborhood_vector.push_back(*vertex_w_itt);

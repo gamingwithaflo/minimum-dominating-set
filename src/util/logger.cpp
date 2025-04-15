@@ -3,71 +3,136 @@
 #include <fstream>
 #include <iostream>
 
-int Logger::cnt_alber_simple_rule_1 = 0;
-int Logger::attempt_alber_simple_rule_1 = 0;
+void initialize_logger()
+{
+    Logger::cnt_alber_simple_rule_1 = 0;
+    Logger::attempt_alber_simple_rule_1 = 0;
 
-int Logger::cnt_alber_simple_rule_2 = 0;
-int Logger::attempt_alber_simple_rule_2 = 0;
+    Logger::cnt_alber_simple_rule_2 = 0;
+    Logger::attempt_alber_simple_rule_2 = 0;
 
-int Logger::cnt_alber_simple_rule_3dot1 = 0;
-int Logger::cnt_alber_simple_rule_3dot2 = 0;
-int Logger::attempt_alber_simple_rule_3 = 0;
+    Logger::cnt_alber_simple_rule_3dot1 = 0;
+    Logger::cnt_alber_simple_rule_3dot2 = 0;
+    Logger::attempt_alber_simple_rule_3 = 0;
 
-int Logger::cnt_alber_simple_rule_4 = 0;
-int Logger::attempt_alber_simple_rule_4 = 0;
+    Logger::cnt_alber_simple_rule_4 = 0;
+    Logger::attempt_alber_simple_rule_4 = 0;
 
-int Logger::cnt_alber_rule_1_default = 0;
-int Logger::cnt_alber_rule_1_guard = 0;
-int Logger::attempt_alber_rule_1 = 0;
+    Logger::cnt_alber_rule_1_default = 0;
+    Logger::cnt_alber_rule_1_guard = 0;
+    Logger::attempt_alber_rule_1 = 0;
 
-int Logger::cnt_alber_rule_2_single = 0;
-int Logger::cnt_alber_rule_2_either = 0;
-int Logger::cnt_alber_rule_2_both = 0;
-int Logger::attempt_alber_rule_2 = 0;
+    Logger::cnt_alber_rule_2_single = 0;
+    Logger::cnt_alber_rule_2_either = 0;
+    Logger::cnt_alber_rule_2_both = 0;
+    Logger::attempt_alber_rule_2 = 0;
 
-int Logger::cnt_ijcai_rule_1 = 0;
-int Logger::attempt_ijcai_rule_1 = 0;
+    Logger::cnt_ijcai_rule_1 = 0;
+    Logger::attempt_ijcai_rule_1 = 0;
 
-int Logger::cnt_ijcai_rule_2 = 0;
-int Logger::attempt_ijcai_rule_2 = 0;
+    Logger::cnt_ijcai_rule_2 = 0;
+    Logger::attempt_ijcai_rule_2 = 0;
 
-int Logger::cnt_ijcai_rule_3 = 0;
-int Logger::attempt_ijcai_rule_3 = 0;
+    Logger::cnt_ijcai_rule_3 = 0;
+    Logger::attempt_ijcai_rule_3 = 0;
 
-//components.
-int Logger::num_components = 0;
-int Logger::num_reduced_components = 0;
+    //components.
+    Logger::num_components = 0;
+    Logger::num_reduced_components = 0;
 
-//effectiveness reduction rules.
-int Logger::num_vertices = 0;
-int Logger::num_edges = 0;
-int Logger::num_reduced_vertices = 0;
-int Logger::num_reduced_edges = 0;
-int Logger::cnt_undetermined_vertices = 0;
-int Logger::cnt_selected_vertices = 0;
-int Logger::cnt_ignored_vertices = 0;
-int Logger::cnt_excluded_vertices = 0;
-int Logger::cnt_removed_vertices = 0;
+    //effectiveness reduction rules.
+    Logger::num_vertices = 0;
+    Logger::num_edges = 0;
+    Logger::num_reduced_vertices = 0;
+    Logger::num_reduced_edges = 0;
+    Logger::cnt_undetermined_vertices = 0;
+    Logger::cnt_selected_vertices = 0;
+    Logger::cnt_ignored_vertices = 0;
+    Logger::cnt_excluded_vertices = 0;
+    Logger::cnt_removed_vertices = 0;
 
-//timer functions.
-long long Logger::execution_time_complete = 0;
-long long  Logger::execution_time_treewidth = 0;
-long long  Logger::execution_time_reduction = 0;
-long long Logger::execution_time_ilp = 0;
-long long  Logger::execution_time_sat = 0;
-long long Logger::execution_time_nice_tree_decomposition = 0;
+    //timer functions.
+    Logger::execution_time_complete = 0;
+    Logger::execution_time_treewidth = 0;
+    Logger::execution_time_reduction = 0;
+    Logger::execution_time_ilp = 0;
+    Logger::execution_time_sat = 0;
+    Logger::execution_time_nice_tree_decomposition = 0;
 
     //treewidth specific.
-int Logger::maximum_treewidth = 0;
-long long Logger::execution_time_introduce = 0;
-long long Logger::execution_time_forget = 0;
-long long Logger::execution_time_join = 0;
-long long Logger::execution_time_introduce_edge = 0;
-long long Logger::execution_time_leaf = 0;
+    Logger::maximum_treewidth = 0;
+    Logger::execution_time_introduce = 0;
+    Logger::execution_time_forget = 0;
+    Logger::execution_time_join = 0;
+    Logger::execution_time_introduce_edge = 0;
+    Logger::execution_time_leaf = 0;
+}
 
-//strategy.
-strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
-strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
+    int Logger::cnt_alber_simple_rule_1 = 0;
+    int Logger::attempt_alber_simple_rule_1 = 0;
+
+    int Logger::cnt_alber_simple_rule_2 = 0;
+    int Logger::attempt_alber_simple_rule_2 = 0;
+
+    int Logger::cnt_alber_simple_rule_3dot1 = 0;
+    int Logger::cnt_alber_simple_rule_3dot2 = 0;
+    int Logger::attempt_alber_simple_rule_3 = 0;
+
+    int Logger::cnt_alber_simple_rule_4 = 0;
+    int Logger::attempt_alber_simple_rule_4 = 0;
+
+    int Logger::cnt_alber_rule_1_default = 0;
+    int Logger::cnt_alber_rule_1_guard = 0;
+    int Logger::attempt_alber_rule_1 = 0;
+
+    int Logger::cnt_alber_rule_2_single = 0;
+    int Logger::cnt_alber_rule_2_either = 0;
+    int Logger::cnt_alber_rule_2_both = 0;
+    int Logger::attempt_alber_rule_2 = 0;
+
+    int Logger::cnt_ijcai_rule_1 = 0;
+    int Logger::attempt_ijcai_rule_1 = 0;
+
+    int Logger::cnt_ijcai_rule_2 = 0;
+    int Logger::attempt_ijcai_rule_2 = 0;
+
+    int Logger::cnt_ijcai_rule_3 = 0;
+    int Logger::attempt_ijcai_rule_3 = 0;
+
+    //components.
+    int Logger::num_components = 0;
+    int Logger::num_reduced_components = 0;
+
+    //effectiveness reduction rules.
+    int Logger::num_vertices = 0;
+    int Logger::num_edges = 0;
+    int Logger::num_reduced_vertices = 0;
+    int Logger::num_reduced_edges = 0;
+    int Logger::cnt_undetermined_vertices = 0;
+    int Logger::cnt_selected_vertices = 0;
+    int Logger::cnt_ignored_vertices = 0;
+    int Logger::cnt_excluded_vertices = 0;
+    int Logger::cnt_removed_vertices = 0;
+
+    //timer functions.
+    long long Logger::execution_time_complete = 0;
+    long long  Logger::execution_time_treewidth = 0;
+    long long  Logger::execution_time_reduction = 0;
+    long long Logger::execution_time_ilp = 0;
+    long long  Logger::execution_time_sat = 0;
+    long long Logger::execution_time_nice_tree_decomposition = 0;
+
+    //treewidth specific.
+    int Logger::maximum_treewidth = 0;
+    long long Logger::execution_time_introduce = 0;
+    long long Logger::execution_time_forget = 0;
+    long long Logger::execution_time_join = 0;
+    long long Logger::execution_time_introduce_edge = 0;
+    long long Logger::execution_time_leaf = 0;
+
+    //strategy.
+    strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
+    strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
 
 std::string getReductionString(strategy_reduction reduction) {
     switch (reduction) {

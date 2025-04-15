@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+void initialize_logger();
+
 enum strategy_solver{
 	SOLVER_COMBINATION,
 	SOLVER_ILP,

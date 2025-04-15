@@ -6,6 +6,8 @@
 #include <iostream>
 #include <queue>
 
+#include "absl/strings/internal/str_format/extension.h"
+
 
 namespace reduce {
 	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction strategy) {
@@ -128,7 +130,11 @@ namespace reduce {
 					for (vertex poss : possible_combinations) {
 						if (mds_context.is_undetermined(poss)) {
 							if (*itt < poss) {
-								reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+								//reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+								std::vector<int>test;
+								test.push_back(*itt);
+								test.push_back(poss);
+								reduced |= reduction_l_rule(mds_context, test);
 							}
 						}
 					}
@@ -897,6 +903,303 @@ namespace reduce {
 			else {
 				mds_context.select_vertex(*neigh_itt_v);
 				break;
+			}
+		}
+		return true;
+	}
+
+	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices)
+	{
+		for (vertex v : l_vertices) {
+			if (mds_context.is_excluded(v) || mds_context.is_selected(v) || mds_context.is_dominated(v))
+			{
+				return false;
+			}
+		}
+		//get l vertices.
+
+		//get neighbourhood l.
+		std::unordered_set<int> lookup_neighbourhood;
+		std::vector<int> l_neighbourhood;
+		mds_context.get_l_neighborhood(l_vertices, lookup_neighbourhood, l_neighbourhood);
+
+		// partition neighborhood u into 3 sets.
+		std::vector<int>exit_vertices; //N_{3}
+		std::vector<int>guard_vertices; //N_{2}
+		std::vector<int>prison_vertices; //N_{1}
+
+		// get N_exit(V_l)
+		for (auto u = l_neighbourhood.begin(); u < l_neighbourhood.end(); ++u) {
+			//for each vertex get the neighborhood
+			auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
+			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
+			for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
+				if (lookup_neighbourhood.find(*neigh_itt_u) == lookup_neighbourhood.end()) {
+					if (mds_context.is_dominated(*u) && mds_context.is_dominated(*neigh_itt_u)) {
+						continue;
+					}
+					if (mds_context.is_dominated(*neigh_itt_u) && mds_context.is_excluded(*neigh_itt_u)) {
+						continue;
+					}
+					if (mds_context.is_selected(*neigh_itt_u)) {
+						continue;
+					}
+					exit_vertices.push_back(*u);
+					break;
+				}
+			}
+		}
+		//divide all non N_exit vertices into N_guard and N_prison. (could be abstracted).
+		for (auto u = l_neighbourhood.begin(); u < l_neighbourhood.end(); ++u) {
+			//check if vertex is not a exit_vertex.
+			if (std::find(exit_vertices.begin(), exit_vertices.end(), *u) == exit_vertices.end()){
+				bool guard_trigger = false;
+				//check if a neighbor vertex is adjacent to a exit_vertex.
+				auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
+				for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
+					//Check if it is a guard_vertex.
+					if (std::find(exit_vertices.begin(), exit_vertices.end(), *neigh_itt_u) != exit_vertices.end()) {
+						guard_vertices.push_back(*u);
+						guard_trigger = true;
+						break;
+					}
+				}
+				//Not adjacent to exit_vertex then it is a: prison vertex.
+				if (guard_trigger == false) {
+					prison_vertices.push_back(*u);
+				}
+			}
+		}
+
+		//find the subset of undominated N_prison vertices.
+		std::vector<int>undominated_prison_vertices;
+		for (auto i = prison_vertices.begin(); i < prison_vertices.end(); ++i) {
+			if (!mds_context.is_dominated(*i)) {
+				undominated_prison_vertices.push_back(*i);
+			}
+		}
+
+		//Is there a chance on profit.
+		if (!undominated_prison_vertices.empty()) {
+			std::vector<std::vector<int>>dominating_subsets;
+			//find all combinations.
+			const int total_combinations = 1 << l_vertices.size();
+
+			for (int mask = 1; mask < total_combinations; mask++) {
+				std::vector<int> combination;
+				for (int i = 0; i < l_vertices.size(); ++i){
+					if (mask & (1 << i)) {
+						combination.push_back(l_vertices[i]);
+					}
+				}
+				//check the combination.
+				bool skip_combination = false;  // Flag to track whether to skip the combination
+
+				for (auto& subset : dominating_subsets) {
+					//if subset is a (subset) of combination then go further.
+					bool is_subset = true;
+					for (auto& elem : subset) {
+						if (std::find(combination.begin(), combination.end(), elem) == combination.end()) {
+							is_subset = false;
+							break; // No need to continue checking if one element is missing
+						}
+					}
+
+					if (is_subset) {
+						skip_combination = true;
+						break;
+					}
+				}
+
+				if (skip_combination){
+					continue;
+				}
+
+				//check if the combination dominates.
+				std::unordered_set<int> dominated_vertices;
+				mds_context.get_lookup_l_neighborhood(combination, dominated_vertices);
+				bool dominates = true;
+				for (int undominated_prison_vertex : undominated_prison_vertices){
+					if (dominated_vertices.find(undominated_prison_vertex) == dominated_vertices.end()) {
+						dominates = false;
+						break;
+					}
+				}
+				if (dominates) {
+					dominating_subsets.emplace_back(combination);
+				}
+			}
+
+			std::unordered_set<int> lookup_n_prison_neighbourhood;
+			std::vector<int> n_prison_neighbourhood;
+			mds_context.get_l_neighborhood(prison_vertices, lookup_n_prison_neighbourhood, n_prison_neighbourhood);
+			for (int undominated_prison_vertex : undominated_prison_vertices) {
+				n_prison_neighbourhood.push_back(undominated_prison_vertex);
+			}
+
+			//Find all alternative dominations which are smaller than
+			// For each size from 1 to max_size
+			std::vector<std::vector<int>>alternative_dominations;
+			for (int size = 1; size < l_vertices.size(); ++size) {
+				// Generate all permutations of the given size
+				std::vector<int> combination(size);
+				std::vector<bool> chosen(n_prison_neighbourhood.size(), false);
+
+				// Lambda function to generate combinations
+				std::function<void(int)> generate = [&](int index) {
+					if (index == size) {
+						for (int vertex : combination){
+							if (mds_context.is_excluded(vertex)){
+								return;
+							}
+						}
+
+						// Do something with domination.
+						//check the combination.
+						bool skip_combination = false;  // Flag to track whether to skip the combination
+
+						for (auto& subset : alternative_dominations) {
+							//if subset is a (subset) of combination then go further.
+							bool is_subset = true;
+							for (auto& elem : subset) {
+								if (std::find(combination.begin(), combination.end(), elem) == combination.end()) {
+									is_subset = false;
+									break; // No need to continue checking if one element is missing
+								}
+							}
+
+							if (is_subset) {
+								skip_combination = true;
+								break;
+							}
+						}
+
+						if (skip_combination){
+							return;
+						}
+
+						//check if the combination dominates.
+						std::unordered_set<int> dominated_vertices;
+						mds_context.get_lookup_l_neighborhood(combination, dominated_vertices);
+						bool dominates = true;
+						for (int undominated_prison_vertex : undominated_prison_vertices){
+							if (dominated_vertices.find(undominated_prison_vertex) == dominated_vertices.end()) {
+								dominates = false;
+								break;
+							}
+						}
+						if (dominates) {
+							alternative_dominations.emplace_back(combination);
+						}
+					}
+
+					// Try each element in the set to be included in the current combination
+					for (int i = 0; i < n_prison_neighbourhood.size(); ++i) {
+						if (!chosen[i]) {
+							combination[index] = n_prison_neighbourhood[i];
+							chosen[i] = true;
+							generate(index + 1);  // Recurse to the next position
+							chosen[i] = false;    // Unmark the current element (backtrack)
+						}
+					}
+				};
+
+				// Start the recursive generation from index 0
+				generate(0);
+			}
+			//if for all W in W_alternative, which is better.
+			bool is_stronger = true;
+			bool subset = false;
+			for (auto& w_alter : alternative_dominations) {
+				for (auto& w : dominating_subsets ) {
+					subset = false;
+					std::unordered_set<int> subset_w;
+					mds_context.get_lookup_l_neighborhood(w, subset_w);
+					if (w.size() <= w_alter.size())
+					{
+						if (is_superset(mds_context, subset_w, w_alter)){
+							subset = true;
+							break;
+						}
+					}
+				}
+				if (!subset){
+					is_stronger = false;
+					break;
+				}
+			}
+			 if (!is_stronger){
+			 	return false;
+			 }
+			// All are stronger.
+			if (dominating_subsets.size() == 1){
+				//This one can be included.
+				for (auto& i : dominating_subsets[0]){
+					mds_context.select_vertex(i);
+				}
+			} else {
+				// Iterate through each unique pair (v1, v2) where v1 != v2
+				for (size_t i = 0; i < dominating_subsets.size(); ++i) {
+					for (size_t j = i + 1; j < dominating_subsets.size(); ++j) {
+						// Process each pair (vec[i], vec[j])
+						for (auto& i : dominating_subsets[i]) {
+							for (auto& j : dominating_subsets[j]) {
+								auto gadget = mds_context.add_vertex();
+								mds_context.exclude_vertex(gadget);
+								mds_context.add_edge(gadget, j);
+								mds_context.add_edge(gadget, i);
+							}
+						}
+					}
+				}
+				//remove all non needed vertices.
+				std::vector<std::unordered_set<int>> collection_lookup_dominating_subsets;
+
+				for (auto& w : dominating_subsets) {
+					std::unordered_set<int> neighborhood_w;
+					mds_context.get_lookup_l_neighborhood(w, neighborhood_w);
+					collection_lookup_dominating_subsets.emplace_back(neighborhood_w);
+				}
+				for (auto prison : prison_vertices){
+					bool present_all = true;
+					for (auto& lookup_w : collection_lookup_dominating_subsets) {
+						if (lookup_w.find(prison) == lookup_w.end()) {
+							present_all = false;
+							break;
+						}
+					}
+					if (present_all) {
+						mds_context.exclude_vertex(prison);
+						mds_context.dominate_vertex(prison);
+					}
+				}
+				for (auto guard : guard_vertices){
+					bool present_all = true;
+					for (auto& lookup_w : collection_lookup_dominating_subsets) {
+						if (lookup_w.find(guard) == lookup_w.end()) {
+							present_all = false;
+							break;
+						}
+					}
+					if (present_all) {
+						mds_context.exclude_vertex(guard);
+						mds_context.dominate_vertex(guard);
+					}
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool is_superset(MDS_CONTEXT mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter) {
+		for (vertex v : w_alter){
+			if (subset_w.find(v) == subset_w.end()){
+				return false;
+			}
+			auto [it, it_end] = mds_context.get_neighborhood_itt(v);
+			if (subset_w.find(v) == subset_w.end()){
+				return false;
 			}
 		}
 		return true;

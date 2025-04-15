@@ -103,11 +103,11 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/bremen_subgraph_20.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
-	strategy_reduction reduction_strategy = REDUCTION_NON;
+	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_NICE_TREE_DECOMPOSITION;
+	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 		}
 	} else {
 		separate_solver(path, reduction_strategy, solver_strategy);
+		//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
 	}
 
 	// std::promise<void> main_promise;
@@ -185,8 +186,10 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		std::vector<std::unordered_map<int, int>> sub_sub_newToOldIndex;
 
 		std::unordered_map<int, int> newToOldIndex;
+		timer t_subgraph;
 		adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
 		create_reduced_component_subgraphs(reduced_graph, sub_sub_components, sub_sub_newToOldIndex, newToOldIndex);
+		std::cout << "create reduced components execution time: " << t_subgraph.count() << std::endl;
 		//Solve each subgraph with a solver.
 		for (int j = 0; j < sub_sub_components.size(); ++j)
 		{
@@ -436,7 +439,7 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 		int source = boost::source(edge, mds_context.graph);
 		int target = boost::target(edge, mds_context.graph);
 
-		//only add edges which both exists in the new graph.
+		//only add edges which both exists in the new graph. !(mds_context.is_dominated(source) & mds_context.is_dominated(target))
 		if (OldToNewIndex.count(source) && OldToNewIndex.count(target)) {
 			boost::add_edge(OldToNewIndex[source], OldToNewIndex[target], reduced_graph);
 		}

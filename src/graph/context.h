@@ -65,6 +65,10 @@ public:
 
     void remove_vertex(vertex v);
 
+    void get_lookup_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood);
+
+    void get_l_neighborhood(std::vector<int>& l_vertices, std::unordered_set<int>& lookup_neighbourhood, std::vector<int>& l_neighbourhood);
+
     void fill_removed_vertex();
 
     void select_vertex(vertex v);
