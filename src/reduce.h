@@ -12,6 +12,8 @@ namespace reduce {
 
     bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices);
 
+    void generateSelectors( const std::vector<int>& W_sizes,std::vector<int>& current, int index, std::vector<std::vector<int>>& selectorVertices);
+
     void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag);
 
     void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices);

@@ -1259,33 +1259,66 @@ namespace reduce {
 						all_possibilities.insert(elem);
 					}
 				}
-				auto vertex = mds_context.add_vertex();
-				auto vertex_2 = mds_context.add_vertex();
-				for (auto elem : all_possibilities) {
-					mds_context.add_edge(elem, vertex);
-					mds_context.add_edge(elem, vertex_2);
+
+				std::vector<int> W_sizes;
+				int num_selector_vertices = 1;
+				for (auto& constraint : dominating_subsets){
+					num_selector_vertices *= constraint.size();
+					W_sizes.push_back(constraint.size());
 				}
-				// for (size_t i = 0; i < dominating_subsets.size(); ++i) {
-				// 	for (size_t j = i + 1; j < dominating_subsets.size(); ++j) {
-				// 		// Process each pair (vec[i], vec[j])
-				// 		for (auto& s : dominating_subsets[i]) {
-				// 			for (auto& t : dominating_subsets[j]) {
-				// 				if (dominating_subsets[i].size() > 1 || dominating_subsets[j].size() > 1){
-				// 					auto gadget = mds_context.add_vertex();
-				// 					//mds_context.exclude_vertex(gadget); kan niet zomaar geexclude worden.
-				// 					mds_context.add_edge(gadget, s);
-				// 					mds_context.add_edge(gadget, t);
-				// 				}
-				// 			}
-				// 		}
-				// 	}
-				// }
-				//remove all non needed vertices.
+
+				std::vector<vertex>selector_vertices;
+				std::vector<std::vector<int>>indices_selector_vertices;
+				std::vector<int> current(W_sizes.size(), 0);
+
+				generateSelectors(W_sizes, current, 0, indices_selector_vertices);
+
+				for (int i = 0; i < num_selector_vertices; ++i) {
+					auto selector = mds_context.add_vertex();
+					mds_context.exclude_vertex(selector);
+					selector_vertices.push_back(selector);
+				}
+
+				std::vector<vertex>blocker_vertices;
+				if (all_possibilities.size() < selector_vertices.size()){
+					int num_blocker_vertices = selector_vertices.size() - all_possibilities.size();
+					for (int q = 0; q < num_blocker_vertices; ++q) {
+						auto blocker = mds_context.add_vertex();
+						mds_context.exclude_vertex(blocker);
+						blocker_vertices.push_back(blocker);
+					}
+				}
+				for (size_t i = 0; i < dominating_subsets.size(); ++i){
+					for (size_t j = 0; j < dominating_subsets[i].size(); ++j){
+						for (size_t k = 0; k < selector_vertices.size(); ++k){
+							if (indices_selector_vertices[k][i] == j){
+								mds_context.add_edge(selector_vertices[k], dominating_subsets[i][j]);
+							}
+						}
+
+						for (auto& blocker : blocker_vertices) {
+							mds_context.add_edge(blocker, dominating_subsets[i][j]);
+						}
+					}
+				}
 				Logger::execution_is_stronger += t_is_stronger.count();
 				return true;
 			}
 		}
 		return false;
+	}
+
+	// Recursive function to generate all selector vectors
+	void generateSelectors( const std::vector<int>& W_sizes,std::vector<int>& current, int index, std::vector<std::vector<int>>& selectorVertices) {
+		if (index == W_sizes.size()) {
+			selectorVertices.push_back(current);
+			return;
+		}
+
+		for (int i = 0; i <= W_sizes[index]; ++i) {
+			current[index] = i;
+			generateSelectors(W_sizes, current, index + 1, selectorVertices);
+		}
 	}
 
 	bool is_superset(MDS_CONTEXT& mds_context, std::unordered_set<int>& subset_w, std::vector<int>& w_alter) {
