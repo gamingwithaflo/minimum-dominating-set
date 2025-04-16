@@ -207,7 +207,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 
 			strategy_reduction strategy = REDUCTION_L_ALBER;
 			reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
-			//reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+			reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
 			mds_context_reduced.fill_removed_vertex();
 
 			std::unordered_map<int, int> newToOld;

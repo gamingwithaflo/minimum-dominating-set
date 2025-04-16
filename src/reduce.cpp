@@ -1279,15 +1279,15 @@ namespace reduce {
 					selector_vertices.push_back(selector);
 				}
 
-				std::vector<vertex>blocker_vertices;
-				if (all_possibilities.size() < selector_vertices.size()){
-					int num_blocker_vertices = selector_vertices.size() - all_possibilities.size();
-					for (int q = 0; q < num_blocker_vertices; ++q) {
-						auto blocker = mds_context.add_vertex();
-						mds_context.exclude_vertex(blocker);
-						blocker_vertices.push_back(blocker);
-					}
-				}
+				// std::vector<vertex>blocker_vertices;
+				// if (all_possibilities.size() < selector_vertices.size()){
+				// 	int num_blocker_vertices = selector_vertices.size() - all_possibilities.size();
+				// 	for (int q = 0; q < num_blocker_vertices; ++q) {
+				// 		auto blocker = mds_context.add_vertex();
+				// 		mds_context.exclude_vertex(blocker);
+				// 		blocker_vertices.push_back(blocker);
+				// 	}
+				// }
 				for (size_t i = 0; i < dominating_subsets.size(); ++i){
 					for (size_t j = 0; j < dominating_subsets[i].size(); ++j){
 						for (size_t k = 0; k < selector_vertices.size(); ++k){
@@ -1296,9 +1296,9 @@ namespace reduce {
 							}
 						}
 
-						for (auto& blocker : blocker_vertices) {
-							mds_context.add_edge(blocker, dominating_subsets[i][j]);
-						}
+						// for (auto& blocker : blocker_vertices) {
+						// 	mds_context.add_edge(blocker, dominating_subsets[i][j]);
+						// }
 					}
 				}
 				Logger::execution_is_stronger += t_is_stronger.count();
@@ -1315,7 +1315,7 @@ namespace reduce {
 			return;
 		}
 
-		for (int i = 0; i <= W_sizes[index]; ++i) {
+		for (int i = 0; i < W_sizes[index]; ++i) {
 			current[index] = i;
 			generateSelectors(W_sizes, current, index + 1, selectorVertices);
 		}
