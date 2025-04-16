@@ -166,6 +166,19 @@ namespace reduce {
 				++counter;
 			}
 		}
+		bool reduced;
+		//this makes the next reduction round faster (or finds small improvements).
+		do
+		{
+			auto [itt, itt_end] = mds_context.get_vertices_itt();
+			reduced = false;
+			if (mds_context.is_undetermined(*itt)) {
+				reduced |= reduce_subset(mds_context,*itt);
+			}
+			if (!mds_context.is_dominated_ijcai(*itt)) {
+				reduced |= reduce_single_dominator(mds_context, *itt);
+			}
+		} while (reduced);
 	}
 
 	bool hasDuplicate(const std::vector<int>& nums) {
@@ -1094,12 +1107,23 @@ namespace reduce {
 			}
 			Logger::execution_dominations += t_domination.count();
 
+
+			std::unordered_set<int> all_possibilities;
+			for (auto& set : dominating_subsets) {
+				for (auto elem : set) {
+					all_possibilities.insert(elem);
+				}
+			}
+			if (all_possibilities.size() != l_vertices.size()) {
+				return false;
+			}
+
 			timer t_alternative;
 			std::unordered_set<int> lookup_n_prison_neighbourhood;
 			std::vector<int> n_prison_neighbourhood;
 			mds_context.get_l_neighborhood(prison_vertices, lookup_n_prison_neighbourhood, n_prison_neighbourhood);
-			for (int undominated_prison_vertex : undominated_prison_vertices) {
-				n_prison_neighbourhood.push_back(undominated_prison_vertex);
+			for (int prison_vertex : prison_vertices) {
+				n_prison_neighbourhood.push_back(prison_vertex);
 			}
 
 			//Find all alternative dominations which are smaller than
@@ -1230,8 +1254,13 @@ namespace reduce {
 				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
 					continue;
 				}
-				mds_context.exclude_vertex(prison);
-				mds_context.dominate_vertex(prison);
+				if (l_vertices.size() == 2) {
+					mds_context.exclude_vertex(prison);
+					mds_context.dominate_vertex(prison);
+				} else {
+					mds_context.exclude_vertex(prison);
+					mds_context.dominate_vertex(prison);
+				}
 			}
 			for (auto guard : guard_vertices){
 				if (intersection_neighborhood.find(guard) == intersection_neighborhood.end()) {
@@ -1241,11 +1270,17 @@ namespace reduce {
 				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
 					continue;
 				}
-				mds_context.exclude_vertex(guard);
-				mds_context.dominate_vertex(guard);
+				if (l_vertices.size() == 2){
+					mds_context.exclude_vertex(guard);
+					mds_context.dominate_vertex(guard);
+				} else {
+					mds_context.exclude_vertex(guard);
+					mds_context.dominate_vertex(guard);
+				}
 			}
 
 			if (dominating_subsets.size() == 1){
+				std::cout << "new selected vertex found. l_rule" << std::endl;
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
 					mds_context.select_vertex(i);
@@ -1328,6 +1363,7 @@ namespace reduce {
 			}
 			auto [it, it_end] = mds_context.get_neighborhood_itt(v);
 			for (; it != it_end; ++it) {
+				int vertex = *it;
 				if (subset_w.find(*it) == subset_w.end()){
 					return false;
 				}

@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_018.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_093.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
@@ -206,8 +206,16 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			mds_context_reduced.fill_mds_context(mds_context, sub_sub_newToOldIndex[j]);
 
 			strategy_reduction strategy = REDUCTION_L_ALBER;
+			// std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 4, std::ref(stop_flag));
+			//
+			// if (l_reduction.wait_for(std::chrono::minutes(10)) == std::future_status::ready){
+			// 	l_reduction.get();
+			// } else{
+			// 	stop_flag = true;
+			// }
+
 			reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
-			reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+			//reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
 			mds_context_reduced.fill_removed_vertex();
 
 			std::unordered_map<int, int> newToOld;
@@ -223,7 +231,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 
 			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
 				timer t_nice_tree_decomposition;
-				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
+				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(more_reduced);
 				if (nice_tree_decomposition)
 				{
 					if (Logger::maximum_treewidth < nice_tree_decomposition->treewidth){

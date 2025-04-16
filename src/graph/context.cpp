@@ -351,10 +351,10 @@ void MDS_CONTEXT::fill_mds_context(MDS_CONTEXT& mds_context, std::unordered_map<
 	for (int i = 0; i < num_vertices; ++i) {
 		int OldIndex = newToOldIndex[i];
 		if (mds_context.is_dominated(OldIndex)) {
-			dominate_vertex(i);
+			dominated[i] = true;
 		}
 		if (mds_context.is_excluded(OldIndex)) {
-			exclude_vertex(i);
+			excluded[i] = true;
 		}
 		// if (mds_context.is_ignored(OldIndex)) {
 		// 	ignore_vertex(i);
