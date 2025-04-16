@@ -969,8 +969,7 @@ namespace reduce {
 		return true;
 	}
 
-	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices)
-	{
+	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices) {
 		for (vertex v : l_vertices) {
 			if (mds_context.is_removed(v) || mds_context.is_excluded(v) || mds_context.is_selected(v) || mds_context.is_dominated(v))
 			{
@@ -1114,11 +1113,11 @@ namespace reduce {
 				// Lambda function to generate combinations
 				std::function<void(int)> generate = [&](int index) {
 					if (index == size) {
-						for (int vertex : combination){
-							if (mds_context.is_excluded(vertex)){
-								return;
-							}
-						}
+						// for (int vertex : combination){
+						// 	if (mds_context.is_excluded(vertex)){
+						// 		return;
+						// 	}
+						// }
 
 						// Do something with domination.
 						//check the combination.
@@ -1205,55 +1204,83 @@ namespace reduce {
 			 if (!is_stronger){
 			 	return false;
 			 }
+
 			// All are stronger.
+			std::unordered_set<int>intersection_neighborhood;
+			auto [dom, size] = collection_lookup_dominating_subsets.back();
+			for (auto elem : dom)
+			{
+				bool all_present = true;
+				for (auto& [domination, s] : collection_lookup_dominating_subsets){
+					if (domination.find(elem) == domination.end()) {
+						all_present = false;
+						break;
+					};
+				}
+				if (all_present) {
+					intersection_neighborhood.insert(elem);
+				}
+			}
+
+			for (auto prison : prison_vertices){
+				if (intersection_neighborhood.find(prison) == intersection_neighborhood.end()) {
+					continue;
+				}
+				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
+				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+					continue;
+				}
+				mds_context.exclude_vertex(prison);
+				mds_context.dominate_vertex(prison);
+			}
+			for (auto guard : guard_vertices){
+				if (intersection_neighborhood.find(guard) == intersection_neighborhood.end()) {
+					continue;
+				}
+				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(guard);
+				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+					continue;
+				}
+				mds_context.exclude_vertex(guard);
+				mds_context.dominate_vertex(guard);
+			}
+
 			if (dominating_subsets.size() == 1){
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
 					mds_context.select_vertex(i);
 				}
-			} else {
+			} else
+			{
 				// Iterate through each unique pair (v1, v2) where v1 != v2
-				for (size_t i = 0; i < dominating_subsets.size(); ++i) {
-					for (size_t j = i + 1; j < dominating_subsets.size(); ++j) {
-						// Process each pair (vec[i], vec[j])
-						for (auto& i : dominating_subsets[i]) {
-							auto gadget = mds_context.add_vertex();
-							for (auto& j : dominating_subsets[j]) {
-								//mds_context.exclude_vertex(gadget); kan niet zomaar geexclude worden.
-								mds_context.add_edge(gadget, j);
-								mds_context.add_edge(gadget, i);
-							}
-						}
+				std::unordered_set<int> all_possibilities;
+				for (auto& set : dominating_subsets) {
+					for (auto elem : set) {
+						all_possibilities.insert(elem);
 					}
 				}
+				auto vertex = mds_context.add_vertex();
+				auto vertex_2 = mds_context.add_vertex();
+				for (auto elem : all_possibilities) {
+					mds_context.add_edge(elem, vertex);
+					mds_context.add_edge(elem, vertex_2);
+				}
+				// for (size_t i = 0; i < dominating_subsets.size(); ++i) {
+				// 	for (size_t j = i + 1; j < dominating_subsets.size(); ++j) {
+				// 		// Process each pair (vec[i], vec[j])
+				// 		for (auto& s : dominating_subsets[i]) {
+				// 			for (auto& t : dominating_subsets[j]) {
+				// 				if (dominating_subsets[i].size() > 1 || dominating_subsets[j].size() > 1){
+				// 					auto gadget = mds_context.add_vertex();
+				// 					//mds_context.exclude_vertex(gadget); kan niet zomaar geexclude worden.
+				// 					mds_context.add_edge(gadget, s);
+				// 					mds_context.add_edge(gadget, t);
+				// 				}
+				// 			}
+				// 		}
+				// 	}
+				// }
 				//remove all non needed vertices.
-
-				for (auto prison : prison_vertices){
-					bool present_all = true;
-					for (auto& [lookup_w,w_size] : collection_lookup_dominating_subsets) {
-						if (lookup_w.find(prison) == lookup_w.end()) {
-							present_all = false;
-							break;
-						}
-					}
-					if (present_all) {
-						mds_context.exclude_vertex(prison);
-						mds_context.dominate_vertex(prison);
-					}
-				}
-				for (auto guard : guard_vertices){
-					bool present_all = true;
-					for (auto& [lookup_w,w_size] : collection_lookup_dominating_subsets) {
-						if (lookup_w.find(guard) == lookup_w.end()) {
-							present_all = false;
-							break;
-						}
-					}
-					if (present_all) {
-						mds_context.exclude_vertex(guard);
-						mds_context.dominate_vertex(guard);
-					}
-				}
 				Logger::execution_is_stronger += t_is_stronger.count();
 				return true;
 			}
@@ -1267,8 +1294,10 @@ namespace reduce {
 				return false;
 			}
 			auto [it, it_end] = mds_context.get_neighborhood_itt(v);
-			if (subset_w.find(v) == subset_w.end()){
-				return false;
+			for (; it != it_end; ++it) {
+				if (subset_w.find(*it) == subset_w.end()){
+					return false;
+				}
 			}
 		}
 		return true;
