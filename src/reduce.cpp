@@ -165,20 +165,33 @@ namespace reduce {
 				execute_l_alber(mds_context, l, 1, { static_cast<int>(*vert_it) });
 				++counter;
 			}
+			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+			for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
+			{
+				//simple reduction rules.
+				if (mds_context.is_removed(*vertex)) {
+					continue;
+				}
+				if (mds_context.is_dominated(*vertex)) {
+					if (simple_rule_one(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_1++;
+					}
+					if (simple_rule_two(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_2++;
+					}
+					if (simple_rule_three(mds_context, *vertex)) {
+					}
+					if (simple_rule_four(mds_context, *vertex)) {
+						Logger::cnt_alber_simple_rule_4++;
+					}
+				}
+			}
+
+
+
 		}
 		bool reduced;
 		//this makes the next reduction round faster (or finds small improvements).
-		do
-		{
-			auto [itt, itt_end] = mds_context.get_vertices_itt();
-			reduced = false;
-			if (mds_context.is_undetermined(*itt)) {
-				reduced |= reduce_subset(mds_context,*itt);
-			}
-			if (!mds_context.is_dominated_ijcai(*itt)) {
-				reduced |= reduce_single_dominator(mds_context, *itt);
-			}
-		} while (reduced);
 	}
 
 	bool hasDuplicate(const std::vector<int>& nums) {
@@ -1257,9 +1270,13 @@ namespace reduce {
 				if (l_vertices.size() == 2) {
 					mds_context.dominated[prison] = true;
 					mds_context.excluded[prison] = true;
+					//boost::clear_vertex(prison, mds_context.graph);
+					//mds_context.removed[prison] = true;
 				} else {
 					mds_context.dominated[prison] = true;
 					mds_context.excluded[prison] = true;
+					//boost::clear_vertex(prison, mds_context.graph);
+					//mds_context.removed[prison] = true;
 				}
 			}
 			for (auto guard : guard_vertices){
@@ -1273,9 +1290,13 @@ namespace reduce {
 				if (l_vertices.size() == 2){
 					mds_context.dominated[guard] = true;
 					mds_context.excluded[guard] = true;
+					//mds_context.removed[guard] = true;
+					//boost::clear_vertex(guard, mds_context.graph);
 				} else {
 					mds_context.dominated[guard] = true;
 					mds_context.excluded[guard] = true;
+					//mds_context.removed[guard] = true;
+					//boost::clear_vertex(guard, mds_context.graph);
 				}
 			}
 

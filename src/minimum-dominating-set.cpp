@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_041.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
