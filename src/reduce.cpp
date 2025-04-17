@@ -139,11 +139,11 @@ namespace reduce {
 					for (vertex poss : possible_combinations) {
 						if (mds_context.is_undetermined(poss)) {
 							if (*itt < poss) {
-								//reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
-								std::vector<int>test;
-								test.push_back(*itt);
-								test.push_back(poss);
-								reduced |= reduction_l_rule(mds_context, test);
+								reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+								// std::vector<int>test;
+								// test.push_back(*itt);
+								// test.push_back(poss);
+								// reduced |= reduction_l_rule(mds_context, test);
 							}
 						}
 					}
@@ -1255,11 +1255,11 @@ namespace reduce {
 					continue;
 				}
 				if (l_vertices.size() == 2) {
-					mds_context.exclude_vertex(prison);
-					mds_context.dominate_vertex(prison);
+					mds_context.dominated[prison] = true;
+					mds_context.excluded[prison] = true;
 				} else {
-					mds_context.exclude_vertex(prison);
-					mds_context.dominate_vertex(prison);
+					mds_context.dominated[prison] = true;
+					mds_context.excluded[prison] = true;
 				}
 			}
 			for (auto guard : guard_vertices){
@@ -1271,11 +1271,11 @@ namespace reduce {
 					continue;
 				}
 				if (l_vertices.size() == 2){
-					mds_context.exclude_vertex(guard);
-					mds_context.dominate_vertex(guard);
+					mds_context.dominated[guard] = true;
+					mds_context.excluded[guard] = true;
 				} else {
-					mds_context.exclude_vertex(guard);
-					mds_context.dominate_vertex(guard);
+					mds_context.dominated[guard] = true;
+					mds_context.excluded[guard] = true;
 				}
 			}
 
@@ -1283,7 +1283,11 @@ namespace reduce {
 				std::cout << "new selected vertex found. l_rule" << std::endl;
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
-					mds_context.select_vertex(i);
+					mds_context.selected[i] = true;
+					auto [itt, itt_end] = mds_context.get_neighborhood_itt(i);
+					for (; itt != itt_end; itt++) {
+						mds_context.dominated[*itt] = true;
+					}
 				}
 			} else
 			{
@@ -1310,7 +1314,6 @@ namespace reduce {
 
 				for (int i = 0; i < num_selector_vertices; ++i) {
 					auto selector = mds_context.add_vertex();
-					mds_context.exclude_vertex(selector);
 					selector_vertices.push_back(selector);
 				}
 
@@ -1335,6 +1338,9 @@ namespace reduce {
 						// 	mds_context.add_edge(blocker, dominating_subsets[i][j]);
 						// }
 					}
+				}
+				for (auto& selector : selector_vertices){
+						mds_context.excluded[selector] = true;
 				}
 				Logger::execution_is_stronger += t_is_stronger.count();
 				return true;
@@ -1363,7 +1369,6 @@ namespace reduce {
 			}
 			auto [it, it_end] = mds_context.get_neighborhood_itt(v);
 			for (; it != it_end; ++it) {
-				int vertex = *it;
 				if (subset_w.find(*it) == subset_w.end()){
 					return false;
 				}

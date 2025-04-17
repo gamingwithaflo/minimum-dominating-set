@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	// path : string with path to instance graph.
 	bool dir_mode = false;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_093.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_017.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
@@ -215,14 +215,14 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			// }
 
 			reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
-			//reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+			reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
 			mds_context_reduced.fill_removed_vertex();
 
 			std::unordered_map<int, int> newToOld;
 			for (int v = 0; v < mds_context_reduced.selected.size(); ++v) {
 				if (mds_context_reduced.is_selected(v)) {
 					//we need a +1 te correct the previous -1.
-					solution.push_back(sub_newToOldIndex[i][v] + 1);
+					solution.push_back(((sub_newToOldIndex[i][sub_sub_newToOldIndex[j][v]]) + 1));
 				}
 			}
 			adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
@@ -272,7 +272,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				std::vector<int> partial_solution = sat_solver_dominating_set(mds_context_reduced, more_reduced, newToOld);
 
 				for (int newIndex : partial_solution) {
-					auto sub_index = newToOld[newIndex];
+					auto sub_index = sub_sub_newToOldIndex[j][newToOld[newIndex]];
 					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
 				}
 				Logger::execution_time_sat += t_sat.count();
