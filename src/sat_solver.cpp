@@ -42,8 +42,8 @@ std::vector<int> sat_solver_dominating_set(MDS_CONTEXT& mds_context, adjacencyLi
     }
 
     //Create constraint.
-    for (int i = 0; i < boost::num_vertices(graph); i++) {
-        if (mds_context.is_dominated(newToOldIndex[i]) || mds_context.is_ignored(newToOldIndex[i]) || mds_context.is_selected(newToOldIndex[i])){
+    for (int i = 0; i < boost::num_vertices(graph); i++) { //|| mds_context.is_ignored(newToOldIndex[i])
+        if (mds_context.is_dominated(newToOldIndex[i]) || mds_context.is_selected(newToOldIndex[i])){
             continue;
         }
         auto [neigh_itt, neigh_itt_end] = boost::adjacent_vertices(i, graph);

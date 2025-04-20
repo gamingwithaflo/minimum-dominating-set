@@ -116,13 +116,24 @@ namespace reduce {
 
 			for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
 				if (mds_context.is_undetermined(*itt)) {
+					Logger::attempt_ijcai_rule_1++;
 					reduced |= reduce_subset(mds_context,*itt);
 				}
 				if (!mds_context.is_dominated_ijcai(*itt)) {
-					reduced |= reduce_single_dominator(mds_context, *itt);
+					Logger::attempt_ijcai_rule_2++;
+					bool temp = reduce_single_dominator(mds_context, *itt);
+					reduced |= temp;
+					if (temp){
+						Logger::cnt_ijcai_rule_2++;
+					}
 				}
 				if (!mds_context.is_dominated_ijcai(*itt)) {
-					reduced |= reduce_ignore(mds_context, *itt);
+					Logger::attempt_ijcai_rule_3++;
+					bool temp = reduce_ignore(mds_context, *itt);
+					reduced |= temp;
+					if (temp){
+						Logger::cnt_ijcai_rule_3++;
+					}
 				}
 			}
 			if (!reduced && first_time) {
@@ -169,7 +180,7 @@ namespace reduce {
 			for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
 			{
 				//simple reduction rules.
-				if (mds_context.is_removed(*vertex)) {
+				if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
 					continue;
 				}
 				if (mds_context.is_dominated(*vertex)) {
@@ -209,6 +220,7 @@ namespace reduce {
 			// if (hasDuplicate(vertices)) {
 			// 	throw std::runtime_error("L alber does not have duplicates");
 			// }
+			Logger::attempt_alber_l_reduction++;
 			bool reduction = reduction_l_rule(mds_context, vertices);
 			return;
 		}
@@ -244,6 +256,9 @@ namespace reduce {
 			auto [neigh_it, neigh_end] = mds_context.get_neighborhood_itt(current);
 			for (; neigh_it < neigh_end; ++neigh_it) {
 				vertex neighbor = *neigh_it;
+				if (mds_context.is_excluded(neighbor) && mds_context.is_dominated(neighbor)) {
+					continue;
+				}
 				if (!visited.count(neighbor)){
 					visited.insert(neighbor);
 					within_distance_three.push_back(neighbor);
@@ -640,6 +655,7 @@ namespace reduce {
 				bool dominated_by_w = (domination[w] == size);
 				//divide the cases.
 				if (dominated_by_v && dominated_by_w) {
+					return false;
 					++Logger::cnt_alber_rule_2_either;
 					//the optimal is either to choose v, w (or both)
 
@@ -902,6 +918,7 @@ namespace reduce {
 	bool reduce_subset(MDS_CONTEXT& mds_context, vertex v) {
 		if (check_subset(mds_context, v)) {
 			mds_context.exclude_vertex(v);
+			Logger::cnt_ijcai_rule_1++;
 			return true;
 		}
 		return false;
@@ -997,7 +1014,7 @@ namespace reduce {
 
 	bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices) {
 		for (vertex v : l_vertices) {
-			if (mds_context.is_removed(v) || mds_context.is_excluded(v) || mds_context.is_selected(v) || mds_context.is_dominated(v))
+			if (mds_context.is_removed(v) || mds_context.is_excluded(v))
 			{
 				return false;
 			}
@@ -1120,16 +1137,19 @@ namespace reduce {
 			}
 			Logger::execution_dominations += t_domination.count();
 
+			// if (dominating_subsets.size() != 1) {
+			// 		return false;
+			// }
 
-			std::unordered_set<int> all_possibilities;
-			for (auto& set : dominating_subsets) {
-				for (auto elem : set) {
-					all_possibilities.insert(elem);
-				}
-			}
-			if (all_possibilities.size() != l_vertices.size()) {
-				return false;
-			}
+			// std::unordered_set<int> all_possibilities;
+			// for (auto& set : dominating_subsets) {
+			// 	for (auto elem : set) {
+			// 		all_possibilities.insert(elem);
+			// 	}
+			// }
+			// if (all_possibilities.size() != l_vertices.size()) {
+			// 	return false;
+			// }
 
 			timer t_alternative;
 			std::unordered_set<int> lookup_n_prison_neighbourhood;
@@ -1301,6 +1321,7 @@ namespace reduce {
 			}
 
 			if (dominating_subsets.size() == 1){
+				Logger::cnt_alber_l_reduction++;
 				std::cout << "new selected vertex found. l_rule" << std::endl;
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
@@ -1312,6 +1333,7 @@ namespace reduce {
 				}
 			} else
 			{
+				Logger::cnt_alber_l_either_reduction++;
 				// Iterate through each unique pair (v1, v2) where v1 != v2
 				std::unordered_set<int> all_possibilities;
 				for (auto& set : dominating_subsets) {

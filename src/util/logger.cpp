@@ -5,6 +5,7 @@
 
 void initialize_logger()
 {
+    Logger::timed_out = false;
     Logger::cnt_alber_simple_rule_1 = 0;
     Logger::attempt_alber_simple_rule_1 = 0;
 
@@ -45,6 +46,7 @@ void initialize_logger()
     Logger::num_edges = 0;
     Logger::num_reduced_vertices = 0;
     Logger::num_reduced_edges = 0;
+    Logger::cnt_dominated_vertices = 0;
     Logger::cnt_undetermined_vertices = 0;
     Logger::cnt_selected_vertices = 0;
     Logger::cnt_ignored_vertices = 0;
@@ -58,6 +60,7 @@ void initialize_logger()
     Logger::execution_time_ilp = 0;
     Logger::execution_time_sat = 0;
     Logger::execution_time_nice_tree_decomposition = 0;
+    Logger::execution_time_alber_rule_l = 0;
 
     //treewidth specific.
     Logger::maximum_treewidth = 0;
@@ -66,7 +69,15 @@ void initialize_logger()
     Logger::execution_time_join = 0;
     Logger::execution_time_introduce_edge = 0;
     Logger::execution_time_leaf = 0;
+
+    Logger::domination_number = 0;
+
+    Logger::cnt_alber_l_reduction = 0;
+    Logger::cnt_alber_l_either_reduction = 0;
+    Logger::attempt_alber_l_reduction = 0;
 }
+
+    bool Logger::timed_out = false;
 
     int Logger::cnt_alber_simple_rule_1 = 0;
     int Logger::attempt_alber_simple_rule_1 = 0;
@@ -99,6 +110,11 @@ void initialize_logger()
     int Logger::cnt_ijcai_rule_3 = 0;
     int Logger::attempt_ijcai_rule_3 = 0;
 
+    int Logger::cnt_alber_l_reduction = 0;
+    int Logger::cnt_alber_l_either_reduction = 0;
+    long long Logger::attempt_alber_l_reduction = 0;
+
+
     //components.
     int Logger::num_components = 0;
     int Logger::num_reduced_components = 0;
@@ -110,6 +126,7 @@ void initialize_logger()
     int Logger::num_reduced_edges = 0;
     int Logger::cnt_undetermined_vertices = 0;
     int Logger::cnt_selected_vertices = 0;
+    int Logger::cnt_dominated_vertices = 0;
     int Logger::cnt_ignored_vertices = 0;
     int Logger::cnt_excluded_vertices = 0;
     int Logger::cnt_removed_vertices = 0;
@@ -121,6 +138,7 @@ void initialize_logger()
     long long Logger::execution_time_ilp = 0;
     long long  Logger::execution_time_sat = 0;
     long long Logger::execution_time_nice_tree_decomposition = 0;
+    long long Logger::execution_time_alber_rule_l = 0;
 
     long long Logger::execution_time_seperate = 0;
     long long Logger::execution_dominations = 0;
@@ -138,6 +156,9 @@ void initialize_logger()
     //strategy.
     strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
     strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
+    strategy_reduction_scheme Logger::reduction_scheme_strategy = REDUCTION_ALBER_L_NON;
+
+    int Logger::domination_number = 0;
 
 std::string getReductionString(strategy_reduction reduction) {
     switch (reduction) {
@@ -175,10 +196,23 @@ std::string getSolverString(strategy_solver reduction) {
     }
 }
 
+std::string getReductionSchemeString(strategy_reduction_scheme reduction) {
+    switch (reduction) {
+    case REDUCTION_ALBER_L_3:
+        return "REDUCTION_ALBER_L_3";
+    case REDUCTION_ALBER_L_4:
+        return "REDUCTION_ALBER_L_4";
+    case REDUCTION_ALBER_L_NON:
+        return "REDUCTION_ALBER_L_NON";
+    default:
+        throw std::runtime_error("Unknown reduction");
+    }
+}
+
 void output_loginfo(std::string& name) {
     std::string prefix = "/home/floris/github/minimum-dominating-set/log_info/";
-
-    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/loginfo_" + name;
+    //+ "/only_reduced" +
+    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/loginfo_" + name;
     std::cout << output_path << std::endl;
 
     std::ofstream outFile(output_path);
@@ -188,11 +222,14 @@ void output_loginfo(std::string& name) {
         return;
     }
     //strategy
+    outFile << "Timed out: " << Logger::timed_out << std::endl;
     outFile << "Reduction strategy: " << getReductionString(Logger::reduction_strategy) << std::endl;
     outFile << "Solver strategy: " << getSolverString(Logger::solver_strategy) << std::endl;
+    outFile << "Reduction scheme strategy: " << getReductionSchemeString(Logger::reduction_scheme_strategy) << std::endl;
     //Timer
     outFile << "Execution time complete: " << Logger::execution_time_complete << std::endl;
     outFile << "Execution time reduction: " << Logger::execution_time_reduction << std::endl;
+    outFile << "Domination number: " << Logger::domination_number << std::endl;
     if (Logger::solver_strategy != SOLVER_NON)
     {
         if (Logger::solver_strategy == SOLVER_COMBINATION) {
@@ -225,6 +262,7 @@ void output_loginfo(std::string& name) {
     outFile << "Number of reduced_vertices: " << Logger::num_reduced_vertices << std::endl;
     outFile << "Number of reduced_edges: " << Logger::num_reduced_edges << std::endl;
     outFile << "Number of undetermined vertices: " << Logger::cnt_undetermined_vertices << std::endl;
+    outFile << "Number of dominated vertices: " << Logger::cnt_dominated_vertices << std::endl;
     outFile << "Number of selected vertices: " << Logger::cnt_selected_vertices << std::endl;
     outFile << "Number of ignored vertices: "  << Logger::cnt_ignored_vertices << std::endl;
     outFile << "Number of excluded vertices: " << Logger::cnt_excluded_vertices << std::endl;
@@ -287,6 +325,12 @@ void output_loginfo(std::string& name) {
         } else if (Logger::reduction_strategy == REDUCTION_NON){
         } else {
             throw std::runtime_error("non-supported reduction strategy.");
+        }
+        if (Logger::reduction_scheme_strategy != REDUCTION_ALBER_L_NON){
+            outFile << "Execution time of ALBER rule l: " << Logger::execution_time_alber_rule_l << std::endl;
+            outFile << "Attempts of ALBER rule l : " << Logger::attempt_alber_l_reduction << std::endl;
+            outFile << "Successful reduction of ALBER rule l: " << Logger::cnt_alber_l_reduction << std::endl;
+            outFile << "Successful reduction of ALBER rule l (either): " << Logger::cnt_alber_l_either_reduction << std::endl;
         }
     }
 

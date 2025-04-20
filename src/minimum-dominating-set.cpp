@@ -101,13 +101,15 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = false;
+	bool dir_mode = true;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_041.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_033.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
+	strategy_solver solver_strategy = SOLVER_NON;
+	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
+
 
 	//be able to take in parameters.
 	if (argc > 1) path = std::string(argv[1]);
@@ -120,10 +122,10 @@ int main(int argc, char* argv[])
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			std::cout << entry.path().string() << std::endl;
 			initialize_logger();
-			separate_solver(entry.path(), reduction_strategy, solver_strategy);
+			separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy);
 		}
 	} else {
-		separate_solver(path, reduction_strategy, solver_strategy);
+		separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy);
 		//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
 	}
 
@@ -145,10 +147,11 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy){
+void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy){
 	timer t_complete;
 	Logger::solver_strategy = sol_strategy;
 	Logger::reduction_strategy = red_strategy;
+	Logger::reduction_scheme_strategy = red_scheme_strategy;
 	//create empty sub-graphs + translation function.
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
@@ -176,17 +179,14 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		mds_context.fill_removed_vertex();
 
 		Logger::cnt_selected_vertices += mds_context.cnt_sel;
-		Logger::cnt_excluded_vertices += mds_context.cnt_excl;
-		Logger::cnt_ignored_vertices += mds_context.cnt_ign;
+		//Logger::cnt_excluded_vertices += mds_context.cnt_excl;
+		//Logger::cnt_ignored_vertices += mds_context.cnt_ign;
 		Logger::cnt_removed_vertices += mds_context.cnt_rem;
 
 		for (int v = 0; v < mds_context.selected.size(); ++v) {
 			if (mds_context.is_selected(v)) {
 				//we need a +1 te correct the previous -1.
 				solution.push_back(sub_newToOldIndex[i][v] + 1);
-			}
-			if (mds_context.is_undetermined(v)){
-				Logger::cnt_undetermined_vertices++;
 			}
 		}
 
@@ -213,16 +213,57 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			// } else{
 			// 	stop_flag = true;
 			// }
+			timer t_reduction_alber_rule_l;
+			if (!(red_scheme_strategy == REDUCTION_ALBER_L_NON)) {
+				if (red_scheme_strategy == REDUCTION_ALBER_L_3) {
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 3, std::ref(stop_flag));
+					if (l_reduction.wait_for(std::chrono::minutes(30)) == std::future_status::ready){
+							l_reduction.get();
+						} else{
+							stop_flag = true;
+							Logger::timed_out = true;
+						}
+				} else {
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
 
-			reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
-			reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+				}
+
+			}
+			Logger::execution_time_alber_rule_l += t_reduction_alber_rule_l.count();
+			Logger::execution_time_reduction += t_reduction_alber_rule_l.count();
+
 			mds_context_reduced.fill_removed_vertex();
+			//Logger::cnt_selected_vertices += mds_context_reduced.cnt_sel;
+			//Logger::cnt_excluded_vertices += mds_context_reduced.cnt_excl;
+			//Logger::cnt_ignored_vertices += mds_context_reduced.cnt_ign;
+			Logger::cnt_removed_vertices += mds_context_reduced.cnt_rem;
 
 			std::unordered_map<int, int> newToOld;
 			for (int v = 0; v < mds_context_reduced.selected.size(); ++v) {
 				if (mds_context_reduced.is_selected(v)) {
 					//we need a +1 te correct the previous -1.
 					solution.push_back(((sub_newToOldIndex[i][sub_sub_newToOldIndex[j][v]]) + 1));
+					Logger::cnt_selected_vertices++;
+					continue;
+				}
+				if (mds_context_reduced.is_removed(v)) {
+					continue;
+				}
+				Logger::num_reduced_vertices++;
+				if (mds_context_reduced.is_undetermined(v)){
+					Logger::cnt_undetermined_vertices++;
+				}
+				if (mds_context_reduced.is_dominated(v))
+				{
+					Logger::cnt_dominated_vertices++;
+				}
+				if (mds_context_reduced.is_excluded(v))
+				{
+					Logger::cnt_excluded_vertices++;
+				}
+				if (mds_context_reduced.is_ignored(v)){
+					Logger::cnt_ignored_vertices++;
 				}
 			}
 			adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
@@ -243,7 +284,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			if (sol_strategy == SOLVER_TREEWIDTH)
 			{
 				timer t_treewidth;
-				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[j]);
+				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(more_reduced);
 				if (nice_tree_decomposition == nullptr)
 				{
 					throw std::runtime_error("tree decomposition is to big");
@@ -252,17 +293,17 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 
 				//generate final solution.
 				for (int newIndex : td_comp->global_solution) {
-					auto sub_index = sub_sub_newToOldIndex[j][newIndex];
+					auto sub_index = sub_sub_newToOldIndex[j][newToOld[newIndex]];
 					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
 				}
 				Logger::execution_time_treewidth += t_treewidth.count();
 			}
 			else if (sol_strategy == SOLVER_ILP) {
 				timer t_ilp;
-				std::vector<int> partial_solution = operations_research::ilp_solver(mds_context, *sub_sub_components[j], sub_sub_newToOldIndex[j]);
+				std::vector<int> partial_solution = operations_research::ilp_solver(mds_context_reduced, more_reduced, newToOld);
 
 				for (int newIndex : partial_solution) {
-					auto sub_index = sub_sub_newToOldIndex[j][newIndex];
+					auto sub_index = sub_sub_newToOldIndex[j][newToOld[newIndex]];
 					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
 				}
 				Logger::execution_time_ilp += t_ilp.count();
@@ -279,6 +320,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			}
 		}
 	}
+	Logger::domination_number = solution.size();
 	Logger::execution_time_complete = t_complete.count();
 	std::cout << Logger::execution_time_complete << std::endl;
 	parse::output_solution(solution, path);
@@ -302,6 +344,7 @@ void seperate_solver_no_components(std::string path, strategy_reduction red_stra
 	Logger::cnt_excluded_vertices += mds_context.cnt_excl;
 	Logger::cnt_ignored_vertices += mds_context.cnt_ign;
 	Logger::cnt_removed_vertices += mds_context.cnt_rem;
+	Logger::cnt_dominated_vertices += mds_context.cnt_dom;
 
 	std::unordered_map<int, int> newToOldIndex;
 	auto reduced_graph = create_reduced_graph(mds_context,newToOldIndex);

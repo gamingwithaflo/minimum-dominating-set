@@ -14,6 +14,8 @@ namespace reduce {
 
     void generateSelectors( const std::vector<int>& W_sizes,std::vector<int>& current, int index, std::vector<std::vector<int>>& selectorVertices);
 
+    std::vector<vertex> bfs_get_distance_three_generalized_original_graph(MDS_CONTEXT& mds_context, adjacencyListBoost& original_graph, std::vector<int>& vertices);
+
     void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag);
 
     void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices);

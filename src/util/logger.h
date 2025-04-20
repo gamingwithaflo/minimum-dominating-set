@@ -22,9 +22,17 @@ enum strategy_reduction{
 	REDUCTION_L_ALBER,
 };
 
+enum strategy_reduction_scheme{
+	REDUCTION_ALBER_L_3,
+	REDUCTION_ALBER_L_4,
+	REDUCTION_ALBER_L_NON,
+};
+
 class Logger {
 public:
 	//reduction rules.
+	static bool timed_out;
+
 	static int cnt_alber_simple_rule_1;
 	static int attempt_alber_simple_rule_1;
 
@@ -56,6 +64,10 @@ public:
 	static int cnt_ijcai_rule_3;
 	static int attempt_ijcai_rule_3;
 
+	static int cnt_alber_l_reduction;
+	static int cnt_alber_l_either_reduction;
+	static long long attempt_alber_l_reduction;
+
 	//components.
 	static int num_components;
 	static int num_reduced_components;
@@ -67,6 +79,7 @@ public:
 	static int num_reduced_edges;
 	static int cnt_undetermined_vertices;
 	static int cnt_selected_vertices;
+	static int cnt_dominated_vertices;
 	static int cnt_ignored_vertices;
 	static int cnt_excluded_vertices;
 	static int cnt_removed_vertices;
@@ -78,6 +91,7 @@ public:
 	static long long execution_time_ilp;
 	static long long execution_time_sat;
 	static long long execution_time_nice_tree_decomposition;
+	static long long execution_time_alber_rule_l;
 
 	static long long execution_time_seperate;
 	static long long execution_dominations;
@@ -95,6 +109,9 @@ public:
 	//strategy.
 	static strategy_reduction reduction_strategy;
 	static strategy_solver solver_strategy;
+	static strategy_reduction_scheme reduction_scheme_strategy;
+
+	static int domination_number;
 };
 
 void output_loginfo(std::string& name);

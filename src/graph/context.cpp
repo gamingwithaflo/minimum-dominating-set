@@ -356,9 +356,9 @@ void MDS_CONTEXT::fill_mds_context(MDS_CONTEXT& mds_context, std::unordered_map<
 		if (mds_context.is_excluded(OldIndex)) {
 			excluded[i] = true;
 		}
-		// if (mds_context.is_ignored(OldIndex)) {
-		// 	ignore_vertex(i);
-		// }
+		if (mds_context.is_ignored(OldIndex)) {
+			ignored[i] = true;
+		}
 	}
 }
 
