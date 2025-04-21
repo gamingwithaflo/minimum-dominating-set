@@ -1137,6 +1137,84 @@ namespace reduce {
 			}
 			Logger::execution_dominations += t_domination.count();
 
+			std::vector<int> W_sizes;
+			int num_selector_vertices = 1;
+			if (dominating_subsets.size() == 1){
+				num_selector_vertices = 0;
+			}
+			else
+			{
+				for (auto& constraint : dominating_subsets){
+					num_selector_vertices *= constraint.size();
+				}
+			}
+
+			std::vector<std::pair<std::unordered_set<int>,int>> collection_lookup_dominating_subsets;
+			timer t_is_stronger;
+			for (auto& w : dominating_subsets) {
+				std::unordered_set<int> neighborhood_w;
+				mds_context.get_lookup_l_neighborhood(w, neighborhood_w);
+				collection_lookup_dominating_subsets.emplace_back(neighborhood_w,w.size());
+			}
+
+			// All are stronger.
+			std::unordered_set<int>intersection_neighborhood;
+			auto [dom, size] = collection_lookup_dominating_subsets.back();
+			for (auto elem : dom)
+			{
+				bool all_present = true;
+				for (auto& [domination, s] : collection_lookup_dominating_subsets){
+					if (domination.find(elem) == domination.end()) {
+						all_present = false;
+						break;
+					};
+				}
+				if (all_present) {
+					intersection_neighborhood.insert(elem);
+				}
+			}
+			int total = 0;
+			int cnt_undetermined = 0;
+
+			std::vector<int> removable_guard_vertices;
+			std::vector<int> removable_prison_vertices;
+
+			for (auto prison : prison_vertices)
+			{
+				if (intersection_neighborhood.find(prison) == intersection_neighborhood.end()) {
+					continue;
+				}
+				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
+				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+					continue;
+				}
+				removable_prison_vertices.push_back(prison);
+				total++;
+				if (mds_context.is_undetermined(prison))
+				{
+					cnt_undetermined++;
+				}
+			}
+			for (auto guard : guard_vertices)
+			{
+				if (intersection_neighborhood.find(guard) == intersection_neighborhood.end()) {
+					continue;
+				}
+				auto [guard_it, guard_it_end] = mds_context.get_neighborhood_itt(guard);
+				if (intersection_neighborhood.find(*guard_it) == intersection_neighborhood.end()) {
+					continue;
+				}
+				removable_guard_vertices.push_back(guard);
+				total++;
+				if (mds_context.is_undetermined(guard))
+				{
+					cnt_undetermined++;
+				}
+			}
+			if (cnt_undetermined == 0 && dominating_subsets.size() != 1){
+				return false;
+			}
+
 			// if (dominating_subsets.size() != 1) {
 			// 		return false;
 			// }
@@ -1231,13 +1309,6 @@ namespace reduce {
 				generate(0);
 			}
 			Logger::execution_alternative_dominations += t_alternative.count();
-			std::vector<std::pair<std::unordered_set<int>,int>> collection_lookup_dominating_subsets;
-			timer t_is_stronger;
-			for (auto& w : dominating_subsets) {
-				std::unordered_set<int> neighborhood_w;
-				mds_context.get_lookup_l_neighborhood(w, neighborhood_w);
-				collection_lookup_dominating_subsets.emplace_back(neighborhood_w,w.size());
-			}
 			//if for all W in W_alternative, which is better.
 
 			bool is_stronger = true;
@@ -1262,62 +1333,17 @@ namespace reduce {
 			 	return false;
 			 }
 
-			// All are stronger.
-			std::unordered_set<int>intersection_neighborhood;
-			auto [dom, size] = collection_lookup_dominating_subsets.back();
-			for (auto elem : dom)
-			{
-				bool all_present = true;
-				for (auto& [domination, s] : collection_lookup_dominating_subsets){
-					if (domination.find(elem) == domination.end()) {
-						all_present = false;
-						break;
-					};
-				}
-				if (all_present) {
-					intersection_neighborhood.insert(elem);
-				}
-			}
-
-			for (auto prison : prison_vertices){
-				if (intersection_neighborhood.find(prison) == intersection_neighborhood.end()) {
-					continue;
-				}
-				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
-				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
-					continue;
-				}
-				if (l_vertices.size() == 2) {
+			for (auto prison : removable_prison_vertices){
 					mds_context.dominated[prison] = true;
 					mds_context.excluded[prison] = true;
-					//boost::clear_vertex(prison, mds_context.graph);
-					//mds_context.removed[prison] = true;
-				} else {
-					mds_context.dominated[prison] = true;
-					mds_context.excluded[prison] = true;
-					//boost::clear_vertex(prison, mds_context.graph);
-					//mds_context.removed[prison] = true;
-				}
+					mds_context.removed[prison] = true;
+					boost::clear_vertex(prison, mds_context.graph);
 			}
-			for (auto guard : guard_vertices){
-				if (intersection_neighborhood.find(guard) == intersection_neighborhood.end()) {
-					continue;
-				}
-				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(guard);
-				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
-					continue;
-				}
-				if (l_vertices.size() == 2){
-					mds_context.dominated[guard] = true;
-					mds_context.excluded[guard] = true;
-					//mds_context.removed[guard] = true;
-					//boost::clear_vertex(guard, mds_context.graph);
-				} else {
-					mds_context.dominated[guard] = true;
-					mds_context.excluded[guard] = true;
-					//mds_context.removed[guard] = true;
-					//boost::clear_vertex(guard, mds_context.graph);
-				}
+			for (auto guard : removable_guard_vertices){
+				mds_context.dominated[guard] = true;
+				mds_context.excluded[guard] = true;
+				mds_context.removed[guard] = true;
+				boost::clear_vertex(guard, mds_context.graph);
 			}
 
 			if (dominating_subsets.size() == 1){

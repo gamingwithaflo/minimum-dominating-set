@@ -109,8 +109,8 @@ namespace operations_research {
         //create a highs instance
         Highs highs;
         HighsStatus return_status;
-        //double time_limit = 30 * 60; //time_limit in seconds.
-        //highs.setOptionValue("time_limit", time_limit);
+        double time_limit = 30 * 60; //time_limit in seconds.
+        highs.setOptionValue("time_limit", time_limit);
 
         return_status = highs.passModel(ds_model);
         assert(return_status == HighsStatus::kOk);
@@ -132,6 +132,7 @@ namespace operations_research {
         }
         if (return_status == HighsStatus::kWarning) {
             //time limit reached.
+            Logger::timed_out = true;
             return vector<int>();
         }
         //should never happen (set a breakpoint for sure);
