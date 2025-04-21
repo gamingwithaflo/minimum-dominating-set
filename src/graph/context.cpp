@@ -165,7 +165,7 @@ void MDS_CONTEXT::get_l_neighborhood(std::vector<int>& l_vertices, std::unordere
 			{
 				lookup_neighbourhood.emplace(*vertex_it);
 				//only check not removed vertices.
-				if (!is_selected(*vertex_it) && !(is_excluded(*vertex_it) && is_dominated(*vertex_it))) {
+				if (!is_selected(*vertex_it) && !(is_excluded(*vertex_it) && is_dominated(*vertex_it)) && !is_removed(*vertex_it)) {
 					l_neighbourhood.push_back(*vertex_it);
 				}
 			}

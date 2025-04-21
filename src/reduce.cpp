@@ -762,7 +762,8 @@ namespace reduce {
 		}
 
 		if (mds_context.get_out_degree_vertex(v) <= 1) {
-			mds_context.remove_vertex(v);
+			mds_context.removed[v] = true;
+			mds_context.excluded[v] = true;
 			return true;
 		}
 		return false;
@@ -787,7 +788,8 @@ namespace reduce {
 			}
 			//rule 3.1
 			if (mds_context.edge_exists(u_one, u_two)) {
-				mds_context.remove_vertex(v);
+				mds_context.removed[v] = true;
+				mds_context.excluded[v] = true;
 				++Logger::cnt_alber_simple_rule_3dot1;
 				return true;
 			}
@@ -796,7 +798,8 @@ namespace reduce {
 			for (;neigh_u_one_itt < neigh_u_one_itt_end; ++neigh_u_one_itt) {
 				//u_2 must be not dominated & not excluded (or undetermined) (is allowed to be ignored /dominated)
 				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && mds_context.is_undetermined(*neigh_u_one_itt)) { //pretty sure this is a bug.
-					mds_context.remove_vertex(v);
+					mds_context.removed[v] = true;
+					mds_context.excluded[v] = true;
 					++Logger::cnt_alber_simple_rule_3dot2;
 					return true;
 				}
@@ -824,7 +827,8 @@ namespace reduce {
 			bool exists = mds_context.edge_exists(u_one, u_two);
 			auto exists_2 = mds_context.edge_exists(u_two, u_three);
 			if (exists && exists_2 && mds_context.is_undetermined(u_one) && mds_context.is_undetermined(u_two) && mds_context.is_undetermined(u_three)) {
-				mds_context.remove_vertex(v);
+				mds_context.removed[v] = true;
+				mds_context.excluded[v] = true;
 				return true;
 			}
 			return false;
@@ -1334,10 +1338,10 @@ namespace reduce {
 			 }
 
 			for (auto prison : removable_prison_vertices){
-					mds_context.dominated[prison] = true;
-					mds_context.excluded[prison] = true;
-					mds_context.removed[prison] = true;
-					boost::clear_vertex(prison, mds_context.graph);
+				mds_context.dominated[prison] = true;
+				mds_context.excluded[prison] = true;
+				mds_context.removed[prison] = true;
+				boost::clear_vertex(prison, mds_context.graph);
 			}
 			for (auto guard : removable_guard_vertices){
 				mds_context.dominated[guard] = true;
@@ -1352,11 +1356,16 @@ namespace reduce {
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
 					mds_context.selected[i] = true;
+					mds_context.excluded[i] = true;
+					mds_context.dominated[i] = true;
 					auto [itt, itt_end] = mds_context.get_neighborhood_itt(i);
 					for (; itt != itt_end; itt++) {
 						mds_context.dominated[*itt] = true;
 					}
+					mds_context.removed[i] = true;
+					boost::clear_vertex(i, mds_context.graph);
 				}
+				return true;
 			} else
 			{
 				Logger::cnt_alber_l_either_reduction++;
