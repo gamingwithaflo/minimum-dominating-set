@@ -101,14 +101,14 @@ int main(int argc, char* argv[])
 
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = false;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_052.gr";
+	bool dir_mode = true;
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/easy_treewidth/";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_005.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
-	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
+	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
+	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_NON;
 
 
 	//be able to take in parameters.
@@ -123,6 +123,7 @@ int main(int argc, char* argv[])
 			std::cout << entry.path().string() << std::endl;
 			initialize_logger();
 			separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy);
+			//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
 		}
 	} else {
 		separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy);
@@ -157,8 +158,9 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
 	//Fill sub-graphs + translation function (no reduction).
+	//std::cout << "1" << std::endl;
 	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
-
+	//std::cout << "2" << std::endl;
 	std::vector<int>solution;
 
 	for (int i = 0; i < sub_components.size(); ++i){
@@ -223,10 +225,26 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 							stop_flag = true;
 							Logger::timed_out = true;
 						}
-				} else {
+				} else if (red_scheme_strategy == REDUCTION_ALBER_L_4) {
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
+					//reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 4, std::ref(stop_flag));
+					if (l_reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+						l_reduction.get();
+					} else{
+						stop_flag = true;
+						Logger::timed_out = true;
+					}
+				} else { //REDUCTION_ALBER_L_5
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
-
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 5, std::ref(stop_flag));
+					if (l_reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+						l_reduction.get();
+					} else{
+						stop_flag = true;
+						Logger::timed_out = true;
+					}
 				}
 
 			}
@@ -275,6 +293,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(more_reduced);
 				if (nice_tree_decomposition)
 				{
+					Logger::treewidth.push_back(nice_tree_decomposition->treewidth);
 					if (Logger::maximum_treewidth < nice_tree_decomposition->treewidth){
 						Logger::maximum_treewidth = nice_tree_decomposition->treewidth;
 					}
@@ -289,7 +308,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				{
 					throw std::runtime_error("tree decomposition is to big");
 				}
-				std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[j]);
+				std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context_reduced.dominated, mds_context_reduced.excluded, newToOld);
 
 				//generate final solution.
 				for (int newIndex : td_comp->global_solution) {

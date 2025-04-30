@@ -125,6 +125,7 @@ void TREEWIDTH_SOLVER::run_operation_leaf(int num_of_vertices) {
 
 void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int introduced_vertex, std::vector<bool>& dominated, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex){
     timer t_operation_introduce;
+    Logger::num_introduce_bags_size[bag.size()]++;
     int index_introduced_vertex = find_index_in_bag(bag, introduced_vertex);
 
     //get previous partial solution.
@@ -162,6 +163,7 @@ void TREEWIDTH_SOLVER::run_operation_introduce(std::vector<uint>& bag, int intro
 
 void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
     timer t_operation_join;
+    Logger::num_join_bags_size[bag.size()]++;
     std::vector<partial_solution> temp_child_partial_solution_a = partial_solution_stack.top();
     partial_solution_stack.pop();
     std::vector<partial_solution>& child_partial_solution_b = partial_solution_stack.top();
@@ -227,6 +229,7 @@ void TREEWIDTH_SOLVER::run_operation_join(std::vector<uint>& bag){
 
 void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int endpoint_a, int endpoint_b){
     timer t_operation_introduce_edge;
+    Logger::num_introduce_edge_bags_size[bag.size()]++;
     //find index of introduced vertex in the bag.
     int index_endpoint_a = find_index_in_bag(bag, endpoint_a);
     int index_endpoint_b = find_index_in_bag(bag, endpoint_b);
@@ -274,6 +277,7 @@ void TREEWIDTH_SOLVER::run_operation_introduce_edge(std::vector<uint>& bag, int 
 
 void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_vertex, std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex){
     timer t_operation_forget;
+    Logger::num_forget_bags_size[bag.size()]++;
     int index_forget_vertex = find_index_in_bag(bag, forget_vertex);
 
     //get previous partial solution.

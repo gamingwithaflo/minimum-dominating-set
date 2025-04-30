@@ -70,6 +70,12 @@ void initialize_logger()
     Logger::execution_time_introduce_edge = 0;
     Logger::execution_time_leaf = 0;
 
+    Logger::num_introduce_bags_size.assign(Logger::num_introduce_bags_size.size(), 0);
+    Logger::num_join_bags_size.assign(Logger::num_join_bags_size.size(), 0);
+    Logger::num_forget_bags_size.assign(Logger::num_forget_bags_size.size(), 0);
+    Logger::num_introduce_edge_bags_size.assign(Logger::num_introduce_edge_bags_size.size(), 0);
+    Logger::treewidth.clear();
+
     Logger::domination_number = 0;
 
     Logger::cnt_alber_l_reduction = 0;
@@ -153,6 +159,12 @@ void initialize_logger()
     long long Logger::execution_time_introduce_edge = 0;
     long long Logger::execution_time_leaf = 0;
 
+    std::vector<int> Logger::num_join_bags_size(20,0);
+    std::vector<int> Logger::num_forget_bags_size(20, 0);
+    std::vector<int> Logger::num_introduce_edge_bags_size(20, 0);
+    std::vector<int> Logger::num_introduce_bags_size(20, 0);
+    std::vector<int> Logger::treewidth;
+
     //strategy.
     strategy_reduction Logger::reduction_strategy = REDUCTION_COMBINATION;
     strategy_solver Logger::solver_strategy = SOLVER_COMBINATION;
@@ -202,6 +214,8 @@ std::string getReductionSchemeString(strategy_reduction_scheme reduction) {
         return "REDUCTION_ALBER_L_3";
     case REDUCTION_ALBER_L_4:
         return "REDUCTION_ALBER_L_4";
+    case REDUCTION_ALBER_L_5:
+        return "REDUCTION_ALBER_L_5";
     case REDUCTION_ALBER_L_NON:
         return "REDUCTION_ALBER_L_NON";
     default:
@@ -248,9 +262,31 @@ void output_loginfo(std::string& name) {
             outFile << "Execution time spent in introduce: " << Logger::execution_time_introduce << std::endl;
             outFile << "Execution time spent in introduce edge: " << Logger::execution_time_introduce_edge << std::endl;
             outFile << "Execution time spent in forget: " << Logger::execution_time_forget << std::endl;
+            outFile << "Treewidths of different components: ";
+            for (int j : Logger::treewidth){
+                outFile << j << " ";
+            }
+            outFile << std::endl;
+            for (size_t i = 0; i < Logger::num_join_bags_size.size(); ++i) {
+                outFile << "cnt Bag size join" << i << ": " << Logger::num_join_bags_size[i] << std::endl;
+            }
+            for (size_t i = 0; i < Logger::num_introduce_bags_size.size(); ++i) {
+                outFile << "cnt Bag size introduce" << i << ": " << Logger::num_introduce_bags_size[i] << std::endl;
+            }
+            for (size_t i = 0; i < Logger::num_introduce_edge_bags_size.size(); ++i) {
+                outFile << "cnt Bag size introduce_edge" << i << ": " << Logger::num_introduce_edge_bags_size[i] << std::endl;
+            }
+            for (size_t i = 0; i < Logger::num_forget_bags_size.size(); ++i) {
+                outFile << "cnt Bag size forget" << i << ": " << Logger::num_forget_bags_size[i] << std::endl;
+            }
         } else if (Logger::solver_strategy == SOLVER_NICE_TREE_DECOMPOSITION) {
             outFile << "Execution time of the nice tree decompositions: " << Logger::execution_time_nice_tree_decomposition << std::endl;
             outFile << "maximum_treewidth : " << Logger::maximum_treewidth << std::endl;
+            outFile << "Treewidths of different components: ";
+            for (int j : Logger::treewidth){
+                outFile << j << " ";
+            }
+            outFile << std::endl;
         }
         else {
             throw std::runtime_error("non-supported solver strategy.");

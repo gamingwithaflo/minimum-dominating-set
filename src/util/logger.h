@@ -25,6 +25,7 @@ enum strategy_reduction{
 enum strategy_reduction_scheme{
 	REDUCTION_ALBER_L_3,
 	REDUCTION_ALBER_L_4,
+	REDUCTION_ALBER_L_5,
 	REDUCTION_ALBER_L_NON,
 };
 
@@ -110,6 +111,13 @@ public:
 	static strategy_reduction reduction_strategy;
 	static strategy_solver solver_strategy;
 	static strategy_reduction_scheme reduction_scheme_strategy;
+
+	static std::vector<int> num_join_bags_size;
+	static std::vector<int> num_forget_bags_size;
+	static std::vector<int> num_introduce_edge_bags_size;
+	static std::vector<int> num_introduce_bags_size;
+
+	static std::vector<int> treewidth;
 
 	static int domination_number;
 };

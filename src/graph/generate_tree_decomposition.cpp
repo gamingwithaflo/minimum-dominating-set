@@ -156,10 +156,10 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     // algorithm_challenge->addDecompositionAlgorithm(adaptiveAlgorithm);
 
 
-    htd::GraphPreprocessor * preprocessor = new htd::GraphPreprocessor(manager.get());
-    preprocessor->setPreprocessingStrategy(3);
-    preprocessor->setIterationCount(256);
-    preprocessor->setNonImprovementLimit(64);
+    // htd::GraphPreprocessor * preprocessor = new htd::GraphPreprocessor(manager.get());
+    // preprocessor->setPreprocessingStrategy(3);
+    // preprocessor->setIterationCount(256);
+    // preprocessor->setNonImprovementLimit(64);
     /**
      *  Create a new instance of htd::IterativeImprovementTreeDecompositionAlgorithm based
      *  on the base algorithm and the fitness function. Note that the fitness function can
@@ -253,6 +253,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 }
             }else {
                 std::cout << decomposition->maximumBagSize() << std::endl;
+                Logger::treewidth.push_back(decomposition->maximumBagSize());
                 if (Logger::maximum_treewidth < decomposition->maximumBagSize()){
                     Logger::maximum_treewidth = decomposition->maximumBagSize();
                 }

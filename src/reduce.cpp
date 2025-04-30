@@ -790,6 +790,7 @@ namespace reduce {
 			if (mds_context.edge_exists(u_one, u_two)) {
 				mds_context.removed[v] = true;
 				mds_context.excluded[v] = true;
+				boost::clear_vertex(v, mds_context.graph);
 				++Logger::cnt_alber_simple_rule_3dot1;
 				return true;
 			}
@@ -800,6 +801,7 @@ namespace reduce {
 				if (*neigh_u_one_itt != v && mds_context.edge_exists(*neigh_u_one_itt, u_two) && mds_context.is_undetermined(*neigh_u_one_itt)) { //pretty sure this is a bug.
 					mds_context.removed[v] = true;
 					mds_context.excluded[v] = true;
+					boost::clear_vertex(v, mds_context.graph);
 					++Logger::cnt_alber_simple_rule_3dot2;
 					return true;
 				}
@@ -829,6 +831,7 @@ namespace reduce {
 			if (exists && exists_2 && mds_context.is_undetermined(u_one) && mds_context.is_undetermined(u_two) && mds_context.is_undetermined(u_three)) {
 				mds_context.removed[v] = true;
 				mds_context.excluded[v] = true;
+				boost::clear_vertex(v, mds_context.graph);
 				return true;
 			}
 			return false;
@@ -1177,6 +1180,11 @@ namespace reduce {
 					intersection_neighborhood.insert(elem);
 				}
 			}
+
+			// if (dominating_subsets.size() != 1) {
+			// 			return false;
+			// 	}
+
 			int total = 0;
 			int cnt_undetermined = 0;
 
@@ -1215,13 +1223,14 @@ namespace reduce {
 					cnt_undetermined++;
 				}
 			}
+
 			if (cnt_undetermined == 0 && dominating_subsets.size() != 1){
-				return false;
+				if (total <= num_selector_vertices)
+				{
+					return false;
+				}
 			}
 
-			// if (dominating_subsets.size() != 1) {
-			// 		return false;
-			// }
 
 			// std::unordered_set<int> all_possibilities;
 			// for (auto& set : dominating_subsets) {
