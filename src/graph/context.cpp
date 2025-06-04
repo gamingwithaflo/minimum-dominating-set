@@ -306,6 +306,18 @@ void MDS_CONTEXT::add_edge(vertex v, vertex w) {
 	return;
 }
 
+int MDS_CONTEXT::num_undetermined_vertices(){
+	int total_vertices = get_total_vertices();
+	int cnt = 0;
+	for (int i = 0; i < total_vertices; ++i)
+	{
+		if (!excluded[i] && !removed[i] && !selected[i]){
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
 std::pair<std::vector<int>, std::map<int,int>> MDS_CONTEXT::get_undetermined_vertices() {
 	std::vector<int>undetermined;
 	int total_vertices = get_total_vertices();

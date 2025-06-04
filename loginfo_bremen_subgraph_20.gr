@@ -1,0 +1,33 @@
+Timed out: 0
+Reduction strategy: REDUCTION_COMBINATION
+Solver strategy: SOLVER_NON
+Reduction scheme strategy: REDUCTION_ALBER_L_3
+Execution time complete: 3
+Execution time reduction: 2
+Domination number: 2
+Number of vertices: 32
+Number of edges: 48
+Number of reduced_vertices: 25
+Number of reduced_edges: 0
+Number of undetermined vertices: 22
+Number of dominated vertices: 0
+Number of selected vertices: 2
+Number of ignored vertices: 3
+Number of excluded vertices: 3
+Number of removed vertices: 5
+Number of components: 1
+Number of components after reduction: 1
+Attempts of rule_1: 77
+Successful reduction of IJCAI rule 1: 8
+Attempts of rule_2: 71
+Successful reduction of IJCAI rule 2: 0
+Attempts of rule_3: 71
+Successful reduction of IJCAI rule 3: 3
+Attempts of Alber rule 2: 0
+Successful reduction of Alber rule 2 (single): 0
+Successful reduction of alber rule 2 (either): 0
+Successful reduction of alber rule 2 (both): 0
+Execution time of ALBER rule l: 2
+Attempts of ALBER rule l : 803
+Successful reduction of ALBER rule l: 0
+Successful reduction of ALBER rule l (either): 0

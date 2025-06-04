@@ -70,6 +70,88 @@ void initialize_logger()
     Logger::execution_time_introduce_edge = 0;
     Logger::execution_time_leaf = 0;
 
+    Logger::average_SAT_execution_time.clear();
+
+    Logger::num_introduce_bags_size.assign(Logger::num_introduce_bags_size.size(), 0);
+    Logger::num_join_bags_size.assign(Logger::num_join_bags_size.size(), 0);
+    Logger::num_forget_bags_size.assign(Logger::num_forget_bags_size.size(), 0);
+    Logger::num_introduce_edge_bags_size.assign(Logger::num_introduce_edge_bags_size.size(), 0);
+    Logger::treewidth.clear();
+
+    Logger::domination_number = 0;
+
+    Logger::cnt_alber_l_reduction = 0;
+    Logger::cnt_alber_l_either_reduction = 0;
+    Logger::attempt_alber_l_reduction = 0;
+}
+
+void initialize_logger_not_average()
+{
+    //Logger::timed_out = false;
+    Logger::cnt_alber_simple_rule_1 = 0;
+    Logger::attempt_alber_simple_rule_1 = 0;
+
+    Logger::cnt_alber_simple_rule_2 = 0;
+    Logger::attempt_alber_simple_rule_2 = 0;
+
+    Logger::cnt_alber_simple_rule_3dot1 = 0;
+    Logger::cnt_alber_simple_rule_3dot2 = 0;
+    Logger::attempt_alber_simple_rule_3 = 0;
+
+    Logger::cnt_alber_simple_rule_4 = 0;
+    Logger::attempt_alber_simple_rule_4 = 0;
+
+    Logger::cnt_alber_rule_1_default = 0;
+    Logger::cnt_alber_rule_1_guard = 0;
+    Logger::attempt_alber_rule_1 = 0;
+
+    Logger::cnt_alber_rule_2_single = 0;
+    Logger::cnt_alber_rule_2_either = 0;
+    Logger::cnt_alber_rule_2_both = 0;
+    Logger::attempt_alber_rule_2 = 0;
+
+    Logger::cnt_ijcai_rule_1 = 0;
+    Logger::attempt_ijcai_rule_1 = 0;
+
+    Logger::cnt_ijcai_rule_2 = 0;
+    Logger::attempt_ijcai_rule_2 = 0;
+
+    Logger::cnt_ijcai_rule_3 = 0;
+    Logger::attempt_ijcai_rule_3 = 0;
+
+    //components.
+    Logger::num_components = 0;
+    Logger::num_reduced_components = 0;
+
+    //effectiveness reduction rules.
+    Logger::num_vertices = 0;
+    Logger::num_edges = 0;
+    Logger::num_reduced_vertices = 0;
+    Logger::num_reduced_edges = 0;
+    Logger::cnt_dominated_vertices = 0;
+    Logger::cnt_undetermined_vertices = 0;
+    Logger::cnt_selected_vertices = 0;
+    Logger::cnt_ignored_vertices = 0;
+    Logger::cnt_excluded_vertices = 0;
+    Logger::cnt_removed_vertices = 0;
+
+    //timer functions.
+    Logger::execution_time_complete = 0;
+    Logger::execution_time_treewidth = 0;
+    Logger::execution_time_reduction = 0;
+    Logger::execution_time_ilp = 0;
+    Logger::execution_time_sat = 0;
+    Logger::execution_time_nice_tree_decomposition = 0;
+    Logger::execution_time_alber_rule_l = 0;
+
+    //treewidth specific.
+    Logger::maximum_treewidth = 0;
+    Logger::execution_time_introduce = 0;
+    Logger::execution_time_forget = 0;
+    Logger::execution_time_join = 0;
+    Logger::execution_time_introduce_edge = 0;
+    Logger::execution_time_leaf = 0;
+
     Logger::num_introduce_bags_size.assign(Logger::num_introduce_bags_size.size(), 0);
     Logger::num_join_bags_size.assign(Logger::num_join_bags_size.size(), 0);
     Logger::num_forget_bags_size.assign(Logger::num_forget_bags_size.size(), 0);
@@ -151,6 +233,8 @@ void initialize_logger()
     long long Logger::execution_alternative_dominations = 0;
     long long Logger:: execution_is_stronger = 0;
 
+    std::vector<long long> Logger::average_SAT_execution_time;
+
     //treewidth specific.
     int Logger::maximum_treewidth = 0;
     long long Logger::execution_time_introduce = 0;
@@ -226,9 +310,9 @@ std::string getReductionSchemeString(strategy_reduction_scheme reduction) {
 void output_loginfo(std::string& name) {
     std::string prefix = "/home/floris/github/minimum-dominating-set/log_info/";
     //+ "/only_reduced" +
-    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/loginfo_" + name;
+    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/single_thread" + "/loginfo_" + name;
     std::cout << output_path << std::endl;
-
+    //"/single_thread"
     std::ofstream outFile(output_path);
 
     if (!outFile) {
@@ -252,6 +336,15 @@ void output_loginfo(std::string& name) {
             outFile << "Execution time treewidth: " << Logger::execution_time_treewidth << std::endl;
         } else if (Logger::solver_strategy == SOLVER_SAT){
             outFile << "Execution time SAT: " << Logger::execution_time_sat << std::endl;
+            outFile << "num average: " << Logger::average_SAT_execution_time.size() << std::endl;
+            if (!Logger::average_SAT_execution_time.empty()) {
+                double sum = std::accumulate(Logger::average_SAT_execution_time.begin(), Logger::average_SAT_execution_time.end(), 0.0);
+                double average = sum / Logger::average_SAT_execution_time.size();
+                outFile << "Average SAT_execution: " << average << std::endl;
+            } else {
+                outFile << "Vector is empty." << std::endl;
+            }
+
         } else if (Logger::solver_strategy == SOLVER_ILP) {
             outFile << "Execution time ILP: " << Logger::execution_time_ilp << std::endl;
         } else if (Logger::solver_strategy == SOLVER_TREEWIDTH){ // Extra information only if you run treewidth specifically.

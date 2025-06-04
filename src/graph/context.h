@@ -49,6 +49,8 @@ public:
 
     int get_total_vertices();
 
+    int num_undetermined_vertices();
+
     int get_total_edges();
 
     int get_coverage_size(vertex v);

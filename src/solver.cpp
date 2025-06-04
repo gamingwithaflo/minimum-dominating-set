@@ -78,7 +78,7 @@ namespace operations_research {
         for (int i = 0; i < total_vertices; i++) {
             HighsInt cnt = 0;
             //vertex v = mds_context.get_vertex_from_index(i);
-            if (mds_context.is_dominated(newToOldIndex[i]) || mds_context.is_ignored(newToOldIndex[i])) { //should be faster right?
+            if (mds_context.is_dominated(newToOldIndex[i])) { //should be faster right?
                 continue; //dominated vertices  do not need a contraint.
             }
             auto [neigh_v_itt, neigh_v_itt_end] = boost::adjacent_vertices(i, graph);
@@ -100,6 +100,9 @@ namespace operations_research {
                 else {
                     continue; //These decision variables have no influence.
                 }
+            }
+            if (cnt == 0) {
+                std::cout << "is_bad" << std::endl;
             }
             HighsInt last = a.start_.back() + cnt;
             a.start_.push_back(last);

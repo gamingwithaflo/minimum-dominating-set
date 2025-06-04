@@ -1,8 +1,11 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <numeric>
 
 void initialize_logger();
+
+void initialize_logger_not_average();
 
 enum strategy_solver{
 	SOLVER_COMBINATION,
@@ -111,6 +114,8 @@ public:
 	static strategy_reduction reduction_strategy;
 	static strategy_solver solver_strategy;
 	static strategy_reduction_scheme reduction_scheme_strategy;
+
+	static std::vector<long long> average_SAT_execution_time;
 
 	static std::vector<int> num_join_bags_size;
 	static std::vector<int> num_forget_bags_size;

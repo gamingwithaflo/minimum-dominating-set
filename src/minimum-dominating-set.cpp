@@ -27,6 +27,7 @@
 #include <csignal>
 #include <future>
 #include <unistd.h>
+#include <sched.h>
 
 bool stringToBool(const std::string& str) {
 	std::string s = str;
@@ -98,16 +99,26 @@ void timer_thread(std::future<void>& main_future){
 
 int main(int argc, char* argv[])
 {
+	cpu_set_t mask;
+	CPU_ZERO(&mask);
+	CPU_SET(0, &mask);
 
+	int result = sched_setaffinity(0, sizeof(mask), &mask);
+	if (result == -1) {
+		perror("sched_setaffinity");
+		return 1;
+	}
 	//default values
 	// path : string with path to instance graph.
 	bool dir_mode = true;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/easy_treewidth/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_005.gr";
+	bool theory_strategy = false;
+	bool average = true;
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/ijcai_todo/";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_097.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_TREEWIDTH;
+	strategy_solver solver_strategy = SOLVER_SAT;
 	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_NON;
 
 
@@ -122,11 +133,20 @@ int main(int argc, char* argv[])
 		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
 			std::cout << entry.path().string() << std::endl;
 			initialize_logger();
-			separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy);
+			for (int i = 0; i < 1; i++) {
+				initialize_logger_not_average();
+				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
+				separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+			}
+			//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
 		}
 	} else {
-		separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy);
+		for (int i = 0; i < 1; i++) {
+			initialize_logger_not_average();
+			separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+		}
+		//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 		//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
 	}
 
@@ -148,7 +168,47 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy){
+void dominating_set_solver(std::string path){
+	//create empty sub-graphs + translation function.
+	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components;
+	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
+
+	/* Takes the path, loads in the graph, and directly splits it into connected components.
+	sub_components := vector with graphs.
+	sub_newToOldIndex := a vector of maps which given a index of a vertex in a subcomponent translates the index
+	to the original index of the vertex. */
+	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
+	std::vector<int>solution;
+
+	//Handle each subcomponent separately.
+	for (int i = 0; i < sub_newToOldIndex.size(); i++) {
+		/*Try to solve the subcomponent which a minute with the SAT_solver.
+		 this either provides a solution (OPTIMAL), or provides an upperbound (FEASIBlE).
+		 */
+		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
+
+		auto start = std::chrono::steady_clock::now();
+		auto timeout_duration = std::chrono::seconds(60);
+
+		reduce::reduction_rule_manager(mds_context, red_strategy, 0, theory_strategy, start, timeout_duration);
+
+		//If optimal, add translated vertices to the solution vector and continue.
+		continue;
+
+		//int upper_bound = TODO;
+		//int lower_bound = TODO;
+
+		/* run, the reduction rules as much as possible for 9 minutes.
+		 * but also check the time of the previous steps.
+		 */
+		int num_undetermined_vertices = mds_context.num_undetermined_vertices();
+
+
+
+	}
+}
+
+void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy, bool theory_strategy){
 	timer t_complete;
 	Logger::solver_strategy = sol_strategy;
 	Logger::reduction_strategy = red_strategy;
@@ -158,9 +218,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
 	//Fill sub-graphs + translation function (no reduction).
-	//std::cout << "1" << std::endl;
 	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
-	//std::cout << "2" << std::endl;
 	std::vector<int>solution;
 
 	for (int i = 0; i < sub_components.size(); ++i){
@@ -168,10 +226,9 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		std::atomic<bool> stop_flag(false);
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 		timer t_reduction;
-		std::cout << "start reduction:" << std::endl;
-		std::future<void> reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context), std::ref(red_strategy), 0, std::ref(stop_flag));
+		std::future<void> reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context), std::ref(red_strategy), 0, std::ref(stop_flag), std::ref(theory_strategy));
 
-		if (reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+		if (reduction.wait_for(std::chrono::minutes(30)) == std::future_status::ready){
 			reduction.get();
 		} else{
 			stop_flag = true;
@@ -218,7 +275,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			timer t_reduction_alber_rule_l;
 			if (!(red_scheme_strategy == REDUCTION_ALBER_L_NON)) {
 				if (red_scheme_strategy == REDUCTION_ALBER_L_3) {
-					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 3, std::ref(stop_flag));
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 3, std::ref(stop_flag), std::ref(theory_strategy));
 					if (l_reduction.wait_for(std::chrono::minutes(30)) == std::future_status::ready){
 							l_reduction.get();
 						} else{
@@ -226,20 +283,20 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 							Logger::timed_out = true;
 						}
 				} else if (red_scheme_strategy == REDUCTION_ALBER_L_4) {
-					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag, theory_strategy);
 					//reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
-					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 4, std::ref(stop_flag));
-					if (l_reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 4, std::ref(stop_flag), std::ref(theory_strategy));
+					if (l_reduction.wait_for(std::chrono::minutes(30)) == std::future_status::ready){
 						l_reduction.get();
 					} else{
 						stop_flag = true;
 						Logger::timed_out = true;
 					}
 				} else { //REDUCTION_ALBER_L_5
-					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag);
-					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag);
-					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 5, std::ref(stop_flag));
-					if (l_reduction.wait_for(std::chrono::minutes(20)) == std::future_status::ready){
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, stop_flag, theory_strategy);
+					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, stop_flag, theory_strategy);
+					std::future<void> l_reduction = std::async(std::launch::async, reduce::reduction_rule_manager, std::ref(mds_context_reduced), std::ref(strategy), 5, std::ref(stop_flag), std::ref(theory_strategy));
+					if (l_reduction.wait_for(std::chrono::minutes(30)) == std::future_status::ready){
 						l_reduction.get();
 					} else{
 						stop_flag = true;
@@ -285,7 +342,8 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				}
 			}
 			adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
-
+			bool is_planar = boost::boyer_myrvold_planarity_test(more_reduced);
+			std::cout << is_planar << std::endl;
 
 
 			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
@@ -336,12 +394,14 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
 				}
 				Logger::execution_time_sat += t_sat.count();
+				//Logger::average_SAT_execution_time.push_back(t_sat.count());
 			}
 		}
 	}
 	Logger::domination_number = solution.size();
 	Logger::execution_time_complete = t_complete.count();
 	std::cout << Logger::execution_time_complete << std::endl;
+	Logger::average_SAT_execution_time.push_back(Logger::execution_time_sat);
 	parse::output_solution(solution, path);
 	std::string name = parse::getNameFile(path);
 	output_loginfo(name);
@@ -351,10 +411,12 @@ void seperate_solver_no_components(std::string path, strategy_reduction red_stra
 	timer t_complete;
 	Logger::solver_strategy = sol_strategy;
 	Logger::reduction_strategy = red_strategy;
+	std::atomic<bool> stop_flag(false);
 
 	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
 	MDS_CONTEXT mds_context = MDS_CONTEXT(*graph);
 	timer t_reduction;
+	reduce::reduction_rule_manager(mds_context, red_strategy, 0, stop_flag, false);
 	//reduce::reduction_rule_manager(mds_context, red_strategy);
 	Logger::execution_time_reduction += t_reduction.count();
 	mds_context.fill_removed_vertex();
@@ -393,6 +455,7 @@ void seperate_solver_no_components(std::string path, strategy_reduction red_stra
 
 	Logger::execution_time_complete = t_complete.count();
 	std::cout << Logger::execution_time_complete << std::endl;
+	Logger::average_SAT_execution_time.push_back(Logger::execution_time_sat);
 	parse::output_solution(solution, path);
 	std::string name = parse::getNameFile(path);
 	output_loginfo(name);
@@ -448,6 +511,11 @@ void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
 		}
 	}
 
+
+}
+
+void split_graph_component(adjacencyListBoost& graph ,std::vector<std::unique_ptr<adjacencyListBoost>>& sub_components,
+								std::vector<std::unordered_map<int, int>>& sub_newToOldIndex) {
 
 }
 
@@ -536,7 +604,12 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 
 		//only add edges which both exists in the new graph. !(mds_context.is_dominated(source) & mds_context.is_dominated(target))
 		if (OldToNewIndex.count(source) && OldToNewIndex.count(target)) {
+			// if (mds_context.is_excluded(source) && mds_context.is_excluded(target)) {
+			//
+			// } else
+			// {
 			boost::add_edge(OldToNewIndex[source], OldToNewIndex[target], reduced_graph);
+			// }
 		}
 	}
 	return reduced_graph;

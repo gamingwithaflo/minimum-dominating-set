@@ -50,6 +50,39 @@ class FitnessFunction_height : public htd::ITreeDecompositionFitnessFunction
         }
 };
 
+class FitnessFunction_minimize_join : public htd::ITreeDecompositionFitnessFunction
+{
+public:
+    FitnessFunction_minimize_join(void)= default;
+
+    ~FitnessFunction_minimize_join()=default;
+
+    htd::FitnessEvaluation * fitness(const htd::IMultiHypergraph & graph, const htd::ITreeDecomposition & decomposition) const {
+        HTD_UNUSED(graph)
+        //actual fitness function.
+        double threshold = 10;
+        double penalty = 0;
+        double join_node_count = decomposition.joinNodeCount();
+        auto join_nodes = decomposition.joinNodes();
+        for (auto join_node : join_nodes) {
+            std::size_t bag_size = decomposition.bagSize(join_node);
+            if (bag_size > threshold) {
+                double excess = static_cast<double>(bag_size - threshold);
+                penalty += std::pow(excess, 2.5);
+            }
+        }
+
+
+        return new htd::FitnessEvaluation(2,
+                                          -(double)(decomposition.maximumBagSize()),
+                                          -(double)(penalty));
+    }
+
+    FitnessFunction_minimize_join * clone(void) const {
+        return new FitnessFunction_minimize_join();
+    }
+};
+
 
 std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced_graph)
 {
@@ -78,7 +111,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     }
 
     // Create an instance of the fitness function. (defined above)
-    const FitnessFunction_height fitnessFunction;
+    const FitnessFunction_minimize_join fitnessFunction;
 
     /**
      *  This operation changes the root of a given decomposition so that the provided

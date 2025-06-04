@@ -15,16 +15,16 @@
 
 
 namespace reduce {
-	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag) {
+	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag, bool theory_strategy) {
 		if (strategy == REDUCTION_COMBINATION) {
 			//IJCAI with Alber rule 1.
-			reduce_ijcai(mds_context, true, stop_flag);
+			reduce_ijcai(mds_context, true, stop_flag, theory_strategy);
 		}
 		else if (strategy == REDUCTION_ALBER) {
 			reduce_alber(mds_context, true);
 		}
 		else if (strategy == REDUCTION_IJCAI){
-			reduce_ijcai(mds_context, false, stop_flag);
+			reduce_ijcai(mds_context, false, stop_flag, theory_strategy);
 		}
 		else if (strategy == REDUCTION_ALBER_RULE_1){
 			reduce_alber(mds_context, false);
@@ -32,7 +32,7 @@ namespace reduce {
 		} else if (strategy == REDUCTION_NON){
 			//Do nothing.
 		} else if (strategy == REDUCTION_L_ALBER) {
-			reduce_l_alber(mds_context, l, stop_flag);
+			reduce_l_alber(mds_context, l, stop_flag, theory_strategy);
 		}
 	}
 
@@ -97,23 +97,18 @@ namespace reduce {
 						}
 					}
 				}
-				first_time = false;
 			}
 		} while (cnt_reductions > 0);
 	}
 
-	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag) {
+	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag, bool theory_strategy) {
 		bool reduced;
 		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 		bool first_time = run_rule_2;
 
 		do {
 			reduced = false;
-
-			if (!first_time) {
-				auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
-			}
-
+			auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 			for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
 				if (mds_context.is_undetermined(*itt)) {
 					Logger::attempt_ijcai_rule_1++;
@@ -136,72 +131,227 @@ namespace reduce {
 					}
 				}
 			}
-			if (!reduced && first_time) {
-				//to prevent a pointer error.
-				std::vector<vertex>vertices = mds_context.get_vertices();
-				for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
-					// if (stop_flag){
-					// 	return;
-					// }
-					if (!mds_context.is_undetermined(*itt)) {
-						continue;
-					}
-					auto possible_combinations = bfs_get_distance_three(mds_context, *itt);
-					for (vertex poss : possible_combinations) {
-						if (mds_context.is_undetermined(poss)) {
-							if (*itt < poss) {
-								reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
-								// std::vector<int>test;
-								// test.push_back(*itt);
-								// test.push_back(poss);
-								// reduced |= reduction_l_rule(mds_context, test);
+			if ((!reduced && first_time)) {
+				bool reduction_found = true;
+				while (reduction_found)
+				{
+					reduction_found = false;
+					//to prevent a pointer error.
+					std::vector<vertex>vertices = mds_context.get_vertices();
+					for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
+						if (stop_flag){
+							return;
+						}
+						if (!mds_context.is_undetermined(*itt)) {
+							continue;
+						}
+						auto possible_combinations = bfs_get_distance_three(mds_context, *itt);
+						for (vertex poss : possible_combinations) {
+							if (mds_context.is_undetermined(poss)) {
+								if (*itt < poss) {
+									reduced |= reduce_neighborhood_pair_vertices_ijcai(mds_context, *itt, poss);
+								}
 							}
 						}
 					}
 				}
-				first_time = false;
+				if (!theory_strategy) {
+					first_time = false;
+				}
 			}
 		} while (reduced);
 	}
 
-	void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag){
+	void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag, bool theory_strategy){
+		bool reduction = true;
+		auto [first_vert_itt, first_vert_itt_end] = mds_context.get_vertices_itt();
+		bool simple_reduce = true;
+		while (simple_reduce)
+		{
+			simple_reduce = false;
+			for (auto first_vertex = first_vert_itt; first_vertex < first_vert_itt_end; ++first_vertex)
+			{
+				//simple reduction rules.
+				if (mds_context.is_removed(*first_vertex) || (mds_context.is_dominated(*first_vertex) && mds_context.is_excluded(*first_vertex))) {
+					continue;
+				}
+				if (mds_context.is_dominated(*first_vertex)) {
+					if (simple_rule_one(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_two(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_three(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_four(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+				}
+			}
+		}
+		while (reduction)
+		{
+			//boost::unordered_set<std::vector<int>> done;
+			reduction = false;
+			auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
+			for (;vert_it != vert_it_end; ++vert_it) {
+				if (stop_flag){
+					return;
+				}
+				if (mds_context.is_undetermined(*vert_it)) {
+					//std::cout << "iteration: " << counter << std::endl;
+					reduction |= execute_l_alber(mds_context, l, 1, { static_cast<int>(*vert_it) });
+					//execute_l_alber_two(mds_context, l, *vert_it);
+				}
+			}
+			if (!theory_strategy){
+				//std::cout << "stop theory" << std::endl;
+				reduction = false;
+			}
+		}
+		// this makes the next reduction round faster (or finds small improvements).
+		 int smaller_l = 1;
+		 //std::cout << "reduction" << reduction << std::endl;
+		 while (smaller_l <= l && theory_strategy) {
+		 	//std::cout << "test" << std::endl;
+		 	//boost::unordered_set<std::vector<int>> done_2;
+		 	bool reduction_smaller = true;
+		 	bool found_a_reduction = false;
+		 	while (reduction_smaller){
+		 		reduction_smaller = false;
+		 	auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
+		 	for (auto itt = vert_it; itt < vert_it_end; ++itt)
+		 	{
+		 		if (stop_flag){
+		 			return;
+		 		}
+		 		if (mds_context.is_undetermined(*vert_it)) {
+		 			bool succes = execute_l_alber(mds_context, smaller_l, 1, { static_cast<int>(*vert_it) });
+		 			reduction_smaller |= succes;
+		 			if (succes) {
+		 				found_a_reduction = true;
+		 				bool simple_reduce_2 = true;
+		 				while (simple_reduce_2)
+		 				{
+		 					simple_reduce_2 = false;
+		 					auto [vert_itt_four, vert_itt_four_end] = mds_context.get_vertices_itt();
+		 					for (auto vertex_four = vert_itt_four_end; vertex_four < vert_itt_four_end; ++vertex_four)
+		 					{
+		 						//simple reduction rules.
+		 						if (mds_context.is_removed(*vertex_four) || (mds_context.is_dominated(*vertex_four) && mds_context.is_excluded(*vertex_four))) {
+		 							continue;
+		 						}
+		 						if (mds_context.is_dominated(*vertex_four)) {
+		 							if (simple_rule_one(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_two(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_three(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_four(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 						}
+		 					}
+		 				}
+		 			}
+		 		}
+		 	}
+		 	}
+		 	if (found_a_reduction) {
+		 		std::cout << "found something" << std::endl;
+		 		smaller_l = 1;
+		 	} else {
+		 		smaller_l = smaller_l + 1;
+		 	}
+		 }
+	}
+
+	void combineRecursive(const std::vector<int>& input, int k, int start,
+					  std::vector<int>& current, MDS_CONTEXT& mds_context) {
+		if (current.size() == k) {
+			std::cout << "[";
+			for (size_t i = 0; i < current.size(); ++i) {
+				std::cout << current[i];
+				if (i != current.size() - 1) {
+					std::cout << ", ";
+				}
+			}
+			std::cout << "]" << std::endl;
+			bool reduction = reduction_l_rule(mds_context, current);
+			if (reduction) {
+				std::cout << "found one" << std::endl;
+				// auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+				// for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
+				// {
+				// 	//simple reduction rules.
+				// 	if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
+				// 		continue;
+				// 	}
+				// 	if (mds_context.is_dominated(*vertex)) {
+				// 		if (simple_rule_one(mds_context, *vertex)) {
+				// 			Logger::cnt_alber_simple_rule_1++;
+				// 		}
+				// 		if (simple_rule_two(mds_context, *vertex)) {
+				// 			Logger::cnt_alber_simple_rule_2++;
+				// 		}
+				// 		if (simple_rule_three(mds_context, *vertex)) {
+				// 		}
+				// 		if (simple_rule_four(mds_context, *vertex)) {
+				// 			Logger::cnt_alber_simple_rule_4++;
+				// 		}
+				// 	}
+				// }
+			}
+			return;
+		}
+
+		for (int i = start; i <= input.size() - (k - current.size()); ++i) {
+			current.push_back(input[i]);
+			combineRecursive(input, k, i + 1, current, mds_context);
+			//std::cout << current[0] << std::endl;
+			std::cout << "[";
+			for (size_t i = 0; i < current.size(); ++i) {
+				std::cout << current[i];
+				if (i != current.size() - 1) {
+					std::cout << ", ";
+				}
+			}
+			std::cout << "]" << std::endl;
+			std::cout << "pop_back" << std::endl;
+			current.pop_back(); // backtrack
+		}
+		std::cout << "end" << current.size() << std::endl;
+	}
+
+	std::vector<std::vector<int>> generateCombinations(const std::vector<int>& input, int k, MDS_CONTEXT& mds_context) {
+		std::vector<int> current;
+		combineRecursive(input, k, 0, current, mds_context);
+	}
+
+	void reduce_l_alber_dense(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag){
+
 		auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
 		int counter = 0;
-		for (;vert_it != vert_it_end; ++vert_it) {
+		std::vector<int> undetermined_vertices;
+		for (;vert_it != vert_it_end; ++vert_it)
+		{
 			if (stop_flag){
 				return;
 			}
 			if (mds_context.is_undetermined(*vert_it)) {
-				std::cout << "iteration: " << counter << std::endl;
-				execute_l_alber(mds_context, l, 1, { static_cast<int>(*vert_it) });
-				++counter;
+				std::cout << "undetermined vertex: " << *vert_it << std::endl;
+				undetermined_vertices.push_back(*vert_it);
 			}
-			auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-			for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
-			{
-				//simple reduction rules.
-				if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
-					continue;
-				}
-				if (mds_context.is_dominated(*vertex)) {
-					if (simple_rule_one(mds_context, *vertex)) {
-						Logger::cnt_alber_simple_rule_1++;
-					}
-					if (simple_rule_two(mds_context, *vertex)) {
-						Logger::cnt_alber_simple_rule_2++;
-					}
-					if (simple_rule_three(mds_context, *vertex)) {
-					}
-					if (simple_rule_four(mds_context, *vertex)) {
-						Logger::cnt_alber_simple_rule_4++;
-					}
-				}
-			}
-
-
-
 		}
-		bool reduced;
+		std::cout << undetermined_vertices.size() << std::endl;
+		generateCombinations(undetermined_vertices, l, mds_context);
+		std::cout << "is it after." << std::endl;
 		//this makes the next reduction round faster (or finds small improvements).
 	}
 
@@ -214,24 +364,92 @@ namespace reduce {
 		return false; // no duplicates
 	}
 
-	void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices){
-		auto possible_combination = bfs_get_distance_three_generalized(mds_context, vertices);
+	bool execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices){
 		if (l == counter){
-			// if (hasDuplicate(vertices)) {
-			// 	throw std::runtime_error("L alber does not have duplicates");
-			// }
-			Logger::attempt_alber_l_reduction++;
-			bool reduction = reduction_l_rule(mds_context, vertices);
-			return;
+			//std::sort(vertices.begin(), vertices.end());
+			//if (done.find(vertices) == done.end())
+			//{
+				//done.insert(vertices);
+				Logger::attempt_alber_l_reduction++;
+				bool reduction = reduction_l_rule(mds_context, vertices);
+				if (reduction){
+					bool simple_reduction = true;
+					while (simple_reduction)
+					{
+						simple_reduction = false;
+						auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+						for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
+						{
+							//simple reduction rules.
+							if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
+								continue;
+							}
+							if (mds_context.is_dominated(*vertex)) {
+								if (simple_rule_one(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_1++;
+									simple_reduction = true;
+								}
+								if (simple_rule_two(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_2++;
+									simple_reduction = true;
+								}
+								if (simple_rule_three(mds_context, *vertex)) {
+									simple_reduction = true;
+								}
+								if (simple_rule_four(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_4++;
+									simple_reduction = true;
+								}
+							}
+						}
+					}
+					return true;
+				}
+				return false;
+			//}
+			return false;
 		}
+		bool reduced = false;
+		auto possible_combination = bfs_get_distance_three_generalized(mds_context, vertices);
 		for (auto& vtx : possible_combination){
 			if (mds_context.is_undetermined(vtx)) {
 				std::vector<int> updated_vertices = vertices;
 				updated_vertices.push_back(vtx);
 				//dont do double work.
-				if (*std::min_element(updated_vertices.begin(), updated_vertices.end()) == vtx){
-					execute_l_alber(mds_context, l, counter+1, updated_vertices);
+				bool is_biggest = true;
+				for (auto& vert : vertices) {
+					if (vert < vtx){
+						continue;
+					}
+					is_biggest = false;
 				}
+				if (is_biggest){
+					reduced |= execute_l_alber(mds_context, l, counter + 1, updated_vertices);
+				}
+				// if (*std::min_element(updated_vertices.begin(), updated_vertices.end()) == vtx){
+				// // 	std::cout << vtx << std::endl;
+				// reduced |= execute_l_alber(mds_context, l, counter+1, updated_vertices);
+				// }
+				//reduced |= execute_l_alber(mds_context, l, counter+1, updated_vertices, done);
+			}
+		}
+		return reduced;
+	}
+
+	void execute_l_alber_two(MDS_CONTEXT& mds_context, int l, int vertex) {
+		auto possible_combination = bfs_get_distance_three(mds_context, vertex);
+		int n = possible_combination.size();
+		for (int mask = 1; mask < (1 << n); ++mask) {
+			std::vector<int> subset;
+			for (int i = 0; i < n; ++i) {
+				if (mask & (1 << i)) {
+					subset.push_back(possible_combination[i]);
+				}
+			}
+			if (subset.size() == l-1) {
+				subset.push_back(vertex);
+				Logger::attempt_alber_l_reduction++;
+				bool reduction = reduction_l_rule(mds_context, subset);
 			}
 		}
 	}
@@ -246,26 +464,29 @@ namespace reduce {
 			visited.insert(v);
 			queue.emplace(v,0);
 		}
+		//queue.emplace(vertices[0],0);
 
 		while (!queue.empty()){
 			auto [current, depth] = queue.front();
 			queue.pop();
 
-			if (depth == 3) continue;
+			if (depth >= 3) continue;
 
 			auto [neigh_it, neigh_end] = mds_context.get_neighborhood_itt(current);
 			for (; neigh_it < neigh_end; ++neigh_it) {
 				vertex neighbor = *neigh_it;
-				if (mds_context.is_excluded(neighbor) && mds_context.is_dominated(neighbor)) {
-					continue;
-				}
+
 				if (!visited.count(neighbor)){
 					visited.insert(neighbor);
-					within_distance_three.push_back(neighbor);
+					if (mds_context.is_undetermined(neighbor))
+					{
+						within_distance_three.push_back(neighbor);
+					}
 					queue.emplace(neighbor,depth+1);
 				}
 			}
 		}
+		std::reverse(within_distance_three.begin(), within_distance_three.end());
 		return within_distance_three;
 
 	}
@@ -287,9 +508,14 @@ namespace reduce {
 			auto [neigh_it, neigh_end] = mds_context.get_neighborhood_itt(current);
 			for (; neigh_it < neigh_end; ++neigh_it) {
 				vertex neighbor = *neigh_it;
+				if (mds_context.is_excluded(neighbor) && mds_context.is_dominated(neighbor)) {
+					continue;
+				}
 				if (!visited.count(neighbor)){
 					visited.insert(neighbor);
-					within_distance_three.push_back(neighbor);
+					if (mds_context.is_undetermined(neighbor)){
+						within_distance_three.push_back(neighbor);
+					}
 					queue.emplace(neighbor,depth+1);
 				}
 			}
@@ -655,7 +881,6 @@ namespace reduce {
 				bool dominated_by_w = (domination[w] == size);
 				//divide the cases.
 				if (dominated_by_v && dominated_by_w) {
-					return false;
 					++Logger::cnt_alber_rule_2_either;
 					//the optimal is either to choose v, w (or both)
 
@@ -761,10 +986,15 @@ namespace reduce {
 			return false;
 		}
 
-		if (mds_context.get_out_degree_vertex(v) <= 1) {
-			mds_context.removed[v] = true;
-			mds_context.excluded[v] = true;
-			return true;
+		if (mds_context.get_out_degree_vertex(v) == 1)
+		{
+			auto [it_neigh, it_neigh_end] = mds_context.get_neighborhood_itt(v);
+			if (mds_context.is_undetermined(*it_neigh)){
+				mds_context.removed[v] = true;
+				mds_context.excluded[v] = true;
+				return true;
+			}
+			return false;
 		}
 		return false;
 	}
@@ -779,7 +1009,7 @@ namespace reduce {
 			//Not both vertices should be excluded.
 			vertex u_one = *neigh_v_itt;
 			vertex u_two = *++neigh_v_itt;
-			if (mds_context.is_undetermined(u_one) || mds_context.is_undetermined(u_two)) {
+			if (!mds_context.is_undetermined(u_one) || !mds_context.is_undetermined(u_two)) {
 				return false;
 			}
 			//the rule is for back black neighboring vertices. (should already not be possible after simple rule 1 but if that one is not on.
@@ -1361,7 +1591,7 @@ namespace reduce {
 
 			if (dominating_subsets.size() == 1){
 				Logger::cnt_alber_l_reduction++;
-				std::cout << "new selected vertex found. l_rule" << std::endl;
+				//std::cout << "new selected vertex found. l_rule" << std::endl;
 				//This one can be included.
 				for (auto& i : dominating_subsets[0]){
 					mds_context.selected[i] = true;

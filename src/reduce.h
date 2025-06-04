@@ -8,17 +8,21 @@
 #include <boost/graph/graph_traits.hpp>
 
 namespace reduce {
-    void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag);
+    void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag, bool theory_strategy);
 
     bool reduction_l_rule(MDS_CONTEXT& mds_context, std::vector<int>& l_vertices);
 
     void generateSelectors( const std::vector<int>& W_sizes,std::vector<int>& current, int index, std::vector<std::vector<int>>& selectorVertices);
 
+    void reduce_l_alber_dense(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag);
+
+    void execute_l_alber_two(MDS_CONTEXT& mds_context, int l, int vertex);
+
     std::vector<vertex> bfs_get_distance_three_generalized_original_graph(MDS_CONTEXT& mds_context, adjacencyListBoost& original_graph, std::vector<int>& vertices);
 
-    void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag);
+    void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag, bool theory_strategy);
 
-    void execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices);
+    bool execute_l_alber(MDS_CONTEXT& mds_context, int l, int counter, std::vector<int> vertices);
 
     std::vector<vertex> bfs_get_distance_three_generalized(MDS_CONTEXT& mds_context, std::vector<int>& vertices);
 
@@ -26,7 +30,7 @@ namespace reduce {
 
     void reduce_alber(MDS_CONTEXT& mds_context, bool run_rule_2);
 
-    void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag);
+    void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag, bool theory_strategy);
 
     bool reduce_neighborhood_single_vertex(MDS_CONTEXT& mds_context, vertex u);
 
@@ -37,6 +41,8 @@ namespace reduce {
     std::unordered_set<vertex> get_distance_three(MDS_CONTEXT& mds_context, vertex v);
 
     bool simple_rule_one(MDS_CONTEXT& mds_context, vertex v);
+
+    bool simple_rule_five(MDS_CONTEXT& mds_context, vertex v);
 
     bool simple_rule_two(MDS_CONTEXT& mds_context, vertex v);
 

@@ -16,7 +16,7 @@ void output_reduced_graph(std::string path);
 
 adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered_map<int, int>& newToOldIndex);
 
-void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy);
+void separate_solver(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy, bool theory_strategy);
 
 void seperate_solver_no_components(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy);
 
