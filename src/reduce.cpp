@@ -15,16 +15,16 @@
 
 
 namespace reduce {
-	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, std::atomic<bool>& stop_flag, bool theory_strategy) {
+	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, bool theory_strategy, std::chrono::time_point<std::chrono::steady_clock> start, std::chrono::seconds timeout_duration) {
 		if (strategy == REDUCTION_COMBINATION) {
 			//IJCAI with Alber rule 1.
-			reduce_ijcai(mds_context, true, stop_flag, theory_strategy);
+			reduce_ijcai(mds_context, true, theory_strategy, start, timeout_duration);
 		}
 		else if (strategy == REDUCTION_ALBER) {
 			reduce_alber(mds_context, true);
 		}
 		else if (strategy == REDUCTION_IJCAI){
-			reduce_ijcai(mds_context, false, stop_flag, theory_strategy);
+			reduce_ijcai(mds_context, false, theory_strategy, start, timeout_duration);
 		}
 		else if (strategy == REDUCTION_ALBER_RULE_1){
 			reduce_alber(mds_context, false);
@@ -32,7 +32,7 @@ namespace reduce {
 		} else if (strategy == REDUCTION_NON){
 			//Do nothing.
 		} else if (strategy == REDUCTION_L_ALBER) {
-			reduce_l_alber(mds_context, l, stop_flag, theory_strategy);
+			reduce_l_alber(mds_context, l, theory_strategy, start, timeout_duration);
 		}
 	}
 
@@ -101,7 +101,7 @@ namespace reduce {
 		} while (cnt_reductions > 0);
 	}
 
-	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, std::atomic<bool>& stop_flag, bool theory_strategy) {
+	void reduce_ijcai(MDS_CONTEXT& mds_context, bool run_rule_2, bool theory_strategy, std::chrono::time_point<std::chrono::steady_clock> start, std::chrono::seconds timeout_duration) {
 		bool reduced;
 		auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 		bool first_time = run_rule_2;
@@ -110,6 +110,9 @@ namespace reduce {
 			reduced = false;
 			auto [vertex_itt, vertex_itt_end] = mds_context.get_vertices_itt();
 			for (auto itt = vertex_itt; itt < vertex_itt_end; ++itt) {
+				if (std::chrono::steady_clock::now() - start > timeout_duration){
+					return;
+				}
 				if (mds_context.is_undetermined(*itt)) {
 					Logger::attempt_ijcai_rule_1++;
 					reduced |= reduce_subset(mds_context,*itt);
@@ -139,7 +142,7 @@ namespace reduce {
 					//to prevent a pointer error.
 					std::vector<vertex>vertices = mds_context.get_vertices();
 					for (auto itt = vertices.begin(); itt < vertices.end(); ++itt) {
-						if (stop_flag){
+						if (std::chrono::steady_clock::now() - start > timeout_duration){
 							return;
 						}
 						if (!mds_context.is_undetermined(*itt)) {
@@ -162,13 +165,16 @@ namespace reduce {
 		} while (reduced);
 	}
 
-	void reduce_l_alber(MDS_CONTEXT& mds_context, int l, std::atomic<bool>& stop_flag, bool theory_strategy){
+	void reduce_l_alber(MDS_CONTEXT& mds_context, int l, bool theory_strategy, std::chrono::time_point<std::chrono::steady_clock> start, std::chrono::seconds timeout_duration){
 		bool reduction = true;
 		auto [first_vert_itt, first_vert_itt_end] = mds_context.get_vertices_itt();
 		bool simple_reduce = true;
 		while (simple_reduce)
 		{
 			simple_reduce = false;
+			if (std::chrono::steady_clock::now() - start > timeout_duration){
+				return;
+			}
 			for (auto first_vertex = first_vert_itt; first_vertex < first_vert_itt_end; ++first_vertex)
 			{
 				//simple reduction rules.
@@ -197,7 +203,7 @@ namespace reduce {
 			reduction = false;
 			auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
 			for (;vert_it != vert_it_end; ++vert_it) {
-				if (stop_flag){
+				if (std::chrono::steady_clock::now() - start > timeout_duration){
 					return;
 				}
 				if (mds_context.is_undetermined(*vert_it)) {
@@ -224,7 +230,7 @@ namespace reduce {
 		 	auto [vert_it, vert_it_end] = mds_context.get_vertices_itt();
 		 	for (auto itt = vert_it; itt < vert_it_end; ++itt)
 		 	{
-		 		if (stop_flag){
+		 		if (std::chrono::steady_clock::now() - start > timeout_duration){
 		 			return;
 		 		}
 		 		if (mds_context.is_undetermined(*vert_it)) {

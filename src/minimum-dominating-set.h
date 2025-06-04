@@ -8,7 +8,11 @@
 
 int main(int argc, char* argv[]);
 
+void dominating_set_solver(std::string path);
+
 void reduction_info(std::string path);
+
+void separate_solver_treewidth(std::string path, strategy_reduction red_strategy, strategy_solver sol_strategy, strategy_reduction_scheme red_scheme_strategy, bool theory_strategy);
 
 void reduction(std::string path, std::string path_td);
 
