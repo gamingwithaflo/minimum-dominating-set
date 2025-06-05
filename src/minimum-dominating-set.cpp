@@ -113,12 +113,12 @@ int main(int argc, char* argv[])
 	bool dir_mode = true;
 	bool theory_strategy = false;
 	bool average = true;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/solvable_L3/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_041.gr";
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact_no_big/";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_056.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_NICE_TREE_DECOMPOSITION;
+	strategy_solver solver_strategy = SOLVER_SAT;
 	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
 
 
@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
 			initialize_logger();
 			for (int i = 0; i < 1; i++) {
 				initialize_logger_not_average();
-				separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-				//dominating_set_solver(path);
+				//separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+				dominating_set_solver(entry.path());
 				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
 				//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			}
@@ -147,8 +147,8 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < 1; i++) {
 			initialize_logger_not_average();
 			//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-			//dominating_set_solver(path);
-			separate_solver_treewidth(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+			dominating_set_solver(path);
+			//separate_solver_treewidth(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 		}
 		//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 		//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
@@ -173,11 +173,14 @@ int main(int argc, char* argv[])
 }
 
 void dominating_set_solver(std::string path){
+	timer t_complete;
+
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components; // subcomponents of the original problem (no reductions).
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex; // translation function to get back to the original indices.
 	std::vector<std::vector<std::unique_ptr<adjacencyListBoost>>> sub_sub_components; // subcomponents after reduction rules X.1 to X.3 and L.2
 	std::vector<std::vector<std::unordered_map<int, int>>> sub_sub_newToOldIndex; // translation function to get back to the original indices.
 	std::vector<std::vector<MDS_CONTEXT>> reduced_components_context; // AMDS context for each subcomponent.
+	std::vector<std::vector<bool>> is_dominated;
 
 	/* Takes the path, loads in the graph, and directly splits it into connected components.
 	sub_components := vector with graphs.
@@ -189,7 +192,7 @@ void dominating_set_solver(std::string path){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(60);
+	auto timeout_duration = std::chrono::seconds(600);
 
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
@@ -215,6 +218,7 @@ void dominating_set_solver(std::string path){
 		//The previous reductions could split up problems into smaller sub-problems.
 		sub_sub_components.emplace_back();
 		sub_sub_newToOldIndex.emplace_back();
+		is_dominated.emplace_back();
 
 		std::unordered_map<int, int> newToOldIndex;
 		adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
@@ -225,6 +229,24 @@ void dominating_set_solver(std::string path){
 		for (int j = 0; j < sub_sub_components[i].size(); ++j) {
 			reduced_components_context[i].emplace_back(*sub_sub_components[i][j]);
 			reduced_components_context[i][j].fill_mds_context(mds_context, sub_sub_newToOldIndex[i][j]);
+			is_dominated[i].emplace_back(false);
+
+			//fast check if it can be solved easily.
+			std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[i][j]);
+			if (nice_tree_decomposition == nullptr) {
+				//treewidth is too big.
+				continue;
+			}
+			if (nice_tree_decomposition->treewidth <= 14){
+				std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[i][j]);
+
+				//generate final solution.
+				for (int newIndex : td_comp->global_solution) {
+					auto sub_index = sub_sub_newToOldIndex[i][j][newIndex];
+					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				}
+				is_dominated[i][j] = true;
+			}
 		}
 	}
 	// After removing all omittable vertices reduction rule L.3 to L.5 can be applied.
@@ -236,7 +258,7 @@ void dominating_set_solver(std::string path){
 		{
 			for (int j = 0; j < sub_sub_components[i].size(); ++j) {
 				//no further reductions possible.
-				if (reduced_components_context[i][j].num_undetermined_vertices() == 0){
+				if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j]){
 					continue;
 				}
 				reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
@@ -248,6 +270,9 @@ void dominating_set_solver(std::string path){
 	for (int i = 0; i < sub_components.size(); ++i){
 		for (int j = 0; j < sub_sub_components[i].size(); ++j)
 		{
+			if (is_dominated[i][j]){
+				continue;
+			}
 			reduced_components_context[i][j].fill_removed_vertex();
 			for (int v = 0; v < reduced_components_context[i][j].selected.size(); ++v){
 				//we need a +1 te correct the previous -1.
@@ -264,6 +289,23 @@ void dominating_set_solver(std::string path){
 			create_reduced_component_subgraphs(reduced_graph, sub_sub_sub_components, sub_sub_sub_newToOldIndex, newToOld);
 
 			for (int q = 0; q < sub_sub_sub_components.size(); ++q) {
+				//fast check if it can be solved easily.
+				 std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_sub_components[q]);
+				 if (nice_tree_decomposition == nullptr) {
+
+				 } else {
+				 	if (nice_tree_decomposition->treewidth <= 14){
+				 		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), reduced_components_context[i][j].dominated, reduced_components_context[i][j].excluded, sub_sub_sub_newToOldIndex[q]);
+
+				 		//generate final solution.
+				 		for (int newIndex : td_comp->global_solution) {
+				 			auto sub_index = sub_sub_newToOldIndex[i][j][sub_sub_sub_newToOldIndex[q][newIndex]];
+				 			solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+				 		}
+				 		continue;
+				 	}
+				 }
+				//If treewidth to big? -> SAT solver.
 				std::vector<int> partial_solution = sat_solver_dominating_set(reduced_components_context[i][j], *sub_sub_sub_components[q], sub_sub_sub_newToOldIndex[q]);
 				for (int newIndex : partial_solution) {
 					auto sub_index = sub_sub_newToOldIndex[i][j][sub_sub_sub_newToOldIndex[q][newIndex]];
@@ -272,7 +314,18 @@ void dominating_set_solver(std::string path){
 			}
 		}
 	}
+	std::cout << solution.size() << std::endl;
 	parse::output_solution(solution, path);
+	std::ofstream outfile("/home/floris/github/minimum-dominating-set/score.txt", std::ios::app);
+	if (!outfile) {
+		std::cerr << "Error: Could not open file for writing.\n";
+		return;
+	}
+	outfile << "instance:" + path + "\n";
+	outfile << "domination number: " << solution.size() << "\n";
+	outfile << "execution time: " << t_complete.count() << "\n";
+	outfile << "\n";
+	outfile.close();
 }
 
 

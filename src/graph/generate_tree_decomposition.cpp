@@ -231,16 +231,16 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                                                    const htd::ITreeDecomposition & decomposition,
                                                    const htd::FitnessEvaluation & fitness){});
 
-    std::cout << "10 itterations is fast" << std::endl;
-    std::cout << decomposition->maximumBagSize() << std::endl;
-    std::cout << decomposition->exchangeNodeCount() << std::endl;
+    //std::cout << "10 itterations is fast" << std::endl;
+    //std::cout << decomposition->maximumBagSize() << std::endl;
+    //std::cout << decomposition->exchangeNodeCount() << std::endl;
     // If a decomposition was found we want to print it to stdout.
     if (decomposition != nullptr) {
         //Check whether the algorithm indeed computed a valid decomposition.
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
             if (decomposition->maximumBagSize() < 11){
-                algorithm.setIterationCount(10); // set iterations to infinite.
+                algorithm.setIterationCount(10);
 
                 /**
                *  Set the optimization operation as manipulation operation in order
@@ -261,7 +261,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                     }
                 }
             }
-             else if (decomposition->maximumBagSize() < 50){
+             else if (decomposition->maximumBagSize() < 20){
                  // Print the size of the largest bag of the decomposition to stdout.
                  algorithm.setIterationCount(0); // set iterations to infinite.
                  algorithm.setNonImprovementLimit(500);
@@ -280,8 +280,11 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
                         std::cout << "actual running treewidth: "<< decomposition->maximumBagSize() - 1 << std::endl;
-                        nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
-                        std::cout << "read" << std::endl;
+                        if (decomposition->maximumBagSize() <= 14){
+                            nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
+                        } else {
+
+                        }
                     }
                 }
             }else {

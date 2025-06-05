@@ -1,0 +1,130 @@
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_056.gr
+domination number: 1512
+execution time: 35710
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_036.gr
+domination number: 5876
+execution time: 26926
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_022.gr
+domination number: 902
+execution time: 385
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_058.gr
+domination number: 740
+execution time: 878024
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_035.gr
+domination number: 1920
+execution time: 645768
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_062.gr
+domination number: 1640
+execution time: 771562
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_098.gr
+domination number: 1472
+execution time: 693515
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_049.gr
+domination number: 1920
+execution time: 653015
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_029.gr
+domination number: 4128
+execution time: 940
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/bremen_subgraph_250.gr
+domination number: 74
+execution time: 1479
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_011.gr
+domination number: 1440
+execution time: 656386
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_027.gr
+domination number: 2546
+execution time: 10920
+
+timed_out
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_069.gr
+domination number: 221
+execution time: 1945408
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_003.gr
+domination number: 1920
+execution time: 670267
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_045.gr
+domination number: 2417
+execution time: 640
+
+timed_out
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_033.gr
+domination number: 2062
+execution time: 2366184
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_073.gr
+domination number: 135
+execution time: 680358
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_012.gr
+domination number: 1440
+execution time: 686199
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_080.gr
+domination number: 1224
+execution time: 32629
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_002.gr
+domination number: 1920
+execution time: 649907
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_039.gr
+domination number: 6688
+execution time: 610335
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_043.gr
+domination number: 1220
+execution time: 319
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_037.gr
+domination number: 5902
+execution time: 444381
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_070.gr
+domination number: 1616
+execution time: 1083
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_019.gr
+domination number: 530
+execution time: 91777
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/bremen_subgraph_300.gr
+domination number: 84
+execution time: 2487
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_015.gr
+domination number: 1440
+execution time: 609203
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_034.gr
+domination number: 5842
+execution time: 22732
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_074.gr
+domination number: 1942
+execution time: 641338
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_009.gr
+domination number: 1920
+execution time: 673439
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_090.gr
+domination number: 680
+execution time: 617785
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact_no_big/exact_005.gr
+domination number: 1920
+execution time: 689331
+

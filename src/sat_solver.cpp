@@ -1,6 +1,7 @@
 #include "sat_solver.h"
 #include "ortools/sat/sat_solver.h"
 
+#include <fstream>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -111,6 +112,12 @@ std::vector<int> sat_solver_dominating_set(MDS_CONTEXT& mds_context, adjacencyLi
         }
         std::cout << response.status() << std::endl;
         std::vector<int> solution;
+        std::ofstream outfile("/home/floris/github/minimum-dominating-set/score.txt", std::ios::app);
+        if (!outfile) {
+            std::cerr << "Error: Could not open file for writing.\n";
+            return solution;
+        }
+        outfile << "timed_out" << "\n";
         std::cout << "time_out" << std::endl;
         Logger::timed_out = true;
         return solution;
