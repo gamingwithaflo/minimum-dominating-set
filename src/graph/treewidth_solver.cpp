@@ -103,7 +103,7 @@ void TREEWIDTH_SOLVER::run_instruction_stack(std::vector<bool>& dominated, std::
             continue;
         }
     }
-    solve_root_vertex();
+    solve_root_vertex(excluded, newToOldIndex);
 }
 
 //(2-bit representation of colors of vertices). 0b01 -> black, 0b11 -> gray, 0b10 -> white.
@@ -351,7 +351,7 @@ void TREEWIDTH_SOLVER::run_operation_forget(std::vector<uint>& bag, int forget_v
     Logger::execution_time_forget += t_operation_forget.count();
 }
 
-void TREEWIDTH_SOLVER::solve_root_vertex() {
+void TREEWIDTH_SOLVER::solve_root_vertex(std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex) {
     std::vector<uint>& bag_root_vertex = nice_tree_decomposition_ptr->nice_bags[nice_tree_decomposition_ptr->root_vertex].bag;
     std::vector<partial_solution>& child_partial_solution = partial_solution_stack.top();
 
@@ -360,7 +360,15 @@ void TREEWIDTH_SOLVER::solve_root_vertex() {
 
     for (auto& child : child_partial_solution){
         if (contains_no_gray(child.encoding)){
-            if (lowest_domination_number > child.domination_number){
+            std::vector<int> white_vertices = get_white_indices(child.encoding, bag_root_vertex.size());
+            bool not_excluded = true;
+            for (int index : white_vertices) {
+                if (excluded[newToOldIndex[bag_root_vertex[index]]] == true)
+                {
+                    not_excluded = false;
+                }
+            }
+            if (lowest_domination_number > child.domination_number && not_excluded){
                 lowest_domination_number = child.domination_number;
                 lowest_encoding = &child;
             }

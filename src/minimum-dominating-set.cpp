@@ -110,11 +110,11 @@ int main(int argc, char* argv[])
 	}
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = true;
+	bool dir_mode = false;
 	bool theory_strategy = false;
 	bool average = true;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact_no_big/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_056.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_027.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
@@ -192,7 +192,7 @@ void dominating_set_solver(std::string path){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(600);
+	auto timeout_duration = std::chrono::seconds(10);
 
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {

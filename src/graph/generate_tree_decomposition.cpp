@@ -280,7 +280,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
                         std::cout << "actual running treewidth: "<< decomposition->maximumBagSize() - 1 << std::endl;
-                        if (decomposition->maximumBagSize() <= 14){
+                        if (decomposition->maximumBagSize() <= 16){
                             nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         } else {
 
