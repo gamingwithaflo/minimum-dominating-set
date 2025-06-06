@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdlib>
+#include <iostream>
 
 
 namespace parse {
@@ -50,6 +51,8 @@ namespace parse {
         //return read_pace_2024(f);
         return read_pace_2024(f);
     }
+
+
 
     void output_reduced_graph_instance(adjacencyListBoost& reduced_graph, std::string& path) {
         std::string prefix = "/mnt/c/Users/Flori/OneDrive/Documenten/GitHub/minimum-dominating-set/output/reduced_instances/reduced_instance_";
@@ -101,6 +104,15 @@ namespace parse {
 
 
         outFile.close();
+    }
+
+    void print_solution(std::vector<int>&solution){
+        int size_solution = solution.size();
+        std::cout << size_solution << std::endl;
+
+        for (int i : solution) {
+            std::cout << i << std::endl;
+        }
     }
 
     void output_context(MDS_CONTEXT& mds_context, std::string& path) {

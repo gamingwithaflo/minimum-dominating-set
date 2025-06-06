@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[]);
 
-void dominating_set_solver(std::string path);
+void dominating_set_solver();
 
 void reduction_info(std::string path);
 
@@ -31,7 +31,7 @@ void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
                                         std::vector<std::unordered_map<int, int>>& sub_sub_newToOldIndex,
                                         std::unordered_map<int, int>& newToOldIndex);
 
-void create_component_subgraphs(const std::string& path,
+void create_component_subgraphs(
                                 std::vector<std::unique_ptr<adjacencyListBoost>>& sub_components,
                                 std::vector<std::unordered_map<int, int>>& sub_newToOldIndex);
 

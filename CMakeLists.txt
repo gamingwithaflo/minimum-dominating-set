@@ -30,19 +30,10 @@ FetchContent_Declare(
 # will be defined and available to the rest of the build
 FetchContent_MakeAvailable(or-tools)
 
-#TEST
-set(HIGHS_INCLUDE_DIR "/usr/local/HiGHS/src")
-set(HIGHS_LIBRARY_DIR "/usr/local/HiGHS/build/lib")
-set(HIGHS_CONFIG_DIR "/usr/local/HiGHS/build/")
-
 # Include the header files
-include_directories(/usr/local/htd-1.2/include)
-link_directories(/usr/local/htd-1.2/lib)
+include_directories(./htd/include)
+link_directories(./htd-1.2/lib)
 
-# Include the directory
-include_directories(${HIGHS_INCLUDE_DIR})
-include_directories(${HIGHS_CONFIG_DIR})
-link_directories(${HIGHS_LIBRARY_DIR})
 
 find_package(Boost REQUIRED)
 
@@ -53,7 +44,6 @@ set(SOURCES
     src/graph/graph_io.cpp
     src/graph/context.cpp
     src/reduce.cpp
-    src/solver.cpp
     src/util/timer.cpp
         src/graph/generate_tree_decomposition.cpp
         src/graph/nice_tree_decomposition.cpp
@@ -66,6 +56,5 @@ set(SOURCES
 # Add source to this project's executable.
 add_executable (minimum-dominating-set ${SOURCES})
 
-target_link_libraries(minimum-dominating-set highs)
 target_link_libraries(minimum-dominating-set htd)
 target_link_libraries(minimum-dominating-set ortools::ortools)

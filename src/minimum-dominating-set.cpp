@@ -9,7 +9,6 @@
 #include "graph/nice_tree_decomposition.h"
 #include "graph/tree_decomposition.h"
 #include "reduce.h"
-#include "solver.h"
 #include <iostream>
 #include "util/logger.h"
 #include <filesystem>
@@ -20,7 +19,6 @@
 
 #include "util/timer.h"
 #include "graph/generate_tree_decomposition.h"
-#include "ortools/sat/cp_model_solver.h"
 
 #include <thread>
 #include <chrono>
@@ -99,82 +97,21 @@ void timer_thread(std::future<void>& main_future){
 
 int main(int argc, char* argv[])
 {
-	cpu_set_t mask;
-	CPU_ZERO(&mask);
-	CPU_SET(0, &mask);
-
-	int result = sched_setaffinity(0, sizeof(mask), &mask);
-	if (result == -1) {
-		perror("sched_setaffinity");
-		return 1;
-	}
-	//default values
-	// path : string with path to instance graph.
-	bool dir_mode = true;
-	bool theory_strategy = false;
-	bool average = true;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/Exact_no_big/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_056.gr";
-	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
-	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
-	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
-	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
-
-
-	//be able to take in parameters.
-	if (argc > 1) path = std::string(argv[1]);
-	if (argc > 2) reduction_strategy = string_to_strategy_reduction(std::string(argv[2]));
-	if (argc > 3) solver_strategy = string_to_strategy_solver(std::string(argv[3]));
-
-	signal(SIGINT, signal_handler);
-	//Sigint handler.
-	if (dir_mode) {
-		for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
-			std::cout << entry.path().string() << std::endl;
-			initialize_logger();
-			for (int i = 0; i < 1; i++) {
-				initialize_logger_not_average();
-				//separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-				dominating_set_solver(entry.path());
-				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
-				//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-			}
-			//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-			//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
-		}
-	} else {
-		for (int i = 0; i < 1; i++) {
-			initialize_logger_not_average();
-			//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-			dominating_set_solver(path);
-			//separate_solver_treewidth(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-		}
-		//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-		//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
-	}
-
-	// std::promise<void> main_promise;
-	// std::future<void> main_future = main_promise.get_future();
+	// cpu_set_t mask;
+	// CPU_ZERO(&mask);
+	// CPU_SET(0, &mask);
 	//
-	// std::thread main_thread([&main_promise, &path, &reduction_strategy,&solver_strategy]() {
-	//  	separate_solver(path, reduction_strategy, solver_strategy);
-	//  	main_promise.set_value();  // Notify that the main task is finished
-	// });
+	// int result = sched_setaffinity(0, sizeof(mask), &mask);
+	// if (result == -1) {
+	// 	perror("sched_setaffinity");
+	// 	return 1;
+	// }
 
-	// Create and launch the timer thread
-	//std::thread timer(timer_thread, std::ref(main_future));
-
-	// Wait for the main task thread to finish (either by completion or signal)
-	//main_thread.join();
-	// Wait for the timer thread to finish (it may finish early if main task completes)
-	//timer.join();
+	dominating_set_solver();
 	return 0;
 }
 
-void dominating_set_solver(std::string path){
-	timer t_complete;
-
+void dominating_set_solver(){
 	std::vector<std::unique_ptr<adjacencyListBoost>> sub_components; // subcomponents of the original problem (no reductions).
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex; // translation function to get back to the original indices.
 	std::vector<std::vector<std::unique_ptr<adjacencyListBoost>>> sub_sub_components; // subcomponents after reduction rules X.1 to X.3 and L.2
@@ -186,7 +123,7 @@ void dominating_set_solver(std::string path){
 	sub_components := vector with graphs.
 	sub_newToOldIndex := a vector of maps which given a index of a vertex in a subcomponent translates the index
 	to the original index of the vertex. */
-	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
+	create_component_subgraphs(sub_components, sub_newToOldIndex);
 
 	std::vector<int>solution; // vector which will hold all vertices in the optimal dominating set.
 
@@ -314,18 +251,8 @@ void dominating_set_solver(std::string path){
 			}
 		}
 	}
-	std::cout << solution.size() << std::endl;
-	parse::output_solution(solution, path);
-	std::ofstream outfile("/home/floris/github/minimum-dominating-set/score.txt", std::ios::app);
-	if (!outfile) {
-		std::cerr << "Error: Could not open file for writing.\n";
-		return;
-	}
-	outfile << "instance:" + path + "\n";
-	outfile << "domination number: " << solution.size() << "\n";
-	outfile << "execution time: " << t_complete.count() << "\n";
-	outfile << "\n";
-	outfile.close();
+	//parse::output_solution(solution);
+	parse::print_solution(solution);
 }
 
 
@@ -339,7 +266,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
 	//Fill sub-graphs + translation function (no reduction).
-	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
+	create_component_subgraphs(sub_components, sub_newToOldIndex);
 	std::vector<int>solution;
 
 	for (int i = 0; i < sub_components.size(); ++i){
@@ -441,7 +368,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 			}
 			adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
 			bool is_planar = boost::boyer_myrvold_planarity_test(more_reduced);
-			std::cout << is_planar << std::endl;
+			//std::cout << is_planar << std::endl;
 
 
 			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
@@ -474,14 +401,6 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				Logger::execution_time_treewidth += t_treewidth.count();
 			}
 			else if (sol_strategy == SOLVER_ILP) {
-				timer t_ilp;
-				std::vector<int> partial_solution = operations_research::ilp_solver(mds_context_reduced, more_reduced, newToOld);
-
-				for (int newIndex : partial_solution) {
-					auto sub_index = sub_sub_newToOldIndex[j][newToOld[newIndex]];
-					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
-				}
-				Logger::execution_time_ilp += t_ilp.count();
 			}
 			else if (sol_strategy == SOLVER_SAT) {
 				timer t_sat;
@@ -626,11 +545,10 @@ void split_graph_component(adjacencyListBoost& graph ,std::vector<std::unique_pt
 
 }
 
-void create_component_subgraphs(const std::string& path,
-								std::vector<std::unique_ptr<adjacencyListBoost>>& sub_components,
+void create_component_subgraphs(std::vector<std::unique_ptr<adjacencyListBoost>>& sub_components,
 								std::vector<std::unordered_map<int, int>>& sub_newToOldIndex){
 
-	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::load_pace_2024(path));
+	std::unique_ptr<adjacencyListBoost> graph = std::make_unique<adjacencyListBoost>(parse::read_pace_2024(std::cin));
 	Logger::num_vertices = num_vertices(*graph);
 	Logger::num_edges = num_edges(*graph);
 
@@ -830,7 +748,7 @@ void separate_solver_treewidth(std::string path, strategy_reduction red_strategy
 	std::vector<std::unordered_map<int, int>> sub_newToOldIndex;
 
 	//Fill sub-graphs + translation function (no reduction).
-	create_component_subgraphs(path, sub_components, sub_newToOldIndex);
+	create_component_subgraphs(sub_components, sub_newToOldIndex);
 	std::vector<int>solution;
 
 	for (int i = 0; i < sub_components.size(); ++i){
@@ -968,14 +886,6 @@ void separate_solver_treewidth(std::string path, strategy_reduction red_strategy
 				Logger::execution_time_treewidth += t_treewidth.count();
 			}
 			else if (sol_strategy == SOLVER_ILP) {
-				timer t_ilp;
-				std::vector<int> partial_solution = operations_research::ilp_solver(mds_context_reduced, *sub_sub_sub_components[q], sub_sub_sub_newToOldIndex[q]);
-
-				for (int newIndex : partial_solution) {
-					auto sub_index = sub_sub_newToOldIndex[j][sub_sub_sub_newToOldIndex[q][newIndex]];
-					solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
-				}
-				Logger::execution_time_ilp += t_ilp.count();
 			}
 			else if (sol_strategy == SOLVER_SAT) {
 				timer t_sat;

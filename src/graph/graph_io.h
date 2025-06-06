@@ -17,4 +17,6 @@ namespace parse {
     std::string getNameFile(std::string& path);
 
     void output_solution(std::vector<int>& solution, std::string& path);
+
+    void print_solution(std::vector<int>&solution);
 } 

@@ -5,11 +5,9 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
-#include <absl/strings/str_format.h>
+//#include <absl/strings/str_format.h>
 #include <atomic>
 #include "util/logger.h"
-
-#include "absl/strings/internal/str_format/extension.h"
 #include "util/timer.h"
 
 
@@ -270,7 +268,7 @@ namespace reduce {
 		 	}
 		 	}
 		 	if (found_a_reduction) {
-		 		std::cout << "found something" << std::endl;
+		 		//std::cout << "found something" << std::endl;
 		 		smaller_l = 1;
 		 	} else {
 		 		smaller_l = smaller_l + 1;
