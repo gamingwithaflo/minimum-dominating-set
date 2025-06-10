@@ -29,28 +29,6 @@
 
 int main(int argc, char* argv[])
 {
-	 cpu_set_t mask;
-
-    // Get the current affinity mask of the process
-    if (sched_getaffinity(0, sizeof(mask), &mask) == -1) {
-        perror("sched_getaffinity");
-        return 1;
-    }
-
-    // Find the first allowed core and bind to it
-    for (int i = 0; i < CPU_SETSIZE; i++) {
-        if (CPU_ISSET(i, &mask)) {
-            cpu_set_t set;
-            CPU_ZERO(&set);
-            CPU_SET(i, &set);
-
-            if (sched_setaffinity(0, sizeof(set), &set) == -1) {
-                perror("sched_setaffinity");
-                return 1;
-            }
-            break;
-        }
-    }
 	dominating_set_solver();
 	return 0;
 }
@@ -73,7 +51,7 @@ void dominating_set_solver(){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(600);
+	auto timeout_duration = std::chrono::seconds(900);
 
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
