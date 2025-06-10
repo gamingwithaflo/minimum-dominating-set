@@ -91,7 +91,7 @@ std::vector<int> sat_solver_dominating_set(MDS_CONTEXT& mds_context, adjacencyLi
     // Solving part.
     SatParameters param;
     //
-    param.set_num_search_workers(8);
+    param.set_num_search_workers(4);
     param.set_max_time_in_seconds(1800);
     param.set_log_search_progress(true);
     //param.add_extra_subsolvers("quick_restart");
