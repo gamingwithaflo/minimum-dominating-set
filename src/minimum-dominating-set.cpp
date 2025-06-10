@@ -27,74 +27,6 @@
 #include <unistd.h>
 #include <sched.h>
 
-bool stringToBool(const std::string& str) {
-	std::string s = str;
-	std::transform(s.begin(), s.end(), s.begin(), ::tolower); // Convert to lowercase
-
-	return (s == "1" || s == "true" || s == "yes" || s == "on");
-}
-
-strategy_solver string_to_strategy_solver(const std::string& str) {
-	if (str == "sat" || str == "SAT") {
-		return SOLVER_SAT;
-	}
-	if (str == "ilp" || str == "ILP") {
-		return SOLVER_ILP;
-	}
-	if (str == "treewidth" || str == "TREEWIDTH"){
-		return SOLVER_TREEWIDTH;
-	}
-	if (str == "combination" || str == "COMBINATION") {
-		return SOLVER_COMBINATION; // TODO:: implement.
-	}
-	if (str == "non" || str == "none") {
-		return SOLVER_NON;
-	}
-	if (str == "nice_tree_decomposition") {
-		return SOLVER_NICE_TREE_DECOMPOSITION;
-	}
-	throw new std::runtime_error("not a viable strategy");
-
-}
-
-strategy_reduction string_to_strategy_reduction(const std::string& str) {
-	if (str == "none" || str == "non") {
-		return REDUCTION_NON;
-	}
-	if (str == "alber" || str == "ALBER") {
-		return REDUCTION_ALBER;
-	}
-	if (str == "alber_rule_1" || str == "ALBER_RULE_1") {
-		return REDUCTION_ALBER_RULE_1;
-	}
-	if (str == "IJCAI" || str == "ijcai") {
-		return REDUCTION_IJCAI;
-	}
-	if (str == "COMBINATION" || str == "combination") {
-		return REDUCTION_COMBINATION;
-	}
-	throw new std::runtime_error("not a viable strategy");
-}
-
-void signal_handler(int signum) {
-	std::cout << "Received signal " << signum << ". Stopping the main task...\n";
-	//print temporary results.
-}
-
-void timer_thread(std::future<void>& main_future){
-	std::cout << "Timer thread waiting for 30 minutes...\n";
-
-	// Wait for either the main task to finish or 30 minutes to pass
-	if (main_future.wait_for(std::chrono::minutes(30)) == std::future_status::timeout) {
-		// Timeout reached (30 minutes passed) and main task is still running
-		std::cout << "30 minutes passed. Sending SIGINT to stop main task...\n";
-		kill(getpid(), SIGINT);  // Send SIGINT to the current process
-	} else {
-		// Main task finished before the timeout
-		std::cout << "Main task completed early. Timer thread exiting...\n";
-	}
-}
-
 int main(int argc, char* argv[])
 {
 	 cpu_set_t mask;
@@ -141,7 +73,7 @@ void dominating_set_solver(){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(900);
+	auto timeout_duration = std::chrono::seconds(600);
 
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
@@ -451,16 +383,6 @@ adjacencyListBoost create_reduced_graph(MDS_CONTEXT& mds_context, std::unordered
 		}
 	}
 	return reduced_graph;
-}
-
-int int_pow(int base, int exponent) {
-    int result = 1;
-    while (exponent > 0) {
-        if (exponent % 2 == 1) result *= base;
-        base *= base;
-        exponent /= 2;
-    }
-    return result;
 }
 	
 
