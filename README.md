@@ -3,7 +3,7 @@ This is a solver for the minimum dominating set problem as a submission to the P
 
 This is developed by Floris van der Hout.
 
-###Algorithm
+### Algorithm
 The solver consists of three main components:
 - Reduction rules
 - Treewidth solver
