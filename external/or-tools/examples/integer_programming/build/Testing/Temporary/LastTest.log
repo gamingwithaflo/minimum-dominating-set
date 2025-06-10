@@ -1,0 +1,45 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_integer_programming
+1/1 Test: test_integer_programming
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/integer_programming/build/bin/integer_programming"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/integer_programming/build
+"test_integer_programming" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+I0606 09:52:46.412906    6656 integer_programming.cc:28] ---- Integer programming example with CBC ----
+I0606 09:52:46.413668    6656 integer_programming.cc:64] Number of variables = 2
+I0606 09:52:46.413686    6656 integer_programming.cc:65] Number of constraints = 2
+I0606 09:52:46.415067    6656 integer_programming.cc:72] Solution:
+I0606 09:52:46.415086    6656 integer_programming.cc:73] x = 3
+I0606 09:52:46.415094    6656 integer_programming.cc:74] y = 2
+I0606 09:52:46.415095    6656 integer_programming.cc:75] Optimal objective value = 23
+I0606 09:52:46.415097    6656 integer_programming.cc:76] 
+I0606 09:52:46.415097    6656 integer_programming.cc:77] Advanced usage:
+I0606 09:52:46.415098    6656 integer_programming.cc:78] Problem solved in 1 milliseconds
+I0606 09:52:46.415100    6656 integer_programming.cc:79] Problem solved in 1 iterations
+I0606 09:52:46.415101    6656 integer_programming.cc:80] Problem solved in 0 branch-and-bound nodes
+I0606 09:52:46.415127    6656 integer_programming.cc:28] ---- Integer programming example with SAT ----
+I0606 09:52:46.415141    6656 integer_programming.cc:64] Number of variables = 2
+I0606 09:52:46.415143    6656 integer_programming.cc:65] Number of constraints = 2
+I0606 09:52:46.422253    6656 integer_programming.cc:72] Solution:
+I0606 09:52:46.422263    6656 integer_programming.cc:73] x = 3
+I0606 09:52:46.422266    6656 integer_programming.cc:74] y = 2
+I0606 09:52:46.422268    6656 integer_programming.cc:75] Optimal objective value = 23
+I0606 09:52:46.422269    6656 integer_programming.cc:76] 
+I0606 09:52:46.422270    6656 integer_programming.cc:77] Advanced usage:
+I0606 09:52:46.422271    6656 integer_programming.cc:78] Problem solved in 7 milliseconds
+I0606 09:52:46.422272    6656 integer_programming.cc:79] Problem solved in 0 iterations
+I0606 09:52:46.422273    6656 integer_programming.cc:80] Problem solved in 0 branch-and-bound nodes
+I0606 09:52:46.422275    6656 integer_programming.cc:28] ---- Integer programming example with SCIP ----
+I0606 09:52:46.423307    6656 integer_programming.cc:64] Number of variables = 2
+I0606 09:52:46.423314    6656 integer_programming.cc:65] Number of constraints = 2
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"test_integer_programming" end time: Jun 06 09:52 CEST
+"test_integer_programming" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

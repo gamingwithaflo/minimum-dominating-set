@@ -9,9 +9,10 @@
 #include <string>
 #include "ortools/sat/cp_model.h"
 #include "ortools/sat/cp_model.pb.h"
-//#include "ortools/sat/cp_model_solver.h"
+#include "ortools/sat/cp_model_solver.h"
 #include "ortools/util/sorted_interval_list.h"
 #include "util/logger.h"
+#include "ortools/base/logging.h"
 
 using namespace operations_research::sat;
 
@@ -90,7 +91,7 @@ std::vector<int> sat_solver_dominating_set(MDS_CONTEXT& mds_context, adjacencyLi
     // Solving part.
     SatParameters param;
     //
-    param.set_num_search_workers(8);
+    param.set_num_search_workers(4);
     param.set_max_time_in_seconds(1800);
     param.set_log_search_progress(false);
     //param.add_extra_subsolvers("quick_restart");

@@ -1,0 +1,31 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_simple_min_cost_flow_program
+1/1 Test: test_simple_min_cost_flow_program
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_min_cost_flow_program/build/bin/simple_min_cost_flow_program"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_min_cost_flow_program/build
+"test_simple_min_cost_flow_program" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196370.369054    6940 simple_min_cost_flow_program.cc:66] Minimum cost flow: 150
+I0000 00:00:1749196370.369135    6940 simple_min_cost_flow_program.cc:67] 
+I0000 00:00:1749196370.369139    6940 simple_min_cost_flow_program.cc:68]  Arc   Flow / Capacity  Cost
+I0000 00:00:1749196370.369142    6940 simple_min_cost_flow_program.cc:71] 0 -> 1  12  / 15       48
+I0000 00:00:1749196370.369147    6940 simple_min_cost_flow_program.cc:71] 0 -> 2  8  / 8       32
+I0000 00:00:1749196370.369149    6940 simple_min_cost_flow_program.cc:71] 1 -> 2  8  / 20       16
+I0000 00:00:1749196370.369151    6940 simple_min_cost_flow_program.cc:71] 1 -> 3  4  / 4       8
+I0000 00:00:1749196370.369153    6940 simple_min_cost_flow_program.cc:71] 1 -> 4  0  / 10       0
+I0000 00:00:1749196370.369155    6940 simple_min_cost_flow_program.cc:71] 2 -> 3  12  / 15       12
+I0000 00:00:1749196370.369157    6940 simple_min_cost_flow_program.cc:71] 2 -> 4  4  / 4       12
+I0000 00:00:1749196370.369159    6940 simple_min_cost_flow_program.cc:71] 3 -> 4  11  / 20       22
+I0000 00:00:1749196370.369161    6940 simple_min_cost_flow_program.cc:71] 4 -> 2  0  / 5       0
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_simple_min_cost_flow_program" end time: Jun 06 09:52 CEST
+"test_simple_min_cost_flow_program" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

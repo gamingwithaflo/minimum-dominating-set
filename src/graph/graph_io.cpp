@@ -19,6 +19,7 @@ namespace parse {
 
     adjacencyListBoost read_pace_2024(std::istream& is) {
         std::vector<std::pair<int, int>> edges;
+        //std::cout << "start_reading" << std::endl;
 
         int i = 0;
         int n; // 
@@ -28,6 +29,7 @@ namespace parse {
         
         //Assumption : no spaces before the first letter.
         for (std::string line; std::getline(is, line);) {
+            //std::cout << "is_reading" << std::endl;
             if (line.empty()) continue;
 
             if (line[i] == 'c') continue;  // ignore comments
@@ -40,6 +42,7 @@ namespace parse {
                 edges.push_back({ u - 1, v - 1 });
             }
         }
+        //std::cout << "end_reading" << std::endl;
         return construct_AdjacencyList_Boost(n, edges);
     }
 

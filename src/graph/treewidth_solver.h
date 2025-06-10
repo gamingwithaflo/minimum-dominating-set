@@ -57,7 +57,7 @@ public:
 
     void run_operation_join(std::vector<uint>& bag);
 
-    void solve_root_vertex();
+    void solve_root_vertex(std::vector<bool>& excluded, std::unordered_map<int, int>& newToOldIndex);
 };
 
 //helper functions.

@@ -1,0 +1,30 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_basic_example
+1/1 Test: test_basic_example
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/basic_example/build/bin/basic_example"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/basic_example/build
+"test_basic_example" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+I0606 09:52:43.275407    6481 basic_example.cc:30] Google OR-Tools version : 9.12.4544
+I0606 09:52:43.276047    6481 basic_example.cc:46] Number of variables = 2
+I0606 09:52:43.276063    6481 basic_example.cc:56] Number of constraints = 1
+I0606 09:52:43.276064    6481 basic_example.cc:68] Solving with Glop solver v9.12.4544
+I0606 09:52:43.276249    6481 basic_example.cc:74] Status: MPSOLVER_OPTIMAL
+I0606 09:52:43.276259    6481 basic_example.cc:85] Solution:
+I0606 09:52:43.276260    6481 basic_example.cc:86] Objective value = 4
+I0606 09:52:43.276269    6481 basic_example.cc:87] x = 1
+I0606 09:52:43.276270    6481 basic_example.cc:88] y = 1
+I0606 09:52:43.276271    6481 basic_example.cc:92] Advanced usage:
+I0606 09:52:43.276272    6481 basic_example.cc:93] Problem solved in 0 milliseconds
+I0606 09:52:43.276273    6481 basic_example.cc:94] Problem solved in 0 iterations
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_basic_example" end time: Jun 06 09:52 CEST
+"test_basic_example" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

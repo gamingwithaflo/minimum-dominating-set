@@ -8,12 +8,17 @@
 //#include <absl/strings/str_format.h>
 #include <atomic>
 #include "util/logger.h"
+
+//#include "absl/strings/internal/str_format/extension.h"
 #include "util/timer.h"
 
 
 
 namespace reduce {
 	void reduction_rule_manager(MDS_CONTEXT& mds_context, strategy_reduction& strategy, int l, bool theory_strategy, std::chrono::time_point<std::chrono::steady_clock> start, std::chrono::seconds timeout_duration) {
+        if (std::chrono::steady_clock::now() - start > timeout_duration){
+					return;
+				}
 		if (strategy == REDUCTION_COMBINATION) {
 			//IJCAI with Alber rule 1.
 			reduce_ijcai(mds_context, true, theory_strategy, start, timeout_duration);

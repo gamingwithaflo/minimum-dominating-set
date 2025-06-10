@@ -1,0 +1,28 @@
+Start testing: Jun 06 09:53 CEST
+----------------------------------------------------------
+1/1 Testing: test_vrp
+1/1 Test: test_vrp
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/vrp/build/bin/vrp"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/vrp/build
+"test_vrp" start time: Jun 06 09:53 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196382.206423    7482 vrp.cc:82] Status: ROUTING_SUCCESS
+I0000 00:00:1749196382.206481    7482 vrp.cc:88] Objective: 4384
+I0000 00:00:1749196382.206492    7482 vrp.cc:95] Route for Vehicle 3:
+I0000 00:00:1749196382.206498    7482 vrp.cc:105] 0 -> 9 -> 5 -> 8 -> 6 -> 2 -> 10 -> 16 -> 14 -> 13 -> 12 -> 11 -> 15 -> 3 -> 4 -> 1 -> 7 -> 0
+I0000 00:00:1749196382.206499    7482 vrp.cc:106] Distance of the route: 4384m
+I0000 00:00:1749196382.206501    7482 vrp.cc:109] Total distance of all routes: 4384m
+I0000 00:00:1749196382.206502    7482 vrp.cc:110] 
+I0000 00:00:1749196382.206502    7482 vrp.cc:111] Advanced usage:
+I0000 00:00:1749196382.206503    7482 vrp.cc:112] Problem solved in 3ms
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_vrp" end time: Jun 06 09:53 CEST
+"test_vrp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:53 CEST

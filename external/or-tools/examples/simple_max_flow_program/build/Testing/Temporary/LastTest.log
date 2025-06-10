@@ -1,0 +1,31 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_simple_max_flow_program
+1/1 Test: test_simple_max_flow_program
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_max_flow_program/build/bin/simple_max_flow_program"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_max_flow_program/build
+"test_simple_max_flow_program" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196369.234667    6853 simple_max_flow_program.cc:55] Max flow: 60
+I0000 00:00:1749196369.234733    6853 simple_max_flow_program.cc:56] 
+I0000 00:00:1749196369.234736    6853 simple_max_flow_program.cc:57]   Arc    Flow / Capacity
+I0000 00:00:1749196369.234738    6853 simple_max_flow_program.cc:59] 0 -> 1  20  / 20
+I0000 00:00:1749196369.234741    6853 simple_max_flow_program.cc:59] 0 -> 2  30  / 30
+I0000 00:00:1749196369.234743    6853 simple_max_flow_program.cc:59] 0 -> 3  10  / 10
+I0000 00:00:1749196369.234744    6853 simple_max_flow_program.cc:59] 1 -> 2  0  / 40
+I0000 00:00:1749196369.234745    6853 simple_max_flow_program.cc:59] 1 -> 4  20  / 30
+I0000 00:00:1749196369.234747    6853 simple_max_flow_program.cc:59] 2 -> 3  10  / 10
+I0000 00:00:1749196369.234748    6853 simple_max_flow_program.cc:59] 2 -> 4  20  / 20
+I0000 00:00:1749196369.234750    6853 simple_max_flow_program.cc:59] 3 -> 2  0  / 5
+I0000 00:00:1749196369.234752    6853 simple_max_flow_program.cc:59] 3 -> 4  20  / 20
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_simple_max_flow_program" end time: Jun 06 09:52 CEST
+"test_simple_max_flow_program" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

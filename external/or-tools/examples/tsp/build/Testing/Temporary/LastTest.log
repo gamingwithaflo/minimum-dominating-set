@@ -1,0 +1,27 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_tsp
+1/1 Test: test_tsp
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/tsp/build/bin/tsp"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/tsp/build
+"test_tsp" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196379.836814    7396 tsp.cc:77] Status: ROUTING_SUCCESS
+I0000 00:00:1749196379.836855    7396 tsp.cc:83] Objective: 4384
+I0000 00:00:1749196379.836863    7396 tsp.cc:86] Route for Vehicle 0:
+I0000 00:00:1749196379.836868    7396 tsp.cc:95] 0 -> 9 -> 5 -> 8 -> 6 -> 2 -> 10 -> 16 -> 14 -> 13 -> 12 -> 11 -> 15 -> 3 -> 4 -> 1 -> 7 -> 0
+I0000 00:00:1749196379.836869    7396 tsp.cc:96] Distance of the route: 4384m
+I0000 00:00:1749196379.836870    7396 tsp.cc:97] 
+I0000 00:00:1749196379.836871    7396 tsp.cc:98] Advanced usage:
+I0000 00:00:1749196379.836871    7396 tsp.cc:99] Problem solved in 2ms
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_tsp" end time: Jun 06 09:52 CEST
+"test_tsp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

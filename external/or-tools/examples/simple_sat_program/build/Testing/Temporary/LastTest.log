@@ -1,0 +1,22 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_simple_sat_program
+1/1 Test: test_simple_sat_program
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_sat_program/build/bin/simple_sat_program"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_sat_program/build
+"test_simple_sat_program" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196375.169039    7200 simple_sat_program.cc:53] x = 1
+I0000 00:00:1749196375.169162    7200 simple_sat_program.cc:54] y = 0
+I0000 00:00:1749196375.169169    7200 simple_sat_program.cc:55] z = 0
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_simple_sat_program" end time: Jun 06 09:52 CEST
+"test_simple_sat_program" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST

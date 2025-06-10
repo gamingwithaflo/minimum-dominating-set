@@ -1,0 +1,23 @@
+Start testing: Jun 06 09:52 CEST
+----------------------------------------------------------
+1/1 Testing: test_simple_knapsack_program
+1/1 Test: test_simple_knapsack_program
+Command: "/home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_knapsack_program/build/bin/simple_knapsack_program"
+Directory: /home/floris/github/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544/examples/simple_knapsack_program/build
+"test_simple_knapsack_program" start time: Jun 06 09:52 CEST
+Output:
+----------------------------------------------------------
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1749196367.711416    6767 simple_knapsack_program.cc:73] Total value: 847
+I0000 00:00:1749196367.711526    6767 simple_knapsack_program.cc:74] Packed items: {2, 3, 6, 13}
+I0000 00:00:1749196367.711533    6767 simple_knapsack_program.cc:75] Total weight: 847
+I0000 00:00:1749196367.711536    6767 simple_knapsack_program.cc:76] Packed weights: {194, 130, 230, 293}
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"test_simple_knapsack_program" end time: Jun 06 09:52 CEST
+"test_simple_knapsack_program" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 06 09:52 CEST
