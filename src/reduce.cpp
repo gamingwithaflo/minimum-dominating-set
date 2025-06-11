@@ -295,27 +295,27 @@ namespace reduce {
 			bool reduction = reduction_l_rule(mds_context, current);
 			if (reduction) {
 				std::cout << "found one" << std::endl;
-				// auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
-				// for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
-				// {
-				// 	//simple reduction rules.
-				// 	if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
-				// 		continue;
-				// 	}
-				// 	if (mds_context.is_dominated(*vertex)) {
-				// 		if (simple_rule_one(mds_context, *vertex)) {
-				// 			Logger::cnt_alber_simple_rule_1++;
-				// 		}
-				// 		if (simple_rule_two(mds_context, *vertex)) {
-				// 			Logger::cnt_alber_simple_rule_2++;
-				// 		}
-				// 		if (simple_rule_three(mds_context, *vertex)) {
-				// 		}
-				// 		if (simple_rule_four(mds_context, *vertex)) {
-				// 			Logger::cnt_alber_simple_rule_4++;
-				// 		}
-				// 	}
-				// }
+				auto [vert_itt, vert_itt_end] = mds_context.get_vertices_itt();
+				for (auto vertex = vert_itt; vertex < vert_itt_end; ++vertex)
+				{
+					//simple reduction rules.
+					if (mds_context.is_removed(*vertex) || (mds_context.is_dominated(*vertex) && mds_context.is_excluded(*vertex))) {
+						continue;
+					}
+					if (mds_context.is_dominated(*vertex)) {
+						if (simple_rule_one(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_1++;
+						}
+						if (simple_rule_two(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_2++;
+						}
+						if (simple_rule_three(mds_context, *vertex)) {
+						}
+						if (simple_rule_four(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_4++;
+						}
+					}
+				}
 			}
 			return;
 		}
@@ -1436,7 +1436,13 @@ namespace reduce {
 					continue;
 				}
 				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
-				if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+				bool is_subset = true;
+				for (auto it = prison_it; it != prison_it_end; ++it) {
+					if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+						is_subset = false;
+					}
+				}
+				if (is_subset) {
 					continue;
 				}
 				removable_prison_vertices.push_back(prison);
@@ -1452,7 +1458,14 @@ namespace reduce {
 					continue;
 				}
 				auto [guard_it, guard_it_end] = mds_context.get_neighborhood_itt(guard);
-				if (intersection_neighborhood.find(*guard_it) == intersection_neighborhood.end()) {
+				bool is_subset = true;
+				for (auto it = guard_it; it != guard_it_end; ++it) {
+					if (intersection_neighborhood.find(*guard_it) == intersection_neighborhood.end()) {
+						is_subset = false;
+					}
+				}
+				if (is_subset)
+				{
 					continue;
 				}
 				removable_guard_vertices.push_back(guard);
