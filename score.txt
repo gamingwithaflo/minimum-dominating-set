@@ -287,3 +287,55 @@ instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_092.gr
 domination number: 1183
 execution time: 842490
 
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 8769
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 220248
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 219540
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 55629
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 17349
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 19394
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 37810
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 37986
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 36411
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1313
+execution time: 37705
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 38072
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 45821
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_023.gr
+domination number: 1312
+execution time: 345050
+

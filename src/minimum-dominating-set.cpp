@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
 	bool theory_strategy = false;
 	bool average = true;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/test/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_092.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_033.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
@@ -210,7 +210,7 @@ void dominating_set_solver(std::string path){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(900);
+	auto timeout_duration = std::chrono::seconds(300);
 	std::cout << "what takes so long 1" << std::endl;
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
@@ -251,23 +251,23 @@ void dominating_set_solver(std::string path){
 			is_dominated[i].emplace_back(false);
 
 			//fast check if it can be solved easily.
-			if (boost::num_vertices(*sub_sub_components[i][j]) < 15000){
-				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[i][j]);
-				if (nice_tree_decomposition == nullptr) {
-					//treewidth is too big.
-					continue;
-				}
-				if (nice_tree_decomposition->treewidth <= 14){
-					std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[i][j]);
-
-					//generate final solution.
-					for (int newIndex : td_comp->global_solution) {
-						auto sub_index = sub_sub_newToOldIndex[i][j][newIndex];
-						solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
-					}
-					is_dominated[i][j] = true;
-				}
-			}
+			// if (boost::num_vertices(*sub_sub_components[i][j]) < 15000){
+			// 	std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[i][j]);
+			// 	if (nice_tree_decomposition == nullptr) {
+			// 		//treewidth is too big.
+			// 		continue;
+			// 	}
+			// 	if (nice_tree_decomposition->treewidth <= 14){
+			// 		std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), mds_context.dominated, mds_context.excluded, sub_sub_newToOldIndex[i][j]);
+			//
+			// 		//generate final solution.
+			// 		for (int newIndex : td_comp->global_solution) {
+			// 			auto sub_index = sub_sub_newToOldIndex[i][j][newIndex];
+			// 			solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+			// 		}
+			// 		is_dominated[i][j] = true;
+			// 	}
+			// }
 		}
 	}
 	// After removing all omittable vertices reduction rule L.3 to L.5 can be applied.
