@@ -185,18 +185,18 @@ namespace reduce {
 					continue;
 				}
 				if (mds_context.is_dominated(*first_vertex)) {
-					if (simple_rule_one(mds_context, *first_vertex)) {
-						simple_reduce = true;
-					}
-					if (simple_rule_two(mds_context, *first_vertex)) {
-						simple_reduce = true;
-					}
-					if (simple_rule_three(mds_context, *first_vertex)) {
-						simple_reduce = true;
-					}
-					if (simple_rule_four(mds_context, *first_vertex)) {
-						simple_reduce = true;
-					}
+					// if (simple_rule_one(mds_context, *first_vertex)) {
+					// 	simple_reduce = true;
+					// }
+					// if (simple_rule_two(mds_context, *first_vertex)) {
+					// 	simple_reduce = true;
+					// }
+					// if (simple_rule_three(mds_context, *first_vertex)) {
+					// 	simple_reduce = true;
+					// }
+					// if (simple_rule_four(mds_context, *first_vertex)) {
+					// 	simple_reduce = true;
+					// }
 				}
 			}
 		}
@@ -253,18 +253,18 @@ namespace reduce {
 		 							continue;
 		 						}
 		 						if (mds_context.is_dominated(*vertex_four)) {
-		 							if (simple_rule_one(mds_context, *vertex_four)) {
-		 								simple_reduce_2 = true;
-		 							}
-		 							if (simple_rule_two(mds_context, *vertex_four)) {
-		 								simple_reduce_2 = true;
-		 							}
-		 							if (simple_rule_three(mds_context, *vertex_four)) {
-		 								simple_reduce_2 = true;
-		 							}
-		 							if (simple_rule_four(mds_context, *vertex_four)) {
-		 								simple_reduce_2 = true;
-		 							}
+		 							// if (simple_rule_one(mds_context, *vertex_four)) {
+		 							// 	simple_reduce_2 = true;
+		 							// }
+		 							// if (simple_rule_two(mds_context, *vertex_four)) {
+		 							// 	simple_reduce_2 = true;
+		 							// }
+		 							// if (simple_rule_three(mds_context, *vertex_four)) {
+		 							// 	simple_reduce_2 = true;
+		 							// }
+		 							// if (simple_rule_four(mds_context, *vertex_four)) {
+		 							// 	simple_reduce_2 = true;
+		 							// }
 		 						}
 		 					}
 		 				}
@@ -303,17 +303,17 @@ namespace reduce {
 						continue;
 					}
 					if (mds_context.is_dominated(*vertex)) {
-						if (simple_rule_one(mds_context, *vertex)) {
-							Logger::cnt_alber_simple_rule_1++;
-						}
-						if (simple_rule_two(mds_context, *vertex)) {
-							Logger::cnt_alber_simple_rule_2++;
-						}
-						if (simple_rule_three(mds_context, *vertex)) {
-						}
-						if (simple_rule_four(mds_context, *vertex)) {
-							Logger::cnt_alber_simple_rule_4++;
-						}
+						// if (simple_rule_one(mds_context, *vertex)) {
+						// 	Logger::cnt_alber_simple_rule_1++;
+						// }
+						// if (simple_rule_two(mds_context, *vertex)) {
+						// 	Logger::cnt_alber_simple_rule_2++;
+						// }
+						// if (simple_rule_three(mds_context, *vertex)) {
+						// }
+						// if (simple_rule_four(mds_context, *vertex)) {
+						// 	Logger::cnt_alber_simple_rule_4++;
+						// }
 					}
 				}
 			}
@@ -394,21 +394,21 @@ namespace reduce {
 								continue;
 							}
 							if (mds_context.is_dominated(*vertex)) {
-								if (simple_rule_one(mds_context, *vertex)) {
-									Logger::cnt_alber_simple_rule_1++;
-									simple_reduction = true;
-								}
-								if (simple_rule_two(mds_context, *vertex)) {
-									Logger::cnt_alber_simple_rule_2++;
-									simple_reduction = true;
-								}
-								if (simple_rule_three(mds_context, *vertex)) {
-									simple_reduction = true;
-								}
-								if (simple_rule_four(mds_context, *vertex)) {
-									Logger::cnt_alber_simple_rule_4++;
-									simple_reduction = true;
-								}
+								// if (simple_rule_one(mds_context, *vertex)) {
+								// 	Logger::cnt_alber_simple_rule_1++;
+								// 	simple_reduction = true;
+								// }
+								// if (simple_rule_two(mds_context, *vertex)) {
+								// 	Logger::cnt_alber_simple_rule_2++;
+								// 	simple_reduction = true;
+								// }
+								// if (simple_rule_three(mds_context, *vertex)) {
+								// 	simple_reduction = true;
+								// }
+								// if (simple_rule_four(mds_context, *vertex)) {
+								// 	Logger::cnt_alber_simple_rule_4++;
+								// 	simple_reduction = true;
+								// }
 							}
 						}
 					}
@@ -1280,11 +1280,11 @@ namespace reduce {
 
 		// get N_exit(V_l)
 
-		for (auto u = l_neighbourhood.begin(); u < l_neighbourhood.end(); ++u) {
+		for (auto u = l_neighbourhood.begin(); u != l_neighbourhood.end(); ++u) {
 			//for each vertex get the neighborhood
 			auto [neigh_itt_u, neigh_itt_u_end] = mds_context.get_neighborhood_itt(*u);
 			//if ANY neighbor isn't in lookup (it belongs to exit_vertices).
-			for (;neigh_itt_u < neigh_itt_u_end; ++neigh_itt_u) {
+			for (;neigh_itt_u != neigh_itt_u_end; ++neigh_itt_u) {
 				if (lookup_neighbourhood.find(*neigh_itt_u) == lookup_neighbourhood.end()) {
 					if (mds_context.is_dominated(*u) && mds_context.is_dominated(*neigh_itt_u)) {
 						continue;
@@ -1301,7 +1301,7 @@ namespace reduce {
 			}
 		}
 		//divide all non N_exit vertices into N_guard and N_prison. (could be abstracted).
-		for (auto u = l_neighbourhood.begin(); u < l_neighbourhood.end(); ++u) {
+		for (auto u = l_neighbourhood.begin(); u != l_neighbourhood.end(); ++u) {
 			//check if vertex is not a exit_vertex.
 			if (std::find(exit_vertices.begin(), exit_vertices.end(), *u) == exit_vertices.end()){
 				bool guard_trigger = false;
@@ -1438,11 +1438,11 @@ namespace reduce {
 				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
 				bool is_subset = true;
 				for (auto it = prison_it; it != prison_it_end; ++it) {
-					if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+					if (intersection_neighborhood.find(*it) == intersection_neighborhood.end()) {
 						is_subset = false;
 					}
 				}
-				if (is_subset) {
+				if (!is_subset) {
 					continue;
 				}
 				removable_prison_vertices.push_back(prison);
@@ -1460,11 +1460,11 @@ namespace reduce {
 				auto [guard_it, guard_it_end] = mds_context.get_neighborhood_itt(guard);
 				bool is_subset = true;
 				for (auto it = guard_it; it != guard_it_end; ++it) {
-					if (intersection_neighborhood.find(*guard_it) == intersection_neighborhood.end()) {
+					if (intersection_neighborhood.find(*it) == intersection_neighborhood.end()) {
 						is_subset = false;
 					}
 				}
-				if (is_subset)
+				if (!is_subset)
 				{
 					continue;
 				}

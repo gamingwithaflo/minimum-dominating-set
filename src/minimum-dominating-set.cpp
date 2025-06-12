@@ -128,15 +128,15 @@ int main(int argc, char* argv[])
     }
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = false;
+	bool dir_mode = true;
 	bool theory_strategy = false;
 	bool average = true;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/test/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_033.gr";
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/reduction_l3/";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_068.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_SAT;
+	strategy_solver solver_strategy = SOLVER_NON;
 	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
 
 
@@ -154,9 +154,9 @@ int main(int argc, char* argv[])
 			for (int i = 0; i < 1; i++) {
 				initialize_logger_not_average();
 				//separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-				dominating_set_solver(entry.path());
+				//dominating_set_solver(entry.path());
 				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
-				//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+				separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			}
 			//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
@@ -210,7 +210,7 @@ void dominating_set_solver(std::string path){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(300);
+	auto timeout_duration = std::chrono::seconds(30);
 	std::cout << "what takes so long 1" << std::endl;
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
@@ -222,7 +222,6 @@ void dominating_set_solver(std::string path){
 		// start reduction rule X.1 to X.3 combined with L.2 without actual removing any vertices
 		strategy_reduction reduction_strategy_combination = REDUCTION_COMBINATION;
 		reduce::reduction_rule_manager(mds_context, reduction_strategy_combination, 0, false, start, timeout_duration);
-		std::cout << "what takes so long" << std::endl;
 		mds_context.fill_removed_vertex();
 
 		// Fill the solution with vertices which must be in the dominating set.
@@ -281,7 +280,6 @@ void dominating_set_solver(std::string path){
 					continue;
 			}
 				reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
-				std::cout << "rule id: " << rule_id << std::endl;
 		}
 	}
 	for (int i = 0; i < sub_components.size(); ++i) {
@@ -292,7 +290,6 @@ void dominating_set_solver(std::string path){
 				continue;
 			}
 			reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
-			std::cout << "rule id: " << rule_id << std::endl;
 		}
 	}
 	for (int i = 0; i < sub_components.size(); ++i) {
@@ -303,10 +300,8 @@ void dominating_set_solver(std::string path){
 				continue;
 			}
 			reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
-			std::cout << "rule id: " << rule_id << std::endl;
 		}
 	}
-	std::cout << "what takes so long" << std::endl;
 	// Fill the solution with vertices which must be in the dominating set because of the reduction rules.
 	for (int i = 0; i < sub_components.size(); ++i){
 		for (int j = 0; j < sub_sub_components[i].size(); ++j)
@@ -392,7 +387,7 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 		timer t_reduction;
 		auto start = std::chrono::steady_clock::now();
-		auto timeout_duration = std::chrono::seconds(60);
+		auto timeout_duration = std::chrono::seconds(1800);
 		reduce::reduction_rule_manager(mds_context, red_strategy, 0, theory_strategy, start, timeout_duration);
 
 		Logger::execution_time_reduction += t_reduction.count();
@@ -484,8 +479,8 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 				}
 			}
 			adjacencyListBoost more_reduced = create_reduced_graph(mds_context_reduced, newToOld);
-			bool is_planar = boost::boyer_myrvold_planarity_test(more_reduced);
-			std::cout << is_planar << std::endl;
+			//bool is_planar = boost::boyer_myrvold_planarity_test(more_reduced);
+			//std::cout << is_planar << std::endl;
 
 
 			if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
