@@ -100,3 +100,19 @@ instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_068.gr
 domination number: 756
 execution time: 158235
 
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_036.gr
+domination number: 5876
+execution time: 69427
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_034.gr
+domination number: 5842
+execution time: 46211
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_070.gr
+domination number: 1616
+execution time: 31471
+
+instance:/home/floris/Documents/Thesis/Dataset/Exact/exact_043.gr
+domination number: 1220
+execution time: 33661
+

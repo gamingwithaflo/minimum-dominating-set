@@ -128,11 +128,11 @@ int main(int argc, char* argv[])
     }
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = true;
+	bool dir_mode = false;
 	bool theory_strategy = false;
 	bool average = true;
 	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/reduction_l3/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_068.gr";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_043.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
 	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]

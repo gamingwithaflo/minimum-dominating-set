@@ -185,18 +185,18 @@ namespace reduce {
 					continue;
 				}
 				if (mds_context.is_dominated(*first_vertex)) {
-					// if (simple_rule_one(mds_context, *first_vertex)) {
-					// 	simple_reduce = true;
-					// }
-					// if (simple_rule_two(mds_context, *first_vertex)) {
-					// 	simple_reduce = true;
-					// }
-					// if (simple_rule_three(mds_context, *first_vertex)) {
-					// 	simple_reduce = true;
-					// }
-					// if (simple_rule_four(mds_context, *first_vertex)) {
-					// 	simple_reduce = true;
-					// }
+					if (simple_rule_one(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_two(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_three(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
+					if (simple_rule_four(mds_context, *first_vertex)) {
+						simple_reduce = true;
+					}
 				}
 			}
 		}
@@ -253,18 +253,18 @@ namespace reduce {
 		 							continue;
 		 						}
 		 						if (mds_context.is_dominated(*vertex_four)) {
-		 							// if (simple_rule_one(mds_context, *vertex_four)) {
-		 							// 	simple_reduce_2 = true;
-		 							// }
-		 							// if (simple_rule_two(mds_context, *vertex_four)) {
-		 							// 	simple_reduce_2 = true;
-		 							// }
-		 							// if (simple_rule_three(mds_context, *vertex_four)) {
-		 							// 	simple_reduce_2 = true;
-		 							// }
-		 							// if (simple_rule_four(mds_context, *vertex_four)) {
-		 							// 	simple_reduce_2 = true;
-		 							// }
+		 							if (simple_rule_one(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_two(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_three(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
+		 							if (simple_rule_four(mds_context, *vertex_four)) {
+		 								simple_reduce_2 = true;
+		 							}
 		 						}
 		 					}
 		 				}
@@ -303,17 +303,17 @@ namespace reduce {
 						continue;
 					}
 					if (mds_context.is_dominated(*vertex)) {
-						// if (simple_rule_one(mds_context, *vertex)) {
-						// 	Logger::cnt_alber_simple_rule_1++;
-						// }
-						// if (simple_rule_two(mds_context, *vertex)) {
-						// 	Logger::cnt_alber_simple_rule_2++;
-						// }
-						// if (simple_rule_three(mds_context, *vertex)) {
-						// }
-						// if (simple_rule_four(mds_context, *vertex)) {
-						// 	Logger::cnt_alber_simple_rule_4++;
-						// }
+						if (simple_rule_one(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_1++;
+						}
+						if (simple_rule_two(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_2++;
+						}
+						if (simple_rule_three(mds_context, *vertex)) {
+						}
+						if (simple_rule_four(mds_context, *vertex)) {
+							Logger::cnt_alber_simple_rule_4++;
+						}
 					}
 				}
 			}
@@ -394,21 +394,21 @@ namespace reduce {
 								continue;
 							}
 							if (mds_context.is_dominated(*vertex)) {
-								// if (simple_rule_one(mds_context, *vertex)) {
-								// 	Logger::cnt_alber_simple_rule_1++;
-								// 	simple_reduction = true;
-								// }
-								// if (simple_rule_two(mds_context, *vertex)) {
-								// 	Logger::cnt_alber_simple_rule_2++;
-								// 	simple_reduction = true;
-								// }
-								// if (simple_rule_three(mds_context, *vertex)) {
-								// 	simple_reduction = true;
-								// }
-								// if (simple_rule_four(mds_context, *vertex)) {
-								// 	Logger::cnt_alber_simple_rule_4++;
-								// 	simple_reduction = true;
-								// }
+								if (simple_rule_one(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_1++;
+									simple_reduction = true;
+								}
+								if (simple_rule_two(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_2++;
+									simple_reduction = true;
+								}
+								if (simple_rule_three(mds_context, *vertex)) {
+									simple_reduction = true;
+								}
+								if (simple_rule_four(mds_context, *vertex)) {
+									Logger::cnt_alber_simple_rule_4++;
+									simple_reduction = true;
+								}
 							}
 						}
 					}
