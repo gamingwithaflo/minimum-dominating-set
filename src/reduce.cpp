@@ -1438,11 +1438,11 @@ namespace reduce {
 				auto [prison_it, prison_it_end] = mds_context.get_neighborhood_itt(prison);
 				bool is_subset = true;
 				for (auto it = prison_it; it != prison_it_end; ++it) {
-					if (intersection_neighborhood.find(*prison_it) == intersection_neighborhood.end()) {
+					if (intersection_neighborhood.find(*it) == intersection_neighborhood.end()) {
 						is_subset = false;
 					}
 				}
-				if (is_subset) {
+				if (!is_subset) {
 					continue;
 				}
 				removable_prison_vertices.push_back(prison);
@@ -1460,11 +1460,11 @@ namespace reduce {
 				auto [guard_it, guard_it_end] = mds_context.get_neighborhood_itt(guard);
 				bool is_subset = true;
 				for (auto it = guard_it; it != guard_it_end; ++it) {
-					if (intersection_neighborhood.find(*guard_it) == intersection_neighborhood.end()) {
+					if (intersection_neighborhood.find(*it) == intersection_neighborhood.end()) {
 						is_subset = false;
 					}
 				}
-				if (is_subset)
+				if (!is_subset)
 				{
 					continue;
 				}
