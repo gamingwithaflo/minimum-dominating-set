@@ -51,7 +51,7 @@ void dominating_set_solver(){
 
 	// Set a timer to limit the maximum duration allowed for the reduction step.
 	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(180);
+	auto timeout_duration = std::chrono::seconds(600);
 
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
