@@ -261,10 +261,10 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                     }
                 }
             }
-             else if (decomposition->maximumBagSize() < 20){
+             else if (decomposition->maximumBagSize() < 16){
                  // Print the size of the largest bag of the decomposition to stdout.
                  algorithm.setIterationCount(0); // set iterations to infinite.
-                 algorithm.setNonImprovementLimit(500);
+                 algorithm.setNonImprovementLimit(300);
 
                  /**
                 *  Set the optimization operation as manipulation operation in order
