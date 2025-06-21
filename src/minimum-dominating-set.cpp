@@ -50,13 +50,6 @@ void dominating_set_solver(){
 
 	std::vector<int>solution; // vector which will hold all vertices in the optimal dominating set.
 
-<<<<<<< HEAD
-=======
-	// Set a timer to limit the maximum duration allowed for the reduction step.
-	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(600);
-
->>>>>>> f23b86afddf99d62a92d480a45feda6384b98c59
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
 		/*Try to solve the subcomponent which a minute with the SAT_solver.
