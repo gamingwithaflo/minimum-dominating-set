@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <algorithm> // for std::sort
 
 void initialize_logger()
 {
@@ -77,6 +78,7 @@ void initialize_logger()
     Logger::num_forget_bags_size.assign(Logger::num_forget_bags_size.size(), 0);
     Logger::num_introduce_edge_bags_size.assign(Logger::num_introduce_edge_bags_size.size(), 0);
     Logger::treewidth.clear();
+    Logger::num_vertices_components.clear();
 
     Logger::domination_number = 0;
 
@@ -134,6 +136,7 @@ void initialize_logger_not_average()
     Logger::cnt_ignored_vertices = 0;
     Logger::cnt_excluded_vertices = 0;
     Logger::cnt_removed_vertices = 0;
+    Logger::num_vertices_components.clear();
 
     //timer functions.
     Logger::execution_time_complete = 0;
@@ -206,6 +209,7 @@ void initialize_logger_not_average()
     //components.
     int Logger::num_components = 0;
     int Logger::num_reduced_components = 0;
+    std::vector<int> Logger::num_vertices_components;
 
     //effectiveness reduction rules.
     int Logger::num_vertices = 0;
@@ -310,7 +314,7 @@ std::string getReductionSchemeString(strategy_reduction_scheme reduction) {
 void output_loginfo(std::string& name) {
     std::string prefix = "/home/floris/github/minimum-dominating-set/log_info/";
     //+ "/only_reduced" +
-    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/single_thread" + "/loginfo_" + name;
+    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/single_thread_1" + "/loginfo_" + name;
     std::cout << output_path << std::endl;
     //"/single_thread"
     std::ofstream outFile(output_path);
@@ -330,6 +334,14 @@ void output_loginfo(std::string& name) {
     outFile << "Domination number: " << Logger::domination_number << std::endl;
     if (Logger::solver_strategy != SOLVER_NON)
     {
+        std::sort(Logger::num_vertices_components.begin(), Logger::num_vertices_components.end(), std::greater<int>());
+        outFile << "vertices components:" << std::endl;
+
+        for (int size : Logger::num_vertices_components)
+        {
+            outFile << size << " ";
+        }
+        outFile << std::endl;
         if (Logger::solver_strategy == SOLVER_COMBINATION) {
             outFile << "Execution time ILP: " << Logger::execution_time_ilp << std::endl;
             outFile << "Execution time SAT: " << Logger::execution_time_sat << std::endl;
@@ -356,6 +368,7 @@ void output_loginfo(std::string& name) {
             outFile << "Execution time spent in introduce edge: " << Logger::execution_time_introduce_edge << std::endl;
             outFile << "Execution time spent in forget: " << Logger::execution_time_forget << std::endl;
             outFile << "Treewidths of different components: ";
+            std::sort(Logger::treewidth.begin(), Logger::treewidth.end());
             for (int j : Logger::treewidth){
                 outFile << j << " ";
             }
@@ -376,6 +389,7 @@ void output_loginfo(std::string& name) {
             outFile << "Execution time of the nice tree decompositions: " << Logger::execution_time_nice_tree_decomposition << std::endl;
             outFile << "maximum_treewidth : " << Logger::maximum_treewidth << std::endl;
             outFile << "Treewidths of different components: ";
+            std::sort(Logger::treewidth.begin(), Logger::treewidth.end(), std::greater<int>());
             for (int j : Logger::treewidth){
                 outFile << j << " ";
             }

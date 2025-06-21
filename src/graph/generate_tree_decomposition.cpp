@@ -111,7 +111,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     }
 
     // Create an instance of the fitness function. (defined above)
-    const FitnessFunction_minimize_join fitnessFunction;
+    const FitnessFunction_default fitnessFunction;
 
     /**
      *  This operation changes the root of a given decomposition so that the provided
@@ -240,7 +240,7 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
             if (decomposition->maximumBagSize() < 11){
-                algorithm.setIterationCount(10);
+                algorithm.setIterationCount(10); // set iterations to infinite.
 
                 /**
                *  Set the optimization operation as manipulation operation in order
@@ -255,16 +255,16 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 //If further optimizations is done as well.
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
-                        std::cout << decomposition->maximumBagSize() << std::endl;
+                        //std::cout << decomposition->maximumBagSize() << std::endl;
                         nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         std::cout << "i want to read" << std::endl;
                     }
                 }
             }
-             else if (decomposition->maximumBagSize() < 20){
+             else if (decomposition->maximumBagSize() < 50){
                  // Print the size of the largest bag of the decomposition to stdout.
                  algorithm.setIterationCount(0); // set iterations to infinite.
-                 algorithm.setNonImprovementLimit(300);
+                 algorithm.setNonImprovementLimit(500);
 
                  /**
                 *  Set the optimization operation as manipulation operation in order
@@ -280,18 +280,21 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
                 if (decomposition != nullptr){
                     if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
                         std::cout << "actual running treewidth: "<< decomposition->maximumBagSize() - 1 << std::endl;
-                        if (decomposition->maximumBagSize() <= 16){
+                        if (decomposition->maximumBagSize() - 1 <= 16){
                             nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
                         } else {
-
+                            Logger::treewidth.push_back(decomposition->maximumBagSize() - 1);
+                            if (Logger::maximum_treewidth < decomposition->maximumBagSize() - 1){
+                                Logger::maximum_treewidth = decomposition->maximumBagSize() - 1;
+                            }
                         }
                     }
                 }
             }else {
                 std::cout << decomposition->maximumBagSize() << std::endl;
-                Logger::treewidth.push_back(decomposition->maximumBagSize());
-                if (Logger::maximum_treewidth < decomposition->maximumBagSize()){
-                    Logger::maximum_treewidth = decomposition->maximumBagSize();
+                Logger::treewidth.push_back(decomposition->maximumBagSize() - 1);
+                if (Logger::maximum_treewidth < decomposition->maximumBagSize() - 1){
+                    Logger::maximum_treewidth = decomposition->maximumBagSize() - 1;
                 }
             }
         }

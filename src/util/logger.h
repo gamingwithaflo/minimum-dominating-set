@@ -75,6 +75,7 @@ public:
 	//components.
 	static int num_components;
 	static int num_reduced_components;
+	static std::vector<int> num_vertices_components;
 
 	//effectiveness reduction rules.
 	static int num_vertices;

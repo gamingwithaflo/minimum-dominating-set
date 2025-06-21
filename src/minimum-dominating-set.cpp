@@ -128,16 +128,16 @@ int main(int argc, char* argv[])
     }
 	//default values
 	// path : string with path to instance graph.
-	bool dir_mode = false;
+	bool dir_mode = true;
 	bool theory_strategy = false;
 	bool average = true;
-	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/reduction_l3/";
-	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_043.gr";
+	std::string dir_path = "/home/floris/Documents/Thesis/Dataset/category_3/";
+	std::string path = "/home/floris/Documents/Thesis/Dataset/Exact/exact_069.gr";
 	//reduction_strategy: [options: Alber, Alber_rule_1, IJCAI, Combination, non]
-	strategy_reduction reduction_strategy = REDUCTION_COMBINATION;
+	strategy_reduction reduction_strategy = REDUCTION_NON;
 	//Solver_strategy: [options: ILP, SAT, Treewidth, Combination, non]
-	strategy_solver solver_strategy = SOLVER_NON;
-	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_3;
+	strategy_solver solver_strategy = SOLVER_SAT;
+	strategy_reduction_scheme reduction_scheme_strategy = REDUCTION_ALBER_L_NON;
 
 
 	//be able to take in parameters.
@@ -153,10 +153,11 @@ int main(int argc, char* argv[])
 			initialize_logger();
 			for (int i = 0; i < 1; i++) {
 				initialize_logger_not_average();
-				//separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
+				separate_solver_treewidth(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 				//dominating_set_solver(entry.path());
 				//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
-				separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+				//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			}
 			//separate_solver(entry.path(), reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 			//seperate_solver_no_components(entry.path(), reduction_strategy, solver_strategy);
@@ -164,8 +165,20 @@ int main(int argc, char* argv[])
 	} else {
 		for (int i = 0; i < 1; i++) {
 			initialize_logger_not_average();
-			//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
-			dominating_set_solver(path);
+			//seperate_solver_no_components(path, reduction_strategy, solver_strategy);
+			strategy_reduction non = REDUCTION_NON;
+			strategy_reduction ijcai = REDUCTION_IJCAI;
+			separate_solver(path, non, solver_strategy, reduction_scheme_strategy, theory_strategy);
+			strategy_reduction_scheme five = REDUCTION_ALBER_L_5;
+			separate_solver(path, reduction_strategy, solver_strategy, five, theory_strategy);
+			//0
+			separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
+			strategy_reduction_scheme three = REDUCTION_ALBER_L_3;
+			separate_solver(path, reduction_strategy, solver_strategy, three, theory_strategy);
+			strategy_reduction_scheme four = REDUCTION_ALBER_L_4;
+			separate_solver(path, reduction_strategy, solver_strategy, four, theory_strategy);
+			separate_solver(path, ijcai, solver_strategy, reduction_scheme_strategy, theory_strategy);
+			//dominating_set_solver(path);
 			//separate_solver_treewidth(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
 		}
 		//separate_solver(path, reduction_strategy, solver_strategy, reduction_scheme_strategy, theory_strategy);
@@ -437,8 +450,13 @@ void separate_solver(std::string path, strategy_reduction red_strategy, strategy
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, theory_strategy, start, timeout_duration);
 				} else { //REDUCTION_ALBER_L_5
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 3, theory_strategy, start, timeout_duration);
+					std::cout << "rule 3" << std::endl;
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 4, theory_strategy, start, timeout_duration);
+					std::cout << "rule 4" << std::endl;
 					reduce::reduction_rule_manager(mds_context_reduced, strategy, 5, theory_strategy, start, timeout_duration);
+					std::cout << "rule 5" << std::endl;
+					//reduce::reduction_rule_manager(mds_context_reduced, strategy, 6, theory_strategy, start, timeout_duration);
+					//reduce::reduction_rule_manager(mds_context_reduced, strategy, 5, theory_strategy, start, timeout_duration);
 				}
 
 			}
@@ -608,7 +626,7 @@ void create_reduced_component_subgraphs(adjacencyListBoost& reduced_graph,
 	int num_components = boost::connected_components(reduced_graph, &component_map[0]);
 	sub_sub_components.resize(num_components);
 	sub_sub_newToOldIndex.resize(num_components);
-	Logger::num_reduced_components += num_components;
+	//Logger::num_reduced_components += num_components;
 
 	if (num_components == 1){
 		sub_sub_components[0] = std::make_unique<adjacencyListBoost>(reduced_graph);
@@ -700,6 +718,7 @@ void create_component_subgraphs(const std::string& path,
 
 	//Create empty sub graphs.
 	for (size_t i = 0; i < components.size(); ++i) {
+		Logger::num_vertices_components.push_back(components[i].size());
 		std::unique_ptr<adjacencyListBoost> sub_component = std::make_unique<adjacencyListBoost>(components[i].size());
 		sub_components[i] = std::move(sub_component);
 	}
@@ -977,6 +996,7 @@ void separate_solver_treewidth(std::string path, strategy_reduction red_strategy
 			create_reduced_component_subgraphs(reduced_graph, sub_sub_sub_components, sub_sub_sub_newToOldIndex, newToOld);
 
 			for (int q = 0; q < sub_sub_sub_newToOldIndex.size(); ++q) {
+				Logger::num_reduced_components++;
 				if (sol_strategy == SOLVER_NICE_TREE_DECOMPOSITION){
 				timer t_nice_tree_decomposition;
 				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_sub_components[q]);
