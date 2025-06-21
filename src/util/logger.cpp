@@ -83,6 +83,7 @@ void initialize_logger()
     Logger::cnt_alber_l_reduction = 0;
     Logger::cnt_alber_l_either_reduction = 0;
     Logger::attempt_alber_l_reduction = 0;
+    Logger::is_medium = false;
 }
 
 void initialize_logger_not_average()
@@ -255,6 +256,8 @@ void initialize_logger_not_average()
     strategy_reduction_scheme Logger::reduction_scheme_strategy = REDUCTION_ALBER_L_NON;
 
     int Logger::domination_number = 0;
+
+    bool Logger::is_medium = false;
 
 std::string getReductionString(strategy_reduction reduction) {
     switch (reduction) {

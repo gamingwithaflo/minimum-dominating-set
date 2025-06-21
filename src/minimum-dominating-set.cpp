@@ -40,6 +40,7 @@ void dominating_set_solver(){
 	std::vector<std::vector<std::unordered_map<int, int>>> sub_sub_newToOldIndex; // translation function to get back to the original indices.
 	std::vector<std::vector<MDS_CONTEXT>> reduced_components_context; // AMDS context for each subcomponent.
 	std::vector<std::vector<bool>> is_dominated;
+	std::vector<std::vector<bool>> aggressive_reduction;
 
 	/* Takes the path, loads in the graph, and directly splits it into connected components.
 	sub_components := vector with graphs.
@@ -49,10 +50,6 @@ void dominating_set_solver(){
 
 	std::vector<int>solution; // vector which will hold all vertices in the optimal dominating set.
 
-	// Set a timer to limit the maximum duration allowed for the reduction step.
-	auto start = std::chrono::steady_clock::now();
-	auto timeout_duration = std::chrono::seconds(180);
-
 	//Handle each subcomponent separately.
 	for (int i = 0; i < sub_components.size(); i++) {
 		/*Try to solve the subcomponent which a minute with the SAT_solver.
@@ -60,9 +57,9 @@ void dominating_set_solver(){
 		 */
 		MDS_CONTEXT mds_context = MDS_CONTEXT(*sub_components[i]);
 
-		// start reduction rule X.1 to X.3 combined with L.2 without actual removing any vertices
-		strategy_reduction reduction_strategy_combination = REDUCTION_COMBINATION;
-		reduce::reduction_rule_manager(mds_context, reduction_strategy_combination, 0, false, start, timeout_duration);
+		// start reduction rule X.1 to X.3 without actual removing any vertices
+		strategy_reduction reduction_strategy_combination = REDUCTION_IJCAI;
+		reduce::reduction_rule_manager(mds_context, reduction_strategy_combination, 0, false, std::chrono::steady_clock::now(), std::chrono::seconds(10));
 
 		mds_context.fill_removed_vertex();
 
@@ -78,6 +75,7 @@ void dominating_set_solver(){
 		sub_sub_components.emplace_back();
 		sub_sub_newToOldIndex.emplace_back();
 		is_dominated.emplace_back();
+		aggressive_reduction.emplace_back();
 
 		std::unordered_map<int, int> newToOldIndex;
 		adjacencyListBoost reduced_graph = create_reduced_graph(mds_context, newToOldIndex);
@@ -89,17 +87,61 @@ void dominating_set_solver(){
 			reduced_components_context[i].emplace_back(*sub_sub_components[i][j]);
 			reduced_components_context[i][j].fill_mds_context(mds_context, sub_sub_newToOldIndex[i][j]);
 			is_dominated[i].emplace_back(false);
+			aggressive_reduction[i].emplace_back(false);
 		}
 	}
+
+	//For each component if it small enough approximate the treewidth.
+	for (int i = 0; i < sub_components.size(); ++i) {
+
+		for (int j = 0; j < sub_sub_components[i].size(); ++j)
+		{
+			//Fill identify function
+			std::unordered_map<int, int> identity_map;
+			for (int q = 0; q < boost::num_vertices(*sub_sub_components[i][j]); ++q) {
+				identity_map[q] = q;
+			}
+
+			if (boost::num_vertices(*sub_sub_components[i][j]) < 20000){
+				//Approximate treewidth.
+				std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_components[i][j]);
+				if (nice_tree_decomposition == nullptr) {
+					if (Logger::is_medium) {
+						aggressive_reduction[i][j] = Logger::is_medium;
+					} else {
+						std::vector<int> partial_solution = sat_solver_dominating_set(reduced_components_context[i][j], *sub_sub_components[i][j], identity_map);
+						for (int newIndex : partial_solution) {
+							auto sub_index = sub_sub_newToOldIndex[i][j][newIndex];
+							solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+						}
+						is_dominated[i][j] = true;
+					}
+					Logger::is_medium = false;
+				} else {
+					if (nice_tree_decomposition->treewidth <= 11){
+						std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), reduced_components_context[i][j].dominated, reduced_components_context[i][j].excluded, identity_map);
+
+						//generate final solution.
+						for (int newIndex : td_comp->global_solution) {
+							auto sub_index = sub_sub_newToOldIndex[i][j][newIndex];
+							solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
+						}
+						is_dominated[i][j] = true;
+					}
+				}
+			}
+		}
+	}
+
+	// Set a timer to limit the maximum duration allowed for the reduction step.
+	auto start = std::chrono::steady_clock::now();
+	auto timeout_duration = std::chrono::seconds(60);
+
 	// After removing all omittable vertices reduction rule L.3 to L.5 can be applied.
 	strategy_reduction reduction_strategy_l = REDUCTION_L_ALBER;
 	//Ensure uniform rule application across all subcomponents first, to avoid uneven computational load on individual components.
-    auto now = std::chrono::steady_clock::now();
-    auto elapsed = now - start;
-    auto time_left = timeout_duration - elapsed;
-    if (elapsed * 50 < time_left){
 	for (int i = 0; i < sub_components.size(); ++i) {
-		int rule_id = 3;
+		int rule_id = 2;
 		for (int j = 0; j < sub_sub_components[i].size(); ++j) {
 			//no further reductions possible.
 			if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j]){
@@ -108,37 +150,29 @@ void dominating_set_solver(){
 				reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
 		}
 	}
-}
-    auto now2 = std::chrono::steady_clock::now();
-    elapsed = now2 - start;
-    time_left = timeout_duration - elapsed;
-    if (elapsed * 50 < time_left){
+
+	for (int i = 0; i < sub_components.size(); ++i) {
+		int rule_id = 3;
+		for (int j = 0; j < sub_sub_components[i].size(); ++j) {
+			//no further reductions possible.
+			if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j] || !aggressive_reduction[i][j]){
+				continue;
+			}
+			reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
+		}
+	}
+
 	for (int i = 0; i < sub_components.size(); ++i) {
 		int rule_id = 4;
 		for (int j = 0; j < sub_sub_components[i].size(); ++j) {
 			//no further reductions possible.
-			if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j]){
+			if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j] || !aggressive_reduction[i][j]){
 				continue;
 			}
 			reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
 		}
 	}
-}
-    auto now3 = std::chrono::steady_clock::now();
-    elapsed = now3 - start;
-    time_left = timeout_duration - elapsed;
-    if (elapsed * 50 < time_left){
-	for (int i = 0; i < sub_components.size(); ++i) {
-		int rule_id = 5;
-		for (int j = 0; j < sub_sub_components[i].size(); ++j) {
-			//no further reductions possible.
-			if (reduced_components_context[i][j].num_undetermined_vertices() == 0 || is_dominated[i][j]){
-				continue;
-			}
-			reduce::reduction_rule_manager(reduced_components_context[i][j], reduction_strategy_l, rule_id, false, start, timeout_duration);
-		}
-	}
-}
+
 	// Fill the solution with vertices which must be in the dominating set because of the reduction rules.
 
 	for (int i = 0; i < sub_components.size(); ++i){
@@ -163,26 +197,6 @@ void dominating_set_solver(){
 			create_reduced_component_subgraphs(reduced_graph, sub_sub_sub_components, sub_sub_sub_newToOldIndex, newToOld);
 
 			for (int q = 0; q < sub_sub_sub_components.size(); ++q) {
-				//fast check if it can be solved easily.
-				 if (boost::num_vertices(*sub_sub_sub_components[q]) < 5000)
-				{
-					std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition = generate_td(*sub_sub_sub_components[q]);
-					if (nice_tree_decomposition == nullptr) {
-
-					} else {
-						if (nice_tree_decomposition->treewidth <= 14){
-							std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), reduced_components_context[i][j].dominated, reduced_components_context[i][j].excluded, sub_sub_sub_newToOldIndex[q]);
-
-							//generate final solution.
-							for (int newIndex : td_comp->global_solution) {
-								auto sub_index = sub_sub_newToOldIndex[i][j][sub_sub_sub_newToOldIndex[q][newIndex]];
-								solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
-							}
-							continue;
-						}
-					}
-				}
-				//If treewidth to big? -> SAT solver.
 				std::vector<int> partial_solution = sat_solver_dominating_set(reduced_components_context[i][j], *sub_sub_sub_components[q], sub_sub_sub_newToOldIndex[q]);
 				for (int newIndex : partial_solution) {
 					auto sub_index = sub_sub_newToOldIndex[i][j][sub_sub_sub_newToOldIndex[q][newIndex]];
