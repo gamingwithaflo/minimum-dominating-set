@@ -86,7 +86,7 @@ public:
 
 std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced_graph)
 {
-    std::cout << "Generating tree decomposition..." << std::endl;
+     //std::cout << "Generating tree decomposition..." << std::endl;
     //Create a management instance of the 'htd' library in order to allow centralized configuration.
     const std::unique_ptr<htd::LibraryInstance> manager(htd::createManagementInstance(htd::Id::FIRST));
     std::unique_ptr<NICE_TREE_DECOMPOSITION> nice_tree_decomposition;
@@ -136,13 +136,13 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
     /**
      *  Set desired manipulations. In this case we want a nice (= normalized) tree decomposition.
      */
-    operation->addManipulationOperation(new htd::NormalizationOperation(manager.get(), false, true, false, false));
+    //operation->addManipulationOperation(new htd::NormalizationOperation(manager.get(), false, true, false, false));
 
     /**
      *  Optionally, we can set the vertex elimination algorithm.
      *  We decide to use the min-degree heuristic in this case.
      */
-
+    std::cout << "start process" << std::endl;
     manager->orderingAlgorithmFactory()
         .setConstructionTemplate(new htd::MinDegreeOrderingAlgorithm(manager.get()));
 
@@ -217,6 +217,8 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
      */
     algorithm.setNonImprovementLimit(50);
 
+    algorithm.addManipulationOperation(operation);
+
     // Record the optimal maximal bag size of the tree decomposition to allow printing the progress.
     std::size_t optimalBagSize = (std::size_t)-1;
 
@@ -230,72 +232,39 @@ std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced
         algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
                                                    const htd::ITreeDecomposition & decomposition,
                                                    const htd::FitnessEvaluation & fitness){});
-
-    //std::cout << "10 itterations is fast" << std::endl;
-    //std::cout << decomposition->maximumBagSize() << std::endl;
-    //std::cout << decomposition->exchangeNodeCount() << std::endl;
     // If a decomposition was found we want to print it to stdout.
     if (decomposition != nullptr) {
         //Check whether the algorithm indeed computed a valid decomposition.
         if (!manager->isTerminated() && algorithm.isSafelyInterruptible()) {
             // check it worth optimizing further. (if treewidth is smaller than 32).
-            if (decomposition->maximumBagSize() < 11){
-                algorithm.setIterationCount(10); // set iterations to infinite.
+            if (decomposition->maximumBagSize() - 1 <= 14){
+                auto * operation_2 = new htd::TreeDecompositionOptimizationOperation(manager.get());
+                operation_2->addManipulationOperation(new htd::NormalizationOperation(manager.get(), false, true, false, false));
+                algorithm.addManipulationOperation(operation_2);
+                if (decomposition->maximumBagSize() - 1 <= 11){
+                    algorithm.setIterationCount(10); // set iterations to infinite.
+                } else {
+                    algorithm.setIterationCount(0); // set iterations to infinite.
+                    algorithm.setNonImprovementLimit(500);
+                }
 
                 /**
                *  Set the optimization operation as manipulation operation in order
                *  to choose the optimal root reducing height of the tree decomposition.
                */
-                baseAlgorithm->addManipulationOperation(operation);
 
                 //run where you left off.
-                htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
+                htd::ITreeDecomposition * decomposition_strong = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
                                                    const htd::ITreeDecomposition & decomposition,
                                                    const htd::FitnessEvaluation & fitness){});
-                //If further optimizations is done as well.
-                if (decomposition != nullptr){
-                    if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
-                        //std::cout << decomposition->maximumBagSize() << std::endl;
-                        nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
-                        std::cout << "i want to read" << std::endl;
-                    }
-                }
+                nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition_strong);
             }
-             else if (decomposition->maximumBagSize() < 50){
-                 // Print the size of the largest bag of the decomposition to stdout.
-                 algorithm.setIterationCount(0); // set iterations to infinite.
-                 algorithm.setNonImprovementLimit(500);
-
-                 /**
-                *  Set the optimization operation as manipulation operation in order
-                *  to choose the optimal root reducing height of the tree decomposition.
-                */
-                 baseAlgorithm->addManipulationOperation(operation);
-
-                 //run where you left off.
-                 htd::ITreeDecomposition * decomposition = algorithm.computeDecomposition(*graph, [&](const htd::IMultiHypergraph & graph,
-                                                    const htd::ITreeDecomposition & decomposition,
-                                                    const htd::FitnessEvaluation & fitness){});
-                //If further optimizations is done as well.
-                if (decomposition != nullptr){
-                    if (!manager->isTerminated() || algorithm.isSafelyInterruptible()){
-                        std::cout << "actual running treewidth: "<< decomposition->maximumBagSize() - 1 << std::endl;
-                        if (decomposition->maximumBagSize() - 1 <= 16){
-                            nice_tree_decomposition = std::make_unique<NICE_TREE_DECOMPOSITION>(reduced_graph, decomposition);
-                        } else {
-                            Logger::treewidth.push_back(decomposition->maximumBagSize() - 1);
-                            if (Logger::maximum_treewidth < decomposition->maximumBagSize() - 1){
-                                Logger::maximum_treewidth = decomposition->maximumBagSize() - 1;
-                            }
-                        }
-                    }
-                }
-            }else {
-                std::cout << decomposition->maximumBagSize() << std::endl;
-                Logger::treewidth.push_back(decomposition->maximumBagSize() - 1);
-                if (Logger::maximum_treewidth < decomposition->maximumBagSize() - 1){
-                    Logger::maximum_treewidth = decomposition->maximumBagSize() - 1;
-                }
+            else if (decomposition->maximumBagSize() < 50){
+                std::cout << "treewidth L4" << std::endl;
+                 Logger::is_medium = true;
+            }else { // bigger than 50.
+                std::cout << "treewidth large" << std::endl;
+                Logger::is_medium = false;
             }
         }
         delete decomposition;
