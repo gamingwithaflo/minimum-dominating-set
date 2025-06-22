@@ -118,7 +118,6 @@ void dominating_set_solver(){
 					}
 					Logger::is_medium = false;
 				} else {
-					if (nice_tree_decomposition->treewidth <= 11){
 						std::unique_ptr<TREEWIDTH_SOLVER> td_comp = std::make_unique<TREEWIDTH_SOLVER>(std::move(nice_tree_decomposition), reduced_components_context[i][j].dominated, reduced_components_context[i][j].excluded, identity_map);
 
 						//generate final solution.
@@ -127,7 +126,6 @@ void dominating_set_solver(){
 							solution.push_back((sub_newToOldIndex[i][sub_index]) + 1);
 						}
 						is_dominated[i][j] = true;
-					}
 				}
 			}
 		}
