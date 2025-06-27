@@ -85,6 +85,8 @@ void initialize_logger()
     Logger::cnt_alber_l_reduction = 0;
     Logger::cnt_alber_l_either_reduction = 0;
     Logger::attempt_alber_l_reduction = 0;
+
+    Logger::is_medium = false;
 }
 
 void initialize_logger_not_average()
@@ -166,6 +168,8 @@ void initialize_logger_not_average()
     Logger::cnt_alber_l_reduction = 0;
     Logger::cnt_alber_l_either_reduction = 0;
     Logger::attempt_alber_l_reduction = 0;
+
+    Logger::is_medium = false;
 }
 
     bool Logger::timed_out = false;
@@ -260,6 +264,8 @@ void initialize_logger_not_average()
 
     int Logger::domination_number = 0;
 
+    bool Logger::is_medium = false;
+
 std::string getReductionString(strategy_reduction reduction) {
     switch (reduction) {
     case REDUCTION_COMBINATION:
@@ -314,7 +320,7 @@ std::string getReductionSchemeString(strategy_reduction_scheme reduction) {
 void output_loginfo(std::string& name) {
     std::string prefix = "/home/floris/github/minimum-dominating-set/log_info/";
     //+ "/only_reduced" +
-    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/single_thread_1" + "/loginfo_" + name;
+    std::string output_path = prefix + getSolverString(Logger::solver_strategy) + "/" + getReductionString(Logger::reduction_strategy) + "/" + getReductionSchemeString(Logger::reduction_scheme_strategy) + "/approx" + "/loginfo_" + name;
     std::cout << output_path << std::endl;
     //"/single_thread"
     std::ofstream outFile(output_path);

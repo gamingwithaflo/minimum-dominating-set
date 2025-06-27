@@ -126,6 +126,8 @@ public:
 	static std::vector<int> treewidth;
 
 	static int domination_number;
+
+	static bool is_medium;
 };
 
 void output_loginfo(std::string& name);

@@ -14,3 +14,5 @@ typedef boost::adjacency_list<
     adjacencyListBoost;
 
 std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td(adjacencyListBoost& reduced_graph);
+
+std::unique_ptr<NICE_TREE_DECOMPOSITION> generate_td_approx(adjacencyListBoost& reduced_graph);
